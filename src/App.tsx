@@ -21,10 +21,10 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-win-bg">
+      <div className="flex items-center justify-center h-screen bg-bg-primary">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-win-accent/30 border-t-win-accent rounded-full animate-spin" />
-          <p className="text-win-muted text-sm">Chargement…</p>
+          <div className="w-8 h-8 border-2 border-accent-primary/30 border-t-accent-primary rounded-full animate-spin" />
+          <p className="text-text-secondary text-sm">Chargement…</p>
         </div>
       </div>
     );

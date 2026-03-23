@@ -21,20 +21,20 @@ export function Layout({ children }: LayoutProps) {
   const totalCount = servers.length;
 
   return (
-    <div className="flex h-screen bg-win-bg text-win-text overflow-hidden select-none">
+    <div className="flex h-screen bg-bg-primary text-text-primary overflow-hidden select-none">
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="w-56 flex flex-col bg-win-surface border-r border-win-border shrink-0">
+      <aside className="w-56 flex flex-col bg-bg-secondary border-r border-border-primary shrink-0">
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-win-border">
+        <div className="px-5 py-5 border-b border-border-primary">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-win bg-win-accent/15">
-              <Server size={18} className="text-win-accent" />
+            <div className="p-1.5 rounded-win bg-accent-primary/15">
+              <Server size={18} className="text-accent-primary" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-win-text leading-tight">
+              <p className="text-sm font-semibold text-text-primary leading-tight">
                 Server Manager
               </p>
-              <p className="text-xs text-win-muted leading-tight">Power Control</p>
+              <p className="text-xs text-text-secondary leading-tight">Power Control</p>
             </div>
           </div>
         </div>
@@ -50,8 +50,8 @@ export function Layout({ children }: LayoutProps) {
                 cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-win text-sm transition-all duration-150",
                   isActive
-                    ? "bg-win-accent text-white shadow-sm"
-                    : "text-win-muted hover:text-win-text hover:bg-win-hover"
+                    ? "bg-accent-primary text-white shadow-sm"
+                    : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
                 )
               }
             >
@@ -63,13 +63,13 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Compteur en ligne */}
         {totalCount > 0 && (
-          <div className="px-4 py-3 border-t border-win-border">
+          <div className="px-4 py-3 border-t border-border-primary">
             <div className="flex items-center gap-2 text-xs">
               <Wifi
                 size={12}
                 className={onlineCount > 0 ? "text-green-400" : "text-gray-500"}
               />
-              <span className="text-win-muted">
+              <span className="text-text-secondary">
                 <span
                   className={
                     onlineCount > 0 ? "text-green-400 font-semibold" : "text-gray-500"
