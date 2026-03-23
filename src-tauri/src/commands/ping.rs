@@ -18,7 +18,7 @@ pub async fn ping_server(
             .iter()
             .find(|s| s.id == server_id)
             .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
-        (server.ip.clone(), data.settings.ping_timeout_ms)
+        (server.ip.clone(), data.settings.network.ping_timeout_ms)
     };
 
     let result = ping_host(&ip, timeout_ms).await;
@@ -42,7 +42,7 @@ pub async fn ping_all(state: State<'_, AppState>) -> Result<Vec<PingResult>, Str
 
     let timeout_ms = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
-        data.settings.ping_timeout_ms
+        data.settings.network.ping_timeout_ms
     };
 
     // Pinger tous les serveurs en parallèle
@@ -83,7 +83,7 @@ pub async fn ping_group(
             .map(|s| (s.id.clone(), s.ip.clone()))
             .collect::<Vec<_>>();
 
-        (ips, data.settings.ping_timeout_ms)
+        (ips, data.settings.network.ping_timeout_ms)
     };
 
     let futures: Vec<_> = server_ips

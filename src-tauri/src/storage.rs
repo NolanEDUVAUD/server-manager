@@ -9,6 +9,7 @@ use crate::models::AppData;
 pub struct AppState {
     pub data: Mutex<AppData>,
     pub data_path: PathBuf,
+    pub pending_import: Mutex<Option<crate::models::PendingImport>>,
 }
 
 impl AppState {
@@ -26,30 +27,12 @@ impl AppState {
         let data_path = data_dir.join("data.json");
         log::info!("Fichier de données : {:?}", data_path);
 
-        let data = if data_path.exists() {
-            let content = std::fs::read_to_string(&data_path).unwrap_or_default();
-            match serde_json::from_str::<AppData>(&content) {
-                Ok(d) => {
-                    log::info!(
-                        "Données chargées : {} serveurs, {} groupes",
-                        d.servers.len(),
-                        d.groups.len()
-                    );
-                    d
-                }
-                Err(e) => {
-                    log::error!("Erreur de lecture du JSON (données réinitialisées) : {}", e);
-                    AppData::default()
-                }
-            }
-        } else {
-            log::info!("Aucune donnée existante, création d'un profil par défaut");
-            AppData::default()
-        };
+        let data = load_app_data(&data_path);
 
         AppState {
             data: Mutex::new(data),
             data_path,
+            pending_import: Mutex::new(None),
         }
     }
 
@@ -69,4 +52,41 @@ impl AppState {
         log::debug!("Données sauvegardées dans {:?}", self.data_path);
         Ok(())
     }
+}
+
+/// Charge les données depuis le disque avec gestion de la migration v1 → v2
+pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
+    if !path.exists() {
+        return crate::models::AppData::default();
+    }
+    let content = match std::fs::read_to_string(path) {
+        Ok(s) => s,
+        Err(_) => return crate::models::AppData::default(),
+    };
+    // Tentative 1 : format v2
+    if let Ok(data) = serde_json::from_str::<crate::models::AppData>(&content) {
+        log::info!(
+            "Données chargées : {} serveurs, {} groupes",
+            data.servers.len(),
+            data.groups.len()
+        );
+        return data;
+    }
+    // Tentative 2 : format v1 → migration
+    if let Ok(v1) = serde_json::from_str::<crate::models::AppDataV1>(&content) {
+        log::info!("Migration AppData v1 → v2");
+        let data = crate::models::AppData {
+            servers: v1.servers,
+            groups: v1.groups,
+            settings: crate::models::AppSettings::from_v1(v1.settings),
+            encryption_salt: v1.encryption_salt,
+        };
+        // Sauvegarder immédiatement en format v2
+        if let Ok(json) = serde_json::to_string_pretty(&data) {
+            let _ = std::fs::write(path, json);
+        }
+        return data;
+    }
+    log::error!("Erreur de lecture du JSON (données réinitialisées)");
+    crate::models::AppData::default()
 }

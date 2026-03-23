@@ -16,14 +16,14 @@ pub fn get_settings(state: State<AppState>) -> Result<AppSettings, String> {
 // ── Mettre à jour les paramètres ─────────────────────────────────────────
 #[tauri::command]
 pub fn update_settings(state: State<AppState>, settings: AppSettings) -> Result<(), String> {
-    // Validation des valeurs
-    if settings.ping_interval_secs < 5 {
+    // Validation des valeurs réseau
+    if settings.network.ping_interval_secs < 5 {
         return Err("L'intervalle de ping doit être d'au moins 5 secondes".to_string());
     }
-    if settings.ping_timeout_ms < 500 || settings.ping_timeout_ms > 30_000 {
+    if settings.network.ping_timeout_ms < 500 || settings.network.ping_timeout_ms > 30_000 {
         return Err("Le timeout de ping doit être entre 500 ms et 30 000 ms".to_string());
     }
-    if settings.ssh_timeout_secs < 5 || settings.ssh_timeout_secs > 120 {
+    if settings.network.ssh_timeout_secs < 5 || settings.network.ssh_timeout_secs > 120 {
         return Err("Le timeout SSH doit être entre 5 et 120 secondes".to_string());
     }
 

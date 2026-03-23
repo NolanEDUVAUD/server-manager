@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 // ── Types OS supportés ─────────────────────────────────────────────────────
@@ -122,25 +123,131 @@ impl Group {
     }
 }
 
-// ── Paramètres de l'application ────────────────────────────────────────────
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AppSettings {
-    /// Intervalle de ping automatique en secondes
+// ─── Thème ───────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Theme {
+    pub id: String,
+    pub name: String,
+    pub builtin: bool,
+    pub colors: HashMap<String, String>,
+}
+
+// ─── Density ─────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
+pub enum Density {
+    Compact,
+    #[default]
+    Normal,
+    Comfortable,
+}
+
+// ─── AppSettings v2 ──────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GeneralSettings {
+    pub start_minimized: bool,
+    pub auto_start: bool,
+    pub notifications: bool,
+}
+
+impl Default for GeneralSettings {
+    fn default() -> Self {
+        Self { start_minimized: false, auto_start: false, notifications: true }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AppearanceSettings {
+    pub brightness: f32,
+    pub font_size: u8,
+    pub density: Density,
+    pub active_theme: String,
+    pub custom_themes: Vec<Theme>,
+}
+
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        Self {
+            brightness: 1.0,
+            font_size: 14,
+            density: Density::Normal,
+            active_theme: "one-half-dark".to_string(),
+            custom_themes: vec![],
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NetworkSettings {
     pub ping_interval_secs: u64,
-    /// Timeout du ping en millisecondes
     pub ping_timeout_ms: u64,
-    /// Timeout SSH en secondes
     pub ssh_timeout_secs: u64,
 }
 
-impl Default for AppSettings {
+impl Default for NetworkSettings {
     fn default() -> Self {
-        AppSettings {
-            ping_interval_secs: 30,
-            ping_timeout_ms: 2000,
-            ssh_timeout_secs: 30,
+        Self { ping_interval_secs: 30, ping_timeout_ms: 2000, ssh_timeout_secs: 30 }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct AppSettings {
+    pub general: GeneralSettings,
+    pub appearance: AppearanceSettings,
+    pub network: NetworkSettings,
+}
+
+impl AppSettings {
+    /// Crée les paramètres v2 à partir des paramètres v1 (migration)
+    pub fn from_v1(v1: AppSettingsV1) -> Self {
+        Self {
+            general: GeneralSettings::default(),
+            appearance: AppearanceSettings::default(),
+            network: NetworkSettings {
+                ping_interval_secs: v1.ping_interval_secs,
+                ping_timeout_ms: v1.ping_timeout_ms,
+                ssh_timeout_secs: v1.ssh_timeout_secs,
+            },
         }
     }
+}
+
+// ─── Format v1 pour migration ────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct AppSettingsV1 {
+    pub ping_interval_secs: u64,
+    pub ping_timeout_ms: u64,
+    pub ssh_timeout_secs: u64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AppDataV1 {
+    pub servers: Vec<Server>,
+    pub groups: Vec<Group>,
+    pub settings: AppSettingsV1,
+    pub encryption_salt: String,
+}
+
+// ─── PendingImport ───────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PendingImport {
+    pub servers: Vec<Server>,
+    pub groups: Vec<Group>,
+    pub settings: Option<AppSettings>,
+    pub config_version: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ImportSummary {
+    pub servers_count: usize,
+    pub groups_count: usize,
+    pub settings_present: bool,
+    pub config_version: String,
+    pub exported_at: Option<String>,
 }
 
 // ── Données globales de l'application ─────────────────────────────────────
@@ -178,4 +285,33 @@ pub struct SshResult {
     pub success: bool,
     pub output: String,
     pub error: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_migrate_v1_settings_preserves_network() {
+        let v1 = AppSettingsV1 {
+            ping_interval_secs: 60,
+            ping_timeout_ms: 3000,
+            ssh_timeout_secs: 45,
+        };
+        let v2 = AppSettings::from_v1(v1);
+        assert_eq!(v2.network.ping_interval_secs, 60);
+        assert_eq!(v2.network.ping_timeout_ms, 3000);
+        assert_eq!(v2.network.ssh_timeout_secs, 45);
+        assert_eq!(v2.appearance.active_theme, "one-half-dark");
+        assert!(!v2.general.start_minimized);
+        assert!(v2.general.notifications);
+    }
+
+    #[test]
+    fn test_default_settings() {
+        let settings = AppSettings::default();
+        assert_eq!(settings.network.ping_interval_secs, 30);
+        assert_eq!(settings.appearance.font_size, 14);
+        assert_eq!(settings.appearance.active_theme, "one-half-dark");
+    }
 }

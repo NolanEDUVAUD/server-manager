@@ -117,7 +117,7 @@ pub async fn ssh_shutdown(
             server.ssh_user.clone(),
             pass,
             server.shutdown_command.clone(),
-            data.settings.ssh_timeout_secs,
+            data.settings.network.ssh_timeout_secs,
         )
     };
 
@@ -145,7 +145,7 @@ pub async fn ssh_reboot(
             server.ssh_user.clone(),
             pass,
             server.reboot_command.clone(),
-            data.settings.ssh_timeout_secs,
+            data.settings.network.ssh_timeout_secs,
         )
     };
 
@@ -173,7 +173,7 @@ pub async fn ssh_execute(
             server.ssh_port,
             server.ssh_user.clone(),
             pass,
-            data.settings.ssh_timeout_secs,
+            data.settings.network.ssh_timeout_secs,
         )
     };
 
@@ -206,7 +206,7 @@ pub async fn ssh_shutdown_group(
                         server.ssh_user.clone(),
                         pass,
                         server.shutdown_command.clone(),
-                        data.settings.ssh_timeout_secs,
+                        data.settings.network.ssh_timeout_secs,
                     ));
                 }
             }
