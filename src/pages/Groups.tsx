@@ -90,12 +90,12 @@ export function Groups() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-win-text">Groupes</h1>
-          <p className="text-sm text-win-muted mt-0.5">{groups.length} groupe{groups.length > 1 ? "s" : ""}</p>
+          <h1 className="text-xl font-bold text-text-primary">Groupes</h1>
+          <p className="text-sm text-text-secondary mt-0.5">{groups.length} groupe{groups.length > 1 ? "s" : ""}</p>
         </div>
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-win bg-win-accent hover:bg-win-accent-hover text-white font-medium transition-all"
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
         >
           <Plus size={14} />
           Créer un groupe
@@ -105,16 +105,16 @@ export function Groups() {
       {/* Liste des groupes */}
       {groups.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="p-4 rounded-full bg-win-card border border-win-border mb-4">
-            <Layers size={32} className="text-win-muted" />
+          <div className="p-4 rounded-full bg-bg-tertiary border border-border-primary mb-4">
+            <Layers size={32} className="text-text-secondary" />
           </div>
-          <h3 className="text-win-text font-semibold mb-2">Aucun groupe</h3>
-          <p className="text-win-muted text-sm mb-4">
+          <h3 className="text-text-primary font-semibold mb-2">Aucun groupe</h3>
+          <p className="text-text-secondary text-sm mb-4">
             Regroupez vos serveurs pour les contrôler en 1 clic
           </p>
           <button
             onClick={() => setShowAddForm(true)}
-            className="px-5 py-2.5 text-sm rounded-win bg-win-accent hover:bg-win-accent-hover text-white font-medium transition-all"
+            className="px-5 py-2.5 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
           >
             Créer un groupe
           </button>
@@ -128,12 +128,12 @@ export function Groups() {
             const isExpanded = expanded.has(group.id);
 
             return (
-              <div key={group.id} className="bg-win-card border border-win-border rounded-win shadow-win">
+              <div key={group.id} className="bg-bg-tertiary border border-border-primary rounded-win shadow-win">
                 {/* Header du groupe */}
                 <div className="flex items-center gap-4 p-4">
                   <button
                     onClick={() => toggleExpand(group.id)}
-                    className="text-win-muted hover:text-win-text transition-colors"
+                    className="text-text-secondary hover:text-text-primary transition-colors"
                   >
                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                   </button>
@@ -141,8 +141,8 @@ export function Groups() {
                   <span className="text-xl">{group.icon ?? "🗂️"}</span>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-win-text font-semibold text-sm">{group.name}</h3>
-                    <p className="text-xs text-win-muted">
+                    <h3 className="text-text-primary font-semibold text-sm">{group.name}</h3>
+                    <p className="text-xs text-text-secondary">
                       {groupServers.length} serveur{groupServers.length > 1 ? "s" : ""}
                       {groupServers.length > 0 && (
                         <span className="ml-2 text-green-400">{onlineCount} en ligne</span>
@@ -157,7 +157,7 @@ export function Groups() {
                         runGroupAction(group.id, "ping", pingAll, `Ping du groupe "${group.name}" lancé`)
                       }
                       disabled={!!loading || groupServers.length === 0}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-win-border text-win-muted hover:text-win-text hover:bg-win-hover transition-all disabled:opacity-50"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50"
                     >
                       {loading === "ping" ? <Loader2 size={11} className="animate-spin" /> : <Wifi size={11} />}
                       Ping
@@ -192,16 +192,16 @@ export function Groups() {
                       {loading === "shutdown" ? <Loader2 size={11} className="animate-spin" /> : <Power size={11} />}
                       Tout éteindre
                     </button>
-                    <div className="w-px h-5 bg-win-border mx-1" />
+                    <div className="w-px h-5 bg-border-primary mx-1" />
                     <button
                       onClick={() => setEditingGroup(group)}
-                      className="p-1.5 rounded text-win-muted hover:text-win-accent hover:bg-win-accent/10 transition-all"
+                      className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       onClick={() => setDeletingGroup(group)}
-                      className="p-1.5 rounded text-win-muted hover:text-red-400 hover:bg-red-400/10 transition-all"
+                      className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -210,13 +210,13 @@ export function Groups() {
 
                 {/* Serveurs du groupe (expandable) */}
                 {isExpanded && groupServers.length > 0 && (
-                  <div className="border-t border-win-border px-4 py-3 space-y-2">
+                  <div className="border-t border-border-primary px-4 py-3 space-y-2">
                     {groupServers.map((s) => (
-                      <div key={s.id} className="flex items-center gap-3 px-3 py-2 rounded-win bg-win-surface">
+                      <div key={s.id} className="flex items-center gap-3 px-3 py-2 rounded-win bg-bg-secondary">
                         <span className="text-base">{s.icon ?? "🖥️"}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-win-text truncate">{s.name}</p>
-                          <p className="text-xs text-win-muted font-mono">{s.ip}</p>
+                          <p className="text-sm text-text-primary truncate">{s.name}</p>
+                          <p className="text-xs text-text-secondary font-mono">{s.ip}</p>
                         </div>
                         <StatusBadge status={statuses[s.id]} size="sm" />
                       </div>
@@ -224,7 +224,7 @@ export function Groups() {
                   </div>
                 )}
                 {isExpanded && groupServers.length === 0 && (
-                  <div className="border-t border-win-border px-4 py-3 text-center text-win-muted text-xs italic">
+                  <div className="border-t border-border-primary px-4 py-3 text-center text-text-secondary text-xs italic">
                     Aucun serveur dans ce groupe
                   </div>
                 )}

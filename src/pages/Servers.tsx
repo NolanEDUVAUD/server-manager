@@ -85,12 +85,12 @@ export function Servers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-win-text">Serveurs</h1>
-          <p className="text-sm text-win-muted mt-0.5">{servers.length} serveur{servers.length > 1 ? "s" : ""} configuré{servers.length > 1 ? "s" : ""}</p>
+          <h1 className="text-xl font-bold text-text-primary">Serveurs</h1>
+          <p className="text-sm text-text-secondary mt-0.5">{servers.length} serveur{servers.length > 1 ? "s" : ""} configuré{servers.length > 1 ? "s" : ""}</p>
         </div>
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-win bg-win-accent hover:bg-win-accent-hover text-white font-medium transition-all"
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
         >
           <Plus size={14} />
           Ajouter
@@ -100,9 +100,9 @@ export function Servers() {
       {/* Barre de recherche */}
       {servers.length > 0 && (
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-win-muted" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
           <input
-            className="w-full bg-win-surface border border-win-border rounded-win pl-9 pr-4 py-2 text-sm text-win-text placeholder-win-muted/50 focus:outline-none focus:border-win-accent transition-colors"
+            className="w-full bg-bg-secondary border border-border-primary rounded-win pl-9 pr-4 py-2 text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent-primary transition-colors"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher par nom, IP ou OS…"
@@ -113,14 +113,14 @@ export function Servers() {
       {/* Liste */}
       {servers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="p-4 rounded-full bg-win-card border border-win-border mb-4">
-            <Server size={32} className="text-win-muted" />
+          <div className="p-4 rounded-full bg-bg-tertiary border border-border-primary mb-4">
+            <Server size={32} className="text-text-secondary" />
           </div>
-          <h3 className="text-win-text font-semibold mb-2">Aucun serveur</h3>
-          <p className="text-win-muted text-sm mb-4">Ajoutez votre premier serveur</p>
+          <h3 className="text-text-primary font-semibold mb-2">Aucun serveur</h3>
+          <p className="text-text-secondary text-sm mb-4">Ajoutez votre premier serveur</p>
           <button
             onClick={() => setShowAddForm(true)}
-            className="px-5 py-2.5 text-sm rounded-win bg-win-accent hover:bg-win-accent-hover text-white font-medium transition-all"
+            className="px-5 py-2.5 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
           >
             Ajouter un serveur
           </button>
@@ -132,7 +132,7 @@ export function Servers() {
             return (
               <div
                 key={server.id}
-                className="bg-win-card border border-win-border rounded-win shadow-win hover:border-win-accent/30 transition-all duration-200 p-4"
+                className="bg-bg-tertiary border border-border-primary rounded-win shadow-win hover:border-accent-primary/30 transition-all duration-200 p-4"
               >
                 <div className="flex items-center gap-4">
                   {/* Icône + nom */}
@@ -140,12 +140,12 @@ export function Servers() {
                     <span className="text-2xl shrink-0">{server.icon || OS_ICONS[server.os_type]}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-win-text font-semibold text-sm truncate">{server.name}</h3>
-                        <span className="text-xs text-win-muted/60 bg-win-surface px-1.5 py-0.5 rounded font-mono">
+                        <h3 className="text-text-primary font-semibold text-sm truncate">{server.name}</h3>
+                        <span className="text-xs text-text-secondary/60 bg-bg-secondary px-1.5 py-0.5 rounded font-mono">
                           {server.os_type}
                         </span>
                       </div>
-                      <p className="text-xs text-win-muted font-mono">
+                      <p className="text-xs text-text-secondary font-mono">
                         {server.ssh_user}@{server.ip}:{server.ssh_port}
                       </p>
                     </div>
@@ -177,22 +177,22 @@ export function Servers() {
                     <button
                       onClick={() => runAction(server.id, "reboot", () => rebootServer(server.id), `Reboot envoyé à ${server.name}`)}
                       disabled={!!loading}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-win-border text-win-muted hover:text-win-text hover:bg-win-hover transition-all disabled:opacity-50"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50"
                       title="Redémarrer"
                     >
                       {loading === "reboot" ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
                       Reboot
                     </button>
-                    <div className="w-px h-5 bg-win-border mx-1" />
+                    <div className="w-px h-5 bg-border-primary mx-1" />
                     <button
                       onClick={() => setEditingServer(server)}
-                      className="p-1.5 rounded text-win-muted hover:text-win-accent hover:bg-win-accent/10 transition-all"
+                      className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       onClick={() => setDeletingServer(server)}
-                      className="p-1.5 rounded text-win-muted hover:text-red-400 hover:bg-red-400/10 transition-all"
+                      className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -201,13 +201,13 @@ export function Servers() {
 
                 {/* Notes */}
                 {server.notes && (
-                  <p className="text-xs text-win-muted/70 mt-2 pl-11 leading-relaxed">{server.notes}</p>
+                  <p className="text-xs text-text-secondary/70 mt-2 pl-11 leading-relaxed">{server.notes}</p>
                 )}
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <div className="text-center py-8 text-win-muted text-sm">
+            <div className="text-center py-8 text-text-secondary text-sm">
               Aucun serveur ne correspond à "{search}"
             </div>
           )}

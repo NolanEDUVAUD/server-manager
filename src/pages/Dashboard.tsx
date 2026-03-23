@@ -70,8 +70,8 @@ export function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-win-text">Dashboard</h1>
-          <p className="text-sm text-win-muted mt-0.5">
+          <h1 className="text-xl font-bold text-text-primary">Dashboard</h1>
+          <p className="text-sm text-text-secondary mt-0.5">
             {servers.length === 0
               ? "Aucun serveur configuré"
               : `${onlineCount} / ${servers.length} serveur${servers.length > 1 ? "s" : ""} en ligne`}
@@ -82,7 +82,7 @@ export function Dashboard() {
             onClick={handleRefresh}
             disabled={refreshing}
             className="flex items-center gap-2 px-3 py-2 text-sm rounded-win
-                       border border-win-border text-win-muted hover:text-win-text hover:bg-win-hover
+                       border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover
                        transition-all disabled:opacity-50"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
@@ -91,7 +91,7 @@ export function Dashboard() {
           <button
             onClick={() => setShowAddForm(true)}
             className="flex items-center gap-2 px-4 py-2 text-sm rounded-win
-                       bg-win-accent hover:bg-win-accent-hover text-white font-medium transition-all"
+                       bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
           >
             <Server size={14} />
             Ajouter
@@ -102,29 +102,29 @@ export function Dashboard() {
       {/* Stats rapides */}
       {servers.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-win-card border border-win-border rounded-win p-4">
+          <div className="bg-bg-tertiary border border-border-primary rounded-win p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-win bg-win-accent/10">
-                <Server size={16} className="text-win-accent" />
+              <div className="p-2 rounded-win bg-accent-primary/10">
+                <Server size={16} className="text-accent-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-win-text">{servers.length}</p>
-                <p className="text-xs text-win-muted">Serveurs</p>
+                <p className="text-2xl font-bold text-text-primary">{servers.length}</p>
+                <p className="text-xs text-text-secondary">Serveurs</p>
               </div>
             </div>
           </div>
-          <div className="bg-win-card border border-win-border rounded-win p-4">
+          <div className="bg-bg-tertiary border border-border-primary rounded-win p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-win bg-green-500/10">
                 <Wifi size={16} className="text-green-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-400">{onlineCount}</p>
-                <p className="text-xs text-win-muted">En ligne</p>
+                <p className="text-xs text-text-secondary">En ligne</p>
               </div>
             </div>
           </div>
-          <div className="bg-win-card border border-win-border rounded-win p-4">
+          <div className="bg-bg-tertiary border border-border-primary rounded-win p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-win bg-red-500/10">
                 <WifiOff size={16} className="text-red-400" />
@@ -133,7 +133,7 @@ export function Dashboard() {
                 <p className="text-2xl font-bold text-red-400">
                   {servers.length - onlineCount}
                 </p>
-                <p className="text-xs text-win-muted">Hors ligne</p>
+                <p className="text-xs text-text-secondary">Hors ligne</p>
               </div>
             </div>
           </div>
@@ -143,16 +143,16 @@ export function Dashboard() {
       {/* Grille des serveurs */}
       {servers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="p-4 rounded-full bg-win-card border border-win-border mb-4">
-            <Server size={32} className="text-win-muted" />
+          <div className="p-4 rounded-full bg-bg-tertiary border border-border-primary mb-4">
+            <Server size={32} className="text-text-secondary" />
           </div>
-          <h3 className="text-win-text font-semibold mb-2">Aucun serveur configuré</h3>
-          <p className="text-win-muted text-sm mb-4">
+          <h3 className="text-text-primary font-semibold mb-2">Aucun serveur configuré</h3>
+          <p className="text-text-secondary text-sm mb-4">
             Ajoutez votre premier serveur pour commencer à le gérer
           </p>
           <button
             onClick={() => setShowAddForm(true)}
-            className="px-5 py-2.5 text-sm rounded-win bg-win-accent hover:bg-win-accent-hover text-white font-medium transition-all"
+            className="px-5 py-2.5 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
           >
             Ajouter un serveur
           </button>

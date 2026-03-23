@@ -22,25 +22,6 @@ export default {
         'accent-info':     'var(--accent-info)',
         'border-primary':  'var(--border-primary)',
         'border-secondary':'var(--border-secondary)',
-        // Palette Windows 11 / Fluent Design
-        win: {
-          bg: "#0a0a0f",         // Fond principal très sombre
-          surface: "#111117",    // Surface secondaire
-          card: "#16161e",       // Fond des cartes
-          border: "#2a2a3a",     // Bordures
-          hover: "#1e1e2e",      // Hover état
-          accent: "#0078d4",     // Bleu Windows 11
-          "accent-hover": "#1084d8",
-          "accent-light": "#106ebe",
-          muted: "#94a3b8",      // Texte secondaire
-          text: "#e2e8f0",       // Texte principal
-        },
-        status: {
-          online: "#22c55e",
-          offline: "#ef4444",
-          unknown: "#6b7280",
-          warning: "#f59e0b",
-        },
       },
       fontFamily: {
         sans: ['"Segoe UI Variable"', '"Segoe UI"', "Inter", "sans-serif"],
