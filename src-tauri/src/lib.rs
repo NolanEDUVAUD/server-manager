@@ -50,6 +50,14 @@ pub fn run() {
             settings::export_config,
             settings::import_config,
             settings::get_data_path,
+            settings::get_autostart,
+            settings::set_autostart,
+            settings::export_full_config,
+            settings::import_full_config,
+            settings::apply_import_config,
+            settings::save_custom_theme,
+            settings::delete_custom_theme,
+            servers::upload_server_icon,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");
