@@ -24,8 +24,16 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$APPDATA/**"]
+      }
     }
+  },
+  "plugins": {
+    "dialog": {},
+    "notification": {}
   },
   "bundle": {
     "active": true,

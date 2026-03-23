@@ -18,6 +18,8 @@ pub fn run() {
             app.manage(state);
             Ok(())
         })
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             // ── Serveurs ──────────────────────────────────────
             servers::get_servers,
