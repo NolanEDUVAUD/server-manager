@@ -4,6 +4,24 @@ export default {
   theme: {
     extend: {
       colors: {
+        // === NOUVELLES CLÉS CSS VARIABLES (thème dynamique) ===
+        'bg-primary':    'var(--bg-primary)',
+        'bg-secondary':  'var(--bg-secondary)',
+        'bg-tertiary':   'var(--bg-tertiary)',
+        'bg-input':      'var(--bg-input)',
+        'bg-hover':      'var(--bg-hover)',
+        'bg-active':     'var(--bg-active)',
+        'text-primary':  'var(--text-primary)',
+        'text-secondary':'var(--text-secondary)',
+        'text-muted':    'var(--text-muted)',
+        'accent-primary':  'var(--accent-primary)',
+        'accent-secondary':'var(--accent-secondary)',
+        'accent-success':  'var(--accent-success)',
+        'accent-warning':  'var(--accent-warning)',
+        'accent-error':    'var(--accent-error)',
+        'accent-info':     'var(--accent-info)',
+        'border-primary':  'var(--border-primary)',
+        'border-secondary':'var(--border-secondary)',
         // Palette Windows 11 / Fluent Design
         win: {
           bg: "#0a0a0f",         // Fond principal très sombre
