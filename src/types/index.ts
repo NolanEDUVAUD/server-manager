@@ -40,10 +40,53 @@ export interface Group {
   icon?: string | null;
 }
 
-export interface AppSettings {
+// ─── Thème ───────────────────────────────────────────────────────────────────
+
+export interface Theme {
+  id: string;
+  name: string;
+  builtin: boolean;
+  colors: Record<string, string>;
+}
+
+export type Density = 'Compact' | 'Normal' | 'Comfortable';
+
+// ─── AppSettings v2 ──────────────────────────────────────────────────────────
+
+export interface GeneralSettings {
+  start_minimized: boolean;
+  auto_start: boolean;
+  notifications: boolean;
+}
+
+export interface AppearanceSettings {
+  brightness: number;
+  font_size: number;
+  density: Density;
+  active_theme: string;
+  custom_themes: Theme[];
+}
+
+export interface NetworkSettings {
   ping_interval_secs: number;
   ping_timeout_ms: number;
   ssh_timeout_secs: number;
+}
+
+export interface AppSettings {
+  general: GeneralSettings;
+  appearance: AppearanceSettings;
+  network: NetworkSettings;
+}
+
+// ─── Import/Export ───────────────────────────────────────────────────────────
+
+export interface ImportSummary {
+  servers_count: number;
+  groups_count: number;
+  settings_present: boolean;
+  config_version: string;
+  exported_at: string | null;
 }
 
 export interface PingResult {

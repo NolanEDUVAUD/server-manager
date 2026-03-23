@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
   const totalCount = servers.length;
 
   return (
-    <div className="flex h-screen bg-bg-primary text-text-primary overflow-hidden select-none">
+    <div id="app-root" className="flex h-screen bg-bg-primary text-text-primary overflow-hidden select-none">
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside className="w-56 flex flex-col bg-bg-secondary border-r border-border-primary shrink-0">
         {/* Logo */}
