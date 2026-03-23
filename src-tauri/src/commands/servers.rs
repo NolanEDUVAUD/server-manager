@@ -1,5 +1,5 @@
 /// Commandes Tauri — CRUD des serveurs
-use tauri::State;
+use tauri::{Manager, State};
 
 use crate::{
     crypto,
@@ -160,6 +160,38 @@ pub fn get_decrypted_password(data: &AppData, server_id: &str) -> Result<String,
 
     let key = crypto::derive_key(&data.encryption_salt);
     crypto::decrypt(&server.ssh_password, &key)
+}
+
+// ── Téléverser une icône personnalisée pour un serveur ────────────────────
+#[tauri::command]
+pub async fn upload_server_icon(
+    server_id: String,
+    file_path: String,
+    state: tauri::State<'_, crate::storage::AppState>,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    let src = std::path::Path::new(&file_path);
+    let ext = src.extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("png")
+        .to_lowercase();
+    if ext != "png" && ext != "svg" {
+        return Err("Seuls les fichiers PNG et SVG sont acceptés".to_string());
+    }
+    let icons_dir = app.path().app_data_dir()
+        .map_err(|e: tauri::Error| e.to_string())?
+        .join("icons");
+    std::fs::create_dir_all(&icons_dir).map_err(|e| e.to_string())?;
+    let file_name = format!("{}.{}", server_id, ext);
+    let dest = icons_dir.join(&file_name);
+    std::fs::copy(src, &dest).map_err(|e| e.to_string())?;
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    if let Some(srv) = data.servers.iter_mut().find(|s| s.id == server_id) {
+        srv.icon = Some(format!("file:{}", file_name));
+    }
+    drop(data);
+    state.save()?;
+    Ok(file_name)
 }
 
 // ── Validation des données d'un serveur ───────────────────────────────────
