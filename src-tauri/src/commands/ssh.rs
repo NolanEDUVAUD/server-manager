@@ -1,0 +1,234 @@
+/// Commandes Tauri — SSH (shutdown / reboot / commande libre)
+use async_trait::async_trait;
+use russh::client;
+use russh_keys::key::PublicKey;
+use std::sync::Arc;
+use tauri::State;
+use crate::{
+    commands::servers::get_decrypted_password,
+    models::SshResult,
+    storage::AppState,
+};
+
+// ── Handler SSH minimal (accepte tous les hosts pour usage homelab) ───────
+struct SshHandler;
+
+#[async_trait]
+impl client::Handler for SshHandler {
+    type Error = russh::Error;
+
+    async fn check_server_key(
+        &mut self,
+        _server_public_key: &PublicKey,
+    ) -> Result<bool, Self::Error> {
+        // Pour un homelab isolé, on accepte n'importe quel host key
+        // En production : vérifier le fingerprint
+        Ok(true)
+    }
+}
+
+// ── Fonction interne d'exécution SSH ──────────────────────────────────────
+async fn execute_ssh(
+    ip: &str,
+    port: u16,
+    user: &str,
+    password: &str,
+    command: &str,
+    timeout_secs: u64,
+) -> Result<SshResult, String> {
+    // Le timeout est géré par tokio::time::timeout ci-dessous
+    let config = Arc::new(client::Config::default());
+
+    let mut session = tokio::time::timeout(
+        std::time::Duration::from_secs(timeout_secs),
+        client::connect(config, (ip, port), SshHandler),
+    )
+    .await
+    .map_err(|_| format!("Timeout de connexion à {}:{}", ip, port))?
+    .map_err(|e| format!("Connexion SSH échouée à {}:{} — {}", ip, port, e))?;
+
+    let authenticated = session
+        .authenticate_password(user, password)
+        .await
+        .map_err(|e| format!("Authentification SSH échouée pour {}@{} — {}", user, ip, e))?;
+
+    if !authenticated {
+        return Err(format!("Mot de passe incorrect pour {}@{}", user, ip));
+    }
+
+    let mut channel = session
+        .channel_open_session()
+        .await
+        .map_err(|e| format!("Impossible d'ouvrir un canal SSH: {}", e))?;
+
+    channel
+        .exec(true, command)
+        .await
+        .map_err(|e| format!("Erreur d'exécution de la commande '{}': {}", command, e))?;
+
+    let mut output = String::new();
+    let mut exit_code: Option<u32> = None;
+
+    loop {
+        match channel.wait().await {
+            Some(russh::ChannelMsg::Data { ref data }) => {
+                output.push_str(&String::from_utf8_lossy(data));
+            }
+            Some(russh::ChannelMsg::ExtendedData { ref data, .. }) => {
+                output.push_str(&String::from_utf8_lossy(data));
+            }
+            Some(russh::ChannelMsg::ExitStatus { exit_status }) => {
+                exit_code = Some(exit_status);
+            }
+            None => break,
+            _ => {}
+        }
+    }
+
+    let success = exit_code.map_or(true, |c| c == 0);
+    Ok(SshResult {
+        success,
+        output: output.trim().to_string(),
+        error: if success {
+            None
+        } else {
+            Some(format!("Code de sortie: {}", exit_code.unwrap_or(1)))
+        },
+    })
+}
+
+// ── Shutdown d'un serveur ─────────────────────────────────────────────────
+#[tauri::command]
+pub async fn ssh_shutdown(
+    state: State<'_, AppState>,
+    server_id: String,
+) -> Result<SshResult, String> {
+    let (ip, port, user, password, command, timeout) = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        let server = data
+            .servers
+            .iter()
+            .find(|s| s.id == server_id)
+            .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
+        let pass = get_decrypted_password(&data, &server_id)?;
+        (
+            server.ip.clone(),
+            server.ssh_port,
+            server.ssh_user.clone(),
+            pass,
+            server.shutdown_command.clone(),
+            data.settings.ssh_timeout_secs,
+        )
+    };
+
+    log::info!("Shutdown SSH de {}:{} — commande: {}", ip, port, command);
+    execute_ssh(&ip, port, &user, &password, &command, timeout).await
+}
+
+// ── Reboot d'un serveur ───────────────────────────────────────────────────
+#[tauri::command]
+pub async fn ssh_reboot(
+    state: State<'_, AppState>,
+    server_id: String,
+) -> Result<SshResult, String> {
+    let (ip, port, user, password, command, timeout) = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        let server = data
+            .servers
+            .iter()
+            .find(|s| s.id == server_id)
+            .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
+        let pass = get_decrypted_password(&data, &server_id)?;
+        (
+            server.ip.clone(),
+            server.ssh_port,
+            server.ssh_user.clone(),
+            pass,
+            server.reboot_command.clone(),
+            data.settings.ssh_timeout_secs,
+        )
+    };
+
+    log::info!("Reboot SSH de {}:{} — commande: {}", ip, port, command);
+    execute_ssh(&ip, port, &user, &password, &command, timeout).await
+}
+
+// ── Exécuter une commande libre sur un serveur ────────────────────────────
+#[tauri::command]
+pub async fn ssh_execute(
+    state: State<'_, AppState>,
+    server_id: String,
+    command: String,
+) -> Result<SshResult, String> {
+    let (ip, port, user, password, timeout) = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        let server = data
+            .servers
+            .iter()
+            .find(|s| s.id == server_id)
+            .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
+        let pass = get_decrypted_password(&data, &server_id)?;
+        (
+            server.ip.clone(),
+            server.ssh_port,
+            server.ssh_user.clone(),
+            pass,
+            data.settings.ssh_timeout_secs,
+        )
+    };
+
+    log::info!("Commande SSH sur {}:{} — {}", ip, port, command);
+    execute_ssh(&ip, port, &user, &password, &command, timeout).await
+}
+
+// ── Shutdown de tout un groupe ────────────────────────────────────────────
+#[tauri::command]
+pub async fn ssh_shutdown_group(
+    state: State<'_, AppState>,
+    group_id: String,
+) -> Result<Vec<(String, SshResult)>, String> {
+    let servers_info = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        let group = data
+            .groups
+            .iter()
+            .find(|g| g.id == group_id)
+            .ok_or_else(|| format!("Groupe introuvable: {}", group_id))?;
+
+        let mut list = Vec::new();
+        for sid in &group.server_ids {
+            if let Some(server) = data.servers.iter().find(|s| &s.id == sid) {
+                if let Ok(pass) = get_decrypted_password(&data, sid) {
+                    list.push((
+                        server.name.clone(),
+                        server.ip.clone(),
+                        server.ssh_port,
+                        server.ssh_user.clone(),
+                        pass,
+                        server.shutdown_command.clone(),
+                        data.settings.ssh_timeout_secs,
+                    ));
+                }
+            }
+        }
+        list
+    };
+
+    let mut results = Vec::new();
+    for (name, ip, port, user, password, command, timeout) in servers_info {
+        let result = execute_ssh(&ip, port, &user, &password, &command, timeout).await;
+        match result {
+            Ok(r) => results.push((name, r)),
+            Err(e) => results.push((
+                name.clone(),
+                SshResult {
+                    success: false,
+                    output: String::new(),
+                    error: Some(e),
+                },
+            )),
+        }
+    }
+
+    Ok(results)
+}

@@ -1,0 +1,97 @@
+// ── Types miroir des structs Rust ──────────────────────────────────────────
+
+export type OsType = "Linux" | "Windows" | "Proxmox" | "TrueNAS" | "ESXi";
+
+export interface Server {
+  id: string;
+  name: string;
+  ip: string;
+  mac_address: string;
+  ssh_user: string;
+  /** Mot de passe chiffré (ne jamais afficher en clair) */
+  ssh_password: string;
+  ssh_port: number;
+  shutdown_command: string;
+  reboot_command: string;
+  os_type: OsType;
+  icon?: string | null;
+  notes?: string | null;
+}
+
+export interface ServerPayload {
+  name: string;
+  ip: string;
+  mac_address: string;
+  ssh_user: string;
+  /** Mot de passe en clair (sera chiffré côté Rust) */
+  ssh_password: string;
+  ssh_port: number;
+  shutdown_command?: string;
+  reboot_command?: string;
+  os_type: OsType;
+  icon?: string | null;
+  notes?: string | null;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  server_ids: string[];
+  icon?: string | null;
+}
+
+export interface AppSettings {
+  ping_interval_secs: number;
+  ping_timeout_ms: number;
+  ssh_timeout_secs: number;
+}
+
+export interface PingResult {
+  server_id: string;
+  online: boolean;
+  latency_ms: number | null;
+}
+
+export interface SshResult {
+  success: boolean;
+  output: string;
+  error: string | null;
+}
+
+// ── Status en temps réel (stocké dans le store frontend) ─────────────────
+export interface ServerStatus {
+  online: boolean;
+  latency_ms: number | null;
+  last_checked: number; // timestamp ms
+}
+
+// ── Toast notifications ───────────────────────────────────────────────────
+export type ToastType = "success" | "error" | "info" | "warning";
+
+export interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+  duration?: number;
+}
+
+// ── OS metadata ───────────────────────────────────────────────────────────
+export const OS_ICONS: Record<OsType, string> = {
+  Linux: "🐧",
+  Windows: "🪟",
+  Proxmox: "🔷",
+  TrueNAS: "💾",
+  ESXi: "⚙️",
+};
+
+export const OS_COLORS: Record<OsType, string> = {
+  Linux: "#f59e0b",
+  Windows: "#0078d4",
+  Proxmox: "#e11d48",
+  TrueNAS: "#0ea5e9",
+  ESXi: "#8b5cf6",
+};
+
+export const DEFAULT_SSH_PORT = 22;
+
+export const OS_TYPES: OsType[] = ["Linux", "Windows", "Proxmox", "TrueNAS", "ESXi"];
