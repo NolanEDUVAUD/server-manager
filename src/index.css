@@ -1,53 +1,62 @@
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  * {
-    box-sizing: border-box;
-  }
+/* === VARIABLES CSS — Thème One Half Dark (fallback avant chargement des settings) === */
+:root {
+  --bg-primary:     #282c34;
+  --bg-secondary:   #21252b;
+  --bg-tertiary:    #2c313a;
+  --bg-input:       #1e2227;
+  --bg-hover:       #323842;
+  --bg-active:      #3a3f4b;
+  --text-primary:   #abb2bf;
+  --text-secondary: #7f848e;
+  --text-muted:     #5c6370;
+  --accent-primary:   #61afef;
+  --accent-secondary: #56b6c2;
+  --accent-success:   #98c379;
+  --accent-warning:   #e5c07b;
+  --accent-error:     #e06c75;
+  --accent-info:      #61afef;
+  --border-primary:   #3e4451;
+  --border-secondary: #2c313a;
+  --shadow-color:     rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb:  #3e4451;
+  --scrollbar-track:  #21252b;
+  --font-size-base:   14px;
+}
 
-  html,
-  body,
-  #root {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
+@layer base {
+  * { box-sizing: border-box; }
 
   body {
-    font-family: "Segoe UI Variable", "Segoe UI", Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #0a0a0f;
-    color: #e2e8f0;
-    /* Empêcher la sélection de texte dans l'UI native */
+    font-family: 'Segoe UI Variable', 'Segoe UI', Inter, system-ui, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
     -webkit-user-select: none;
     user-select: none;
   }
 
-  /* Permettre la sélection dans les inputs et zones de texte */
-  input,
-  textarea,
-  [contenteditable] {
+  input, textarea, select {
     -webkit-user-select: text;
     user-select: text;
   }
 
-  /* Scrollbar custom style */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #2a2a3a;
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a4a;
-  }
+  /* Scrollbar */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
 }
+
+/* === DENSITÉ — appliquée via classe sur <body> === */
+body.density-compact  .card { padding: 8px;  gap: 4px; }
+body.density-normal   .card { padding: 16px; gap: 8px; }
+body.density-comfortable .card { padding: 24px; gap: 16px; }
+
+body.density-compact  .form-row { gap: 8px; margin-bottom: 8px; }
+body.density-normal   .form-row { gap: 12px; margin-bottom: 12px; }
+body.density-comfortable .form-row { gap: 16px; margin-bottom: 20px; }
