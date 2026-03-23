@@ -9,6 +9,7 @@ import {
   DEFAULT_SSH_PORT,
 } from "../types";
 import { isValidIP, isValidMAC, formatMAC } from "../utils";
+import { IconPicker } from "./IconPicker";
 
 interface ServerFormProps {
   initial?: ServerType;
@@ -121,28 +122,26 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Nom + Icône */}
-          <div className="grid grid-cols-[1fr_auto] gap-3">
-            <div>
-              <label className={labelClass}>Nom *</label>
-              <input
-                className={inputClass}
-                value={form.name}
-                onChange={(e) => set("name", e.target.value)}
-                placeholder="Proxmox Master1"
-              />
-              {errors.name && <p className={errorClass}>{errors.name}</p>}
-            </div>
-            <div>
-              <label className={labelClass}>Icône</label>
-              <input
-                className={`${inputClass} w-16 text-center text-lg`}
-                value={form.icon ?? ""}
-                onChange={(e) => set("icon", e.target.value)}
-                placeholder="🖥️"
-                maxLength={2}
-              />
-            </div>
+          {/* Nom */}
+          <div>
+            <label className={labelClass}>Nom *</label>
+            <input
+              className={inputClass}
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="Proxmox Master1"
+            />
+            {errors.name && <p className={errorClass}>{errors.name}</p>}
+          </div>
+
+          {/* Icône */}
+          <div className="form-row">
+            <label className="text-text-secondary text-xs block mb-1">Icône</label>
+            <IconPicker
+              serverId={form.name || 'new'}
+              value={form.icon || null}
+              onChange={icon => set("icon", icon || undefined)}
+            />
           </div>
 
           {/* IP + MAC */}

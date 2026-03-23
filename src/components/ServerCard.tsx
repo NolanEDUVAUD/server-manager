@@ -5,6 +5,7 @@ import { StatusBadge } from "./StatusBadge";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
+import { ServerIconDisplay } from "./IconPicker";
 
 interface ServerCardProps {
   server: Server;
@@ -48,8 +49,11 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xl shrink-0">
-              {server.icon || OS_ICONS[server.os_type]}
+            <span className="shrink-0">
+              {server.icon
+                ? <ServerIconDisplay icon={server.icon} size={20} />
+                : <span className="text-xl">{OS_ICONS[server.os_type]}</span>
+              }
             </span>
             <div className="min-w-0">
               <h3 className="text-text-primary font-semibold text-sm truncate leading-tight">
