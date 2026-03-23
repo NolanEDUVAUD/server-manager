@@ -97,25 +97,25 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
   }
 
   const inputClass =
-    "w-full bg-win-surface border border-win-border rounded-win px-3 py-2 text-sm text-win-text placeholder-win-muted/50 focus:outline-none focus:border-win-accent transition-colors";
-  const labelClass = "block text-xs font-medium text-win-muted mb-1";
+    "w-full bg-bg-secondary border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:border-accent-primary transition-colors";
+  const labelClass = "block text-xs font-medium text-text-secondary mb-1";
   const errorClass = "text-xs text-red-400 mt-1";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-win-card border border-win-border rounded-win-lg shadow-win-hover w-full max-w-2xl mx-4 animate-slide-in max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-2xl mx-4 animate-slide-in max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-win-border">
+        <div className="flex items-center justify-between p-6 border-b border-border-primary">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-win bg-win-accent/10">
-              <Server size={18} className="text-win-accent" />
+            <div className="p-2 rounded-win bg-accent-primary/10">
+              <Server size={18} className="text-accent-primary" />
             </div>
-            <h2 className="text-win-text font-semibold">
+            <h2 className="text-text-primary font-semibold">
               {initial ? "Modifier le serveur" : "Ajouter un serveur"}
             </h2>
           </div>
-          <button onClick={onCancel} className="text-win-muted hover:text-win-text transition-colors">
+          <button onClick={onCancel} className="text-text-secondary hover:text-text-primary transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -180,8 +180,8 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
                   onClick={() => set("os_type", os)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-win text-sm border transition-all duration-150
                     ${form.os_type === os
-                      ? "bg-win-accent border-win-accent text-white"
-                      : "border-win-border text-win-muted hover:border-win-accent/50 hover:text-win-text"
+                      ? "bg-accent-primary border-accent-primary text-white"
+                      : "border-border-primary text-text-secondary hover:border-accent-primary/50 hover:text-text-primary"
                     }`}
                 >
                   <span>{OS_ICONS[os]}</span>
@@ -218,7 +218,7 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-7 text-win-muted hover:text-win-text transition-colors"
+                className="absolute right-2 top-7 text-text-secondary hover:text-text-primary transition-colors"
               >
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
@@ -272,18 +272,18 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 justify-end pt-2 border-t border-win-border">
+          <div className="flex gap-3 justify-end pt-2 border-t border-border-primary">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-sm rounded-win border border-win-border text-win-muted hover:text-win-text hover:bg-win-hover transition-all"
+              className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 text-sm rounded-win bg-win-accent hover:bg-win-accent-hover text-white font-medium transition-all disabled:opacity-50"
+              className="px-5 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all disabled:opacity-50"
             >
               {submitting ? "Enregistrement…" : initial ? "Mettre à jour" : "Ajouter"}
             </button>

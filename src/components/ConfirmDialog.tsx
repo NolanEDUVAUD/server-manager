@@ -27,7 +27,7 @@ export function ConfirmDialog({
         onClick={onCancel}
       />
       {/* Dialog */}
-      <div className="relative bg-win-card border border-win-border rounded-win-lg shadow-win-hover p-6 w-full max-w-md mx-4 animate-slide-in">
+      <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover p-6 w-full max-w-md mx-4 animate-slide-in">
         <div className="flex items-start gap-4">
           {dangerous && (
             <div className="p-2 rounded-win bg-red-500/10">
@@ -35,12 +35,12 @@ export function ConfirmDialog({
             </div>
           )}
           <div className="flex-1">
-            <h3 className="text-win-text font-semibold text-base mb-2">{title}</h3>
-            <p className="text-win-muted text-sm leading-relaxed">{message}</p>
+            <h3 className="text-text-primary font-semibold text-base mb-2">{title}</h3>
+            <p className="text-text-secondary text-sm leading-relaxed">{message}</p>
           </div>
           <button
             onClick={onCancel}
-            className="text-win-muted hover:text-win-text transition-colors"
+            className="text-text-secondary hover:text-text-primary transition-colors"
           >
             <X size={18} />
           </button>
@@ -49,8 +49,8 @@ export function ConfirmDialog({
         <div className="flex gap-3 mt-6 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded-win border border-win-border
-                       text-win-muted hover:text-win-text hover:bg-win-hover
+            className="px-4 py-2 text-sm rounded-win border border-border-primary
+                       text-text-secondary hover:text-text-primary hover:bg-bg-hover
                        transition-all duration-150"
           >
             {cancelLabel}
@@ -60,7 +60,7 @@ export function ConfirmDialog({
             className={`px-4 py-2 text-sm rounded-win font-medium transition-all duration-150
               ${dangerous
                 ? "bg-red-600 hover:bg-red-500 text-white"
-                : "bg-win-accent hover:bg-win-accent-hover text-white"
+                : "bg-accent-primary hover:bg-accent-secondary text-white"
               }`}
           >
             {confirmLabel}

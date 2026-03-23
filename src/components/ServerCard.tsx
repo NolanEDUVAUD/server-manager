@@ -40,8 +40,8 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
     <>
       <div
         className={cn(
-          "bg-win-card border border-win-border rounded-win shadow-win",
-          "hover:shadow-win-hover hover:border-win-accent/30 transition-all duration-200",
+          "bg-bg-tertiary border border-border-primary rounded-win shadow-win",
+          "hover:shadow-win-hover hover:border-accent-primary/30 transition-all duration-200",
           "flex flex-col gap-4 p-4"
         )}
       >
@@ -52,16 +52,16 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
               {server.icon || OS_ICONS[server.os_type]}
             </span>
             <div className="min-w-0">
-              <h3 className="text-win-text font-semibold text-sm truncate leading-tight">
+              <h3 className="text-text-primary font-semibold text-sm truncate leading-tight">
                 {server.name}
               </h3>
-              <p className="text-win-muted text-xs truncate font-mono">{server.ip}</p>
+              <p className="text-text-secondary text-xs truncate font-mono">{server.ip}</p>
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => runAction("ping", () => pingServer(server.id), "Ping OK")}
-              className="p-1.5 rounded text-win-muted hover:text-win-accent hover:bg-win-accent/10 transition-all"
+              className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
               title="Rafraîchir le statut"
             >
               {loading === "ping" ? (
@@ -72,14 +72,14 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
             </button>
             <button
               onClick={() => onEdit(server)}
-              className="p-1.5 rounded text-win-muted hover:text-win-accent hover:bg-win-accent/10 transition-all"
+              className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
               title="Modifier"
             >
               <Pencil size={13} />
             </button>
             <button
               onClick={() => onDelete(server)}
-              className="p-1.5 rounded text-win-muted hover:text-red-400 hover:bg-red-400/10 transition-all"
+              className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all"
               title="Supprimer"
             >
               <Trash2 size={13} />
@@ -139,8 +139,8 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
             onClick={() => setConfirmAction("reboot")}
             disabled={!!loading}
             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
-                       border border-win-border bg-win-surface text-win-muted
-                       hover:bg-win-hover hover:text-win-text
+                       border border-border-primary bg-bg-secondary text-text-secondary
+                       hover:bg-bg-hover hover:text-text-primary
                        text-xs font-medium transition-all disabled:opacity-50"
             title="Redémarrer"
           >
@@ -154,7 +154,7 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
         </div>
 
         {/* Infos SSH */}
-        <div className="text-xs text-win-muted/60 font-mono">
+        <div className="text-xs text-text-secondary/60 font-mono">
           {server.ssh_user}@{server.ip}:{server.ssh_port}
         </div>
       </div>
