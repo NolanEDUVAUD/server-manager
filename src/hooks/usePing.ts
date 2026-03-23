@@ -16,7 +16,7 @@ export function usePing() {
     pingAll().catch(console.error);
 
     // Puis à intervalle régulier
-    const ms = (settings.ping_interval_secs ?? 30) * 1000;
+    const ms = (settings.network.ping_interval_secs ?? 30) * 1000;
     intervalRef.current = setInterval(() => {
       pingAll().catch(console.error);
     }, ms);
@@ -25,5 +25,5 @@ export function usePing() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   // Réinitialiser si l'intervalle ou le nombre de serveurs change
-  }, [settings.ping_interval_secs, servers.length]);
+  }, [settings.network.ping_interval_secs, servers.length]);
 }

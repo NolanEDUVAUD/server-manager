@@ -10,7 +10,11 @@ export function Settings() {
   const { settings, updateSettings, exportConfig, importConfig } = useStore();
   const toast = useToast();
 
-  const [form, setForm] = useState<AppSettings>({ ...settings });
+  const [form, setForm] = useState<AppSettings>({
+    general: { ...settings.general },
+    appearance: { ...settings.appearance },
+    network: { ...settings.network },
+  });
   const [saving, setSaving] = useState(false);
   const [dataPath, setDataPath] = useState<string | null>(null);
 
@@ -95,9 +99,12 @@ export function Settings() {
             <input
               type="number"
               className={inputClass}
-              value={form.ping_interval_secs}
+              value={form.network.ping_interval_secs}
               onChange={(e) =>
-                setForm((f) => ({ ...f, ping_interval_secs: parseInt(e.target.value) || 30 }))
+                setForm((f) => ({
+                  ...f,
+                  network: { ...f.network, ping_interval_secs: parseInt(e.target.value) || 30 },
+                }))
               }
               min={5}
               max={3600}
@@ -110,9 +117,12 @@ export function Settings() {
             <input
               type="number"
               className={inputClass}
-              value={form.ping_timeout_ms}
+              value={form.network.ping_timeout_ms}
               onChange={(e) =>
-                setForm((f) => ({ ...f, ping_timeout_ms: parseInt(e.target.value) || 2000 }))
+                setForm((f) => ({
+                  ...f,
+                  network: { ...f.network, ping_timeout_ms: parseInt(e.target.value) || 2000 },
+                }))
               }
               min={500}
               max={30000}
@@ -126,9 +136,12 @@ export function Settings() {
           <input
             type="number"
             className={`${inputClass} w-40`}
-            value={form.ssh_timeout_secs}
+            value={form.network.ssh_timeout_secs}
             onChange={(e) =>
-              setForm((f) => ({ ...f, ssh_timeout_secs: parseInt(e.target.value) || 30 }))
+              setForm((f) => ({
+                ...f,
+                network: { ...f.network, ssh_timeout_secs: parseInt(e.target.value) || 30 },
+              }))
             }
             min={5}
             max={120}
