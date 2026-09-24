@@ -36,6 +36,14 @@ export function formatDate(ts: number): string {
   });
 }
 
+export function formatBytes(bytes: number): string {
+  const gb = bytes / 1024 / 1024 / 1024;
+  if (gb < 1) {
+    return `${Math.round(bytes / 1024 / 1024)} Mo`;
+  }
+  return `${gb.toFixed(1)} Go`;
+}
+
 // ── Génération d'IDs ──────────────────────────────────────────────────────
 
 export function generateId(): string {
