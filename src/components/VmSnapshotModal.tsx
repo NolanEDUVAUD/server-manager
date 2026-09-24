@@ -18,7 +18,6 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
   const [newSnapshotName, setNewSnapshotName] = useState("");
   const [creating, setCreating] = useState(false);
   const [rollbackTarget, setRollbackTarget] = useState<ProxmoxSnapshot | null>(null);
-  const [rollingBack, setRollingBack] = useState(false);
   const [cloneName, setCloneName] = useState(`${vm.name}-clone`);
   const [cloning, setCloning] = useState(false);
 
@@ -56,15 +55,18 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
 
   async function handleRollback() {
     if (!rollbackTarget) return;
-    setRollingBack(true);
+    // On ferme immédiatement la ConfirmDialog (avant l'await) : ConfirmDialog
+    // n'a pas de prop `disabled` sur son bouton de confirmation, donc c'est
+    // la seule façon d'empêcher un double-clic de déclencher deux appels
+    // concurrents de proxmox_vm_snapshot_rollback (qui verrouille la config
+    // de la VM côté Proxmox) sur le même snapshot.
+    const target = rollbackTarget;
+    setRollbackTarget(null);
     try {
-      await proxmoxSnapshotRollback(connectionId, vm.node, vm.vmid, vm.vm_type, rollbackTarget.name);
-      onMessage(`Restauration vers "${rollbackTarget.name}" lancée`, "success");
-      setRollbackTarget(null);
+      await proxmoxSnapshotRollback(connectionId, vm.node, vm.vmid, vm.vm_type, target.name);
+      onMessage(`Restauration vers "${target.name}" lancée`, "success");
     } catch (e) {
       onMessage(String(e), "error");
-    } finally {
-      setRollingBack(false);
     }
   }
 
