@@ -1,4 +1,4 @@
-use crate::proxmox::models::ProxmoxNode;
+use crate::proxmox::models::{ProxmoxNode, ProxmoxVm, VmType};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use std::time::Duration;
@@ -18,6 +18,24 @@ struct ApiResponse<T> {
 struct RawNode {
     node: String,
     status: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawVm {
+    vmid: u32,
+    #[serde(default)]
+    name: Option<String>,
+    status: String,
+    #[serde(default)]
+    cpu: f64,
+    #[serde(default)]
+    mem: u64,
+    #[serde(default)]
+    maxmem: u64,
+    #[serde(default)]
+    disk: u64,
+    #[serde(default)]
+    maxdisk: u64,
 }
 
 impl ProxmoxClient {
@@ -91,11 +109,44 @@ impl ProxmoxClient {
             .map(|n| ProxmoxNode { node: n.node, status: n.status })
             .collect())
     }
+
+    async fn list_vms_of_type(&self, node: &str, vm_type: VmType) -> Result<Vec<ProxmoxVm>, String> {
+        let path = format!("/nodes/{}/{}", node, vm_type.api_segment());
+        let raw: Vec<RawVm> = self.get_json(&path).await?;
+        Ok(raw
+            .into_iter()
+            .map(|v| ProxmoxVm {
+                vmid: v.vmid,
+                name: v.name.unwrap_or_else(|| format!("vm-{}", v.vmid)),
+                node: node.to_string(),
+                vm_type,
+                status: v.status,
+                cpu: v.cpu,
+                mem: v.mem,
+                maxmem: v.maxmem,
+                disk: v.disk,
+                maxdisk: v.maxdisk,
+            })
+            .collect())
+    }
+
+    pub async fn list_all_vms(&self) -> Result<Vec<ProxmoxVm>, String> {
+        let nodes = self.list_nodes().await?;
+        let mut all = Vec::new();
+        for node in &nodes {
+            let mut qemu = self.list_vms_of_type(&node.node, VmType::Qemu).await?;
+            let mut lxc = self.list_vms_of_type(&node.node, VmType::Lxc).await?;
+            all.append(&mut qemu);
+            all.append(&mut lxc);
+        }
+        Ok(all)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::proxmox::models::VmType;
     use wiremock::matchers::{header, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -144,5 +195,37 @@ mod tests {
         assert_eq!(nodes.len(), 1);
         assert_eq!(nodes[0].node, "pve1");
         assert_eq!(nodes[0].status, "online");
+    }
+
+    #[tokio::test]
+    async fn list_all_vms_combines_qemu_and_lxc_across_nodes() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET")).and(path("/api2/json/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": [{"node": "pve1", "status": "online"}]
+            })))
+            .mount(&server).await;
+        Mock::given(method("GET")).and(path("/api2/json/nodes/pve1/qemu"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": [{"vmid": 100, "name": "web01", "status": "running", "cpu": 0.05, "mem": 536870912i64, "maxmem": 1073741824i64, "disk": 0, "maxdisk": 8589934592i64}]
+            })))
+            .mount(&server).await;
+        Mock::given(method("GET")).and(path("/api2/json/nodes/pve1/lxc"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": [{"vmid": 200, "name": "ct01", "status": "stopped", "cpu": 0.0, "mem": 0, "maxmem": 536870912i64, "disk": 104857600i64, "maxdisk": 2147483648i64}]
+            })))
+            .mount(&server).await;
+
+        let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
+        let vms = client.list_all_vms().await.unwrap();
+
+        assert_eq!(vms.len(), 2);
+        let qemu_vm = vms.iter().find(|v| v.vm_type == VmType::Qemu).unwrap();
+        assert_eq!(qemu_vm.vmid, 100);
+        assert_eq!(qemu_vm.name, "web01");
+        assert_eq!(qemu_vm.node, "pve1");
+        let lxc_vm = vms.iter().find(|v| v.vm_type == VmType::Lxc).unwrap();
+        assert_eq!(lxc_vm.vmid, 200);
+        assert_eq!(lxc_vm.status, "stopped");
     }
 }

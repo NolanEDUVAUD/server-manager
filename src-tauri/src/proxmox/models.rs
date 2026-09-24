@@ -38,6 +38,36 @@ pub struct ProxmoxNode {
     pub status: String,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum VmType {
+    Qemu,
+    Lxc,
+}
+
+impl VmType {
+    pub fn api_segment(&self) -> &'static str {
+        match self {
+            VmType::Qemu => "qemu",
+            VmType::Lxc => "lxc",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProxmoxVm {
+    pub vmid: u32,
+    pub name: String,
+    pub node: String,
+    pub vm_type: VmType,
+    pub status: String,
+    pub cpu: f64,
+    pub mem: u64,
+    pub maxmem: u64,
+    pub disk: u64,
+    pub maxdisk: u64,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProxmoxConnectionPayload {
     pub name: String,
