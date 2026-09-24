@@ -91,6 +91,13 @@ pub struct ProxmoxVm {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProxmoxSnapshot {
+    pub name: String,
+    pub description: String,
+    pub snaptime: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProxmoxConnectionPayload {
     pub name: String,
     pub api_url: String,

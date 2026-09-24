@@ -1,4 +1,4 @@
-use crate::proxmox::models::{ProxmoxNode, ProxmoxVm, VmAction, VmType};
+use crate::proxmox::models::{ProxmoxNode, ProxmoxSnapshot, ProxmoxVm, VmAction, VmType};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use std::time::Duration;
@@ -36,6 +36,15 @@ struct RawVm {
     disk: u64,
     #[serde(default)]
     maxdisk: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawSnapshot {
+    name: String,
+    #[serde(default)]
+    description: Option<String>,
+    #[serde(default)]
+    snaptime: Option<u64>,
 }
 
 impl ProxmoxClient {
@@ -158,6 +167,53 @@ impl ProxmoxClient {
         );
         self.post_form(&path, &[]).await
     }
+
+    pub async fn list_snapshots(
+        &self,
+        node: &str,
+        vmid: u32,
+        vm_type: VmType,
+    ) -> Result<Vec<ProxmoxSnapshot>, String> {
+        let path = format!("/nodes/{}/{}/{}/snapshot", node, vm_type.api_segment(), vmid);
+        let raw: Vec<RawSnapshot> = self.get_json(&path).await?;
+        Ok(raw
+            .into_iter()
+            .filter(|s| s.name != "current")
+            .map(|s| ProxmoxSnapshot {
+                name: s.name,
+                description: s.description.unwrap_or_default(),
+                snaptime: s.snaptime,
+            })
+            .collect())
+    }
+
+    pub async fn create_snapshot(
+        &self,
+        node: &str,
+        vmid: u32,
+        vm_type: VmType,
+        name: &str,
+    ) -> Result<String, String> {
+        let path = format!("/nodes/{}/{}/{}/snapshot", node, vm_type.api_segment(), vmid);
+        self.post_form(&path, &[("snapname", name)]).await
+    }
+
+    pub async fn rollback_snapshot(
+        &self,
+        node: &str,
+        vmid: u32,
+        vm_type: VmType,
+        name: &str,
+    ) -> Result<String, String> {
+        let path = format!(
+            "/nodes/{}/{}/{}/snapshot/{}/rollback",
+            node,
+            vm_type.api_segment(),
+            vmid,
+            name
+        );
+        self.post_form(&path, &[]).await
+    }
 }
 
 #[cfg(test)]
@@ -275,5 +331,49 @@ mod tests {
         let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
         let result = client.vm_action("pve1", 100, VmType::Qemu, VmAction::Stop).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn list_snapshots_excludes_current_pseudo_snapshot() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET")).and(path("/api2/json/nodes/pve1/qemu/100/snapshot"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": [
+                    {"name": "current"},
+                    {"name": "before-update", "description": "avant mise à jour", "snaptime": 1700000000}
+                ]
+            })))
+            .mount(&server).await;
+
+        let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
+        let snaps = client.list_snapshots("pve1", 100, VmType::Qemu).await.unwrap();
+
+        assert_eq!(snaps.len(), 1);
+        assert_eq!(snaps[0].name, "before-update");
+        assert_eq!(snaps[0].description, "avant mise à jour");
+    }
+
+    #[tokio::test]
+    async fn create_snapshot_sends_snapname_form_field() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST")).and(path("/api2/json/nodes/pve1/qemu/100/snapshot"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({"data": "UPID:pve1:snap-create"})))
+            .mount(&server).await;
+
+        let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
+        let upid = client.create_snapshot("pve1", 100, VmType::Qemu, "before-update").await.unwrap();
+        assert_eq!(upid, "UPID:pve1:snap-create");
+    }
+
+    #[tokio::test]
+    async fn rollback_snapshot_calls_rollback_endpoint() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST")).and(path("/api2/json/nodes/pve1/qemu/100/snapshot/before-update/rollback"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({"data": "UPID:pve1:snap-rollback"})))
+            .mount(&server).await;
+
+        let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
+        let upid = client.rollback_snapshot("pve1", 100, VmType::Qemu, "before-update").await.unwrap();
+        assert_eq!(upid, "UPID:pve1:snap-rollback");
     }
 }
