@@ -33,6 +33,12 @@ impl ProxmoxConnection {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProxmoxNode {
+    pub node: String,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProxmoxConnectionPayload {
     pub name: String,
     pub api_url: String,

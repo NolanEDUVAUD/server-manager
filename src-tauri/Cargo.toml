@@ -47,8 +47,14 @@ tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 chrono = { version = "0.4", features = ["serde"] }
 
+# Client HTTP pour l'intégration Proxmox VE
+reqwest = { version = "0.12", features = ["json"] }
+
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
+
+[dev-dependencies]
+wiremock = "0.6"
 
 [profile.release]
 opt-level = 3
