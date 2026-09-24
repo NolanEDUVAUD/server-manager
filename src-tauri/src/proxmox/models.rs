@@ -54,6 +54,28 @@ impl VmType {
     }
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum VmAction {
+    Start,
+    Stop,
+    Shutdown,
+    Reboot,
+    Suspend,
+}
+
+impl VmAction {
+    pub fn api_segment(&self) -> &'static str {
+        match self {
+            VmAction::Start => "start",
+            VmAction::Stop => "stop",
+            VmAction::Shutdown => "shutdown",
+            VmAction::Reboot => "reboot",
+            VmAction::Suspend => "suspend",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProxmoxVm {
     pub vmid: u32,

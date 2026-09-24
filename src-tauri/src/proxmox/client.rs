@@ -1,4 +1,4 @@
-use crate::proxmox::models::{ProxmoxNode, ProxmoxVm, VmType};
+use crate::proxmox::models::{ProxmoxNode, ProxmoxVm, VmAction, VmType};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use std::time::Duration;
@@ -141,6 +141,23 @@ impl ProxmoxClient {
         }
         Ok(all)
     }
+
+    pub async fn vm_action(
+        &self,
+        node: &str,
+        vmid: u32,
+        vm_type: VmType,
+        action: VmAction,
+    ) -> Result<String, String> {
+        let path = format!(
+            "/nodes/{}/{}/{}/status/{}",
+            node,
+            vm_type.api_segment(),
+            vmid,
+            action.api_segment()
+        );
+        self.post_form(&path, &[]).await
+    }
 }
 
 #[cfg(test)]
@@ -227,5 +244,36 @@ mod tests {
         let lxc_vm = vms.iter().find(|v| v.vm_type == VmType::Lxc).unwrap();
         assert_eq!(lxc_vm.vmid, 200);
         assert_eq!(lxc_vm.status, "stopped");
+    }
+
+    #[tokio::test]
+    async fn vm_action_calls_correct_endpoint_for_qemu_and_lxc() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST")).and(path("/api2/json/nodes/pve1/qemu/100/status/start"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({"data": "UPID:pve1:qemu-start"})))
+            .mount(&server).await;
+        Mock::given(method("POST")).and(path("/api2/json/nodes/pve1/lxc/200/status/stop"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({"data": "UPID:pve1:lxc-stop"})))
+            .mount(&server).await;
+
+        let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
+
+        let upid_start = client.vm_action("pve1", 100, VmType::Qemu, VmAction::Start).await.unwrap();
+        assert_eq!(upid_start, "UPID:pve1:qemu-start");
+
+        let upid_stop = client.vm_action("pve1", 200, VmType::Lxc, VmAction::Stop).await.unwrap();
+        assert_eq!(upid_stop, "UPID:pve1:lxc-stop");
+    }
+
+    #[tokio::test]
+    async fn vm_action_propagates_proxmox_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST")).and(path("/api2/json/nodes/pve1/qemu/100/status/stop"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("VM already stopped"))
+            .mount(&server).await;
+
+        let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
+        let result = client.vm_action("pve1", 100, VmType::Qemu, VmAction::Stop).await;
+        assert!(result.is_err());
     }
 }
