@@ -51,11 +51,15 @@ describe("dashboard tabs store", () => {
   it("closeDashboardTab retire l'onglet et active le suivant s'il était actif", async () => {
     await useStore.getState().openDashboardTab(tabA, 0, 0, 100, 100);
     await useStore.getState().openDashboardTab(tabB, 0, 0, 100, 100);
+    vi.mocked(invoke).mockClear();
 
     await useStore.getState().closeDashboardTab("conn-b");
 
     expect(useStore.getState().dashboardTabs).toEqual([tabA]);
     expect(useStore.getState().activeDashboardTabLabel).toBe("conn-a");
+    // L'onglet de repli (conn-a) avait été masqué à l'ouverture de conn-b ;
+    // il doit être explicitement ré-affiché, sinon sa webview reste cachée.
+    expect(invoke).toHaveBeenCalledWith("set_dashboard_tab_visible", { label: "conn-a", visible: true });
   });
 
   it("closeDashboardTab passe à null si c'était le dernier onglet", async () => {

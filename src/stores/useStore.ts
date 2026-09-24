@@ -462,12 +462,17 @@ export const useStore = create<AppStore>((set, get) => ({
 
   closeDashboardTab: async (label) => {
     await invoke("close_dashboard_tab", { label });
-    set((s) => {
-      const remaining = s.dashboardTabs.filter((t) => t.label !== label);
-      const activeDashboardTabLabel =
-        s.activeDashboardTabLabel === label ? (remaining[0]?.label ?? null) : s.activeDashboardTabLabel;
-      return { dashboardTabs: remaining, activeDashboardTabLabel };
-    });
+
+    const s = get();
+    const remaining = s.dashboardTabs.filter((t) => t.label !== label);
+    const activeDashboardTabLabel =
+      s.activeDashboardTabLabel === label ? (remaining[0]?.label ?? null) : s.activeDashboardTabLabel;
+
+    if (s.activeDashboardTabLabel === label && activeDashboardTabLabel) {
+      await invoke("set_dashboard_tab_visible", { label: activeDashboardTabLabel, visible: true }).catch(() => {});
+    }
+
+    set({ dashboardTabs: remaining, activeDashboardTabLabel });
   },
 
   setActiveDashboardTab: async (label) => {

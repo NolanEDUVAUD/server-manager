@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { X, LayoutPanelTop } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { useDashboardTabSync } from "../hooks/useDashboardTabSync";
@@ -9,6 +10,19 @@ export function Dashboards() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useDashboardTabSync(containerRef);
+
+  // Affiche la webview de l'onglet actif tant que cette page est montée ;
+  // la masque au démontage (navigation vers une autre page) ou quand l'onglet
+  // actif change, car la webview native n'est pas un élément du DOM et ne
+  // disparaît donc pas automatiquement avec le routage React.
+  useEffect(() => {
+    if (!activeDashboardTabLabel) return;
+    invoke("set_dashboard_tab_visible", { label: activeDashboardTabLabel, visible: true }).catch(() => {});
+
+    return () => {
+      invoke("set_dashboard_tab_visible", { label: activeDashboardTabLabel, visible: false }).catch(() => {});
+    };
+  }, [activeDashboardTabLabel]);
 
   return (
     <div className="flex flex-col h-full">

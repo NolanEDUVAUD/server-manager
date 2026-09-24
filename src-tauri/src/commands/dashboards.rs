@@ -20,6 +20,12 @@ pub fn open_dashboard_tab(
         .map_err(|e| format!("Erreur mutex: {}", e))?;
 
     if let Some(webview) = webviews.get(&label) {
+        let parsed_url = url
+            .parse()
+            .map_err(|e| format!("URL invalide '{}': {}", url, e))?;
+        webview
+            .navigate(parsed_url)
+            .map_err(|e| format!("Erreur de navigation: {}", e))?;
         webview
             .set_position(LogicalPosition::new(x, y))
             .map_err(|e| format!("Erreur de positionnement: {}", e))?;
