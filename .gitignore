@@ -2,6 +2,9 @@
 node_modules/
 dist/
 
+# Isolated worktrees for subagent-driven development
+.worktrees/
+
 # Rust / Tauri
 src-tauri/target/
 src-tauri/WixTools/
