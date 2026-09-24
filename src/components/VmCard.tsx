@@ -3,6 +3,7 @@ import { Play, Square, RotateCcw, PauseCircle, Camera, Loader2 } from "lucide-re
 import { ProxmoxVm } from "../types";
 import { useStore } from "../stores/useStore";
 import { cn, formatBytes } from "../utils";
+import { VmSnapshotModal } from "./VmSnapshotModal";
 
 interface VmCardProps {
   vm: ProxmoxVm;
@@ -13,6 +14,7 @@ interface VmCardProps {
 export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
   const { proxmoxVmAction } = useStore();
   const [loading, setLoading] = useState<string | null>(null);
+  const [showSnapshots, setShowSnapshots] = useState(false);
 
   const isRunning = vm.status === "running";
 
@@ -123,6 +125,7 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
           </>
         )}
         <button
+          onClick={() => setShowSnapshots(true)}
           disabled={!!loading}
           title="Snapshots"
           className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
@@ -132,6 +135,15 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
           <Camera size={12} />
         </button>
       </div>
+
+      {showSnapshots && (
+        <VmSnapshotModal
+          vm={vm}
+          connectionId={connectionId}
+          onClose={() => setShowSnapshots(false)}
+          onMessage={onMessage}
+        />
+      )}
     </div>
   );
 }
