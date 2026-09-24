@@ -19,6 +19,7 @@ import {
   SshResult,
   VmAction,
   VmType,
+  DashboardTab,
 } from "../types";
 import {
   applyTheme,
@@ -95,6 +96,14 @@ interface AppStore {
   proxmoxSnapshotRollback: (connectionId: string, node: string, vmid: number, vmType: VmType, name: string) => Promise<string>;
   proxmoxCloneVm: (connectionId: string, node: string, vmid: number, vmType: VmType, newName: string) => Promise<string>;
 
+  // ── Onglets web intégrés ───────────────────────────────────────────────
+  dashboardTabs: DashboardTab[];
+  activeDashboardTabLabel: string | null;
+  openDashboardTab: (tab: DashboardTab, x: number, y: number, width: number, height: number) => Promise<void>;
+  closeDashboardTab: (label: string) => Promise<void>;
+  setActiveDashboardTab: (label: string | null) => Promise<void>;
+  resizeDashboardTab: (label: string, x: number, y: number, width: number, height: number) => Promise<void>;
+
   // ── Thèmes custom ──────────────────────────────────────────────────────
   saveCustomTheme: (theme: Theme) => Promise<void>;
   deleteCustomTheme: (id: string) => Promise<void>;
@@ -139,6 +148,8 @@ export const useStore = create<AppStore>((set, get) => ({
   proxmoxVms: {},
   proxmoxLoading: {},
   proxmoxErrors: {},
+  dashboardTabs: [],
+  activeDashboardTabLabel: null,
 
   // ── Initialisation ─────────────────────────────────────────────────────
   initialize: async () => {
@@ -431,6 +442,49 @@ export const useStore = create<AppStore>((set, get) => ({
 
   proxmoxCloneVm: async (connectionId, node, vmid, vmType, newName) => {
     return invoke<string>("proxmox_vm_clone", { connectionId, node, vmid, vmType, newName });
+  },
+
+  // ── Onglets web intégrés ───────────────────────────────────────────────
+  openDashboardTab: async (tab, x, y, width, height) => {
+    const prevActive = get().activeDashboardTabLabel;
+    if (prevActive && prevActive !== tab.label) {
+      await invoke("set_dashboard_tab_visible", { label: prevActive, visible: false }).catch(() => {});
+    }
+
+    const exists = get().dashboardTabs.some((t) => t.label === tab.label);
+    await invoke("open_dashboard_tab", { label: tab.label, url: tab.url, x, y, width, height });
+
+    if (!exists) {
+      set((s) => ({ dashboardTabs: [...s.dashboardTabs, tab] }));
+    }
+    set({ activeDashboardTabLabel: tab.label });
+  },
+
+  closeDashboardTab: async (label) => {
+    await invoke("close_dashboard_tab", { label });
+    set((s) => {
+      const remaining = s.dashboardTabs.filter((t) => t.label !== label);
+      const activeDashboardTabLabel =
+        s.activeDashboardTabLabel === label ? (remaining[0]?.label ?? null) : s.activeDashboardTabLabel;
+      return { dashboardTabs: remaining, activeDashboardTabLabel };
+    });
+  },
+
+  setActiveDashboardTab: async (label) => {
+    const prev = get().activeDashboardTabLabel;
+    if (prev === label) return;
+
+    if (prev) {
+      await invoke("set_dashboard_tab_visible", { label: prev, visible: false }).catch(() => {});
+    }
+    if (label) {
+      await invoke("set_dashboard_tab_visible", { label, visible: true });
+    }
+    set({ activeDashboardTabLabel: label });
+  },
+
+  resizeDashboardTab: async (label, x, y, width, height) => {
+    await invoke("resize_dashboard_tab", { label, x, y, width, height });
   },
 
   // ── Import/Export (ancienne API) ───────────────────────────────────────

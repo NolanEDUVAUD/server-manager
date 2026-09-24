@@ -182,3 +182,12 @@ export interface ProxmoxSnapshot {
   description: string;
   snaptime: number | null;
 }
+
+// ─── Onglets web intégrés ──────────────────────────────────────────────────
+
+export interface DashboardTab {
+  label: string;
+  connectionId: string;
+  url: string;
+  title: string;
+}
