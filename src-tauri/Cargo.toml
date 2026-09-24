@@ -9,6 +9,14 @@ edition = "2021"
 name = "server_manager_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[[bin]]
+name = "server-manager"
+path = "src/main.rs"
+# `main.rs` has no unit tests of its own, so there is nothing to run its own
+# test harness for; disabling it avoids building an extra, pointless
+# executable during `cargo test`.
+test = false
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
