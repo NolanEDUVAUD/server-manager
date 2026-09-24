@@ -214,6 +214,19 @@ impl ProxmoxClient {
         );
         self.post_form(&path, &[]).await
     }
+
+    pub async fn clone_vm(
+        &self,
+        node: &str,
+        vmid: u32,
+        vm_type: VmType,
+        new_name: &str,
+    ) -> Result<String, String> {
+        let next_id: String = self.get_json("/cluster/nextid").await?;
+        let path = format!("/nodes/{}/{}/{}/clone", node, vm_type.api_segment(), vmid);
+        self.post_form(&path, &[("newid", next_id.as_str()), ("name", new_name)])
+            .await
+    }
 }
 
 #[cfg(test)]
@@ -375,5 +388,20 @@ mod tests {
         let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
         let upid = client.rollback_snapshot("pve1", 100, VmType::Qemu, "before-update").await.unwrap();
         assert_eq!(upid, "UPID:pve1:snap-rollback");
+    }
+
+    #[tokio::test]
+    async fn clone_vm_fetches_nextid_then_clones() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET")).and(path("/api2/json/cluster/nextid"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({"data": "105"})))
+            .mount(&server).await;
+        Mock::given(method("POST")).and(path("/api2/json/nodes/pve1/qemu/100/clone"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({"data": "UPID:pve1:clone"})))
+            .mount(&server).await;
+
+        let client = ProxmoxClient::new(&server.uri(), "root@pam!sm", "secret", true, 5).unwrap();
+        let upid = client.clone_vm("pve1", 100, VmType::Qemu, "web01-clone").await.unwrap();
+        assert_eq!(upid, "UPID:pve1:clone");
     }
 }
