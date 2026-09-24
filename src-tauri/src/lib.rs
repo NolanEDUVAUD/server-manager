@@ -4,7 +4,7 @@ mod models;
 mod proxmox;
 mod storage;
 
-use commands::{groups, ping, servers, settings, ssh, wol};
+use commands::{groups, ping, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -59,6 +59,12 @@ pub fn run() {
             settings::save_custom_theme,
             settings::delete_custom_theme,
             servers::upload_server_icon,
+            // ── Proxmox ───────────────────────────────────────
+            proxmox_cmd::proxmox_list_connections,
+            proxmox_cmd::proxmox_add_connection,
+            proxmox_cmd::proxmox_update_connection,
+            proxmox_cmd::proxmox_delete_connection,
+            proxmox_cmd::proxmox_test_connection,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");
