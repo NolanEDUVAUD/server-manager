@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Server, Layers, Settings, Wifi } from "lucide-react";
+import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
 
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/servers", icon: Server, label: "Serveurs" },
   { to: "/groups", icon: Layers, label: "Groupes" },
+  { to: "/proxmox", icon: Boxes, label: "Proxmox" },
   { to: "/settings", icon: Settings, label: "Paramètres" },
 ];
 
