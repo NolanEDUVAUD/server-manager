@@ -1,5 +1,6 @@
 mod commands;
 mod crypto;
+mod dashboard_state;
 mod models;
 mod proxmox;
 mod storage;
@@ -17,6 +18,7 @@ pub fn run() {
             // Charger les données persistées au démarrage
             let state = AppState::load(&app.handle());
             app.manage(state);
+            app.manage(dashboard_state::DashboardState::default());
             Ok(())
         })
         .plugin(tauri_plugin_dialog::init())
