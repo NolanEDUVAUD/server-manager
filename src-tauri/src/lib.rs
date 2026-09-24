@@ -76,6 +76,8 @@ pub fn run() {
             // ── Onglets web intégrés ────────────────────────
             dashboards::open_dashboard_tab,
             dashboards::close_dashboard_tab,
+            dashboards::set_dashboard_tab_visible,
+            dashboards::resize_dashboard_tab,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

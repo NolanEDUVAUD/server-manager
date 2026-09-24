@@ -62,3 +62,50 @@ pub fn close_dashboard_tab(state: State<DashboardState>, label: String) -> Resul
     // et on retourne Ok, sans jamais paniquer.
     Ok(())
 }
+
+#[tauri::command]
+pub fn set_dashboard_tab_visible(
+    state: State<DashboardState>,
+    label: String,
+    visible: bool,
+) -> Result<(), String> {
+    let webviews = state
+        .webviews
+        .lock()
+        .map_err(|e| format!("Erreur mutex: {}", e))?;
+    let webview = webviews
+        .get(&label)
+        .ok_or_else(|| format!("Onglet introuvable: {}", label))?;
+
+    if visible {
+        webview.show().map_err(|e| format!("Erreur d'affichage: {}", e))
+    } else {
+        webview.hide().map_err(|e| format!("Erreur de masquage: {}", e))
+    }
+}
+
+#[tauri::command]
+pub fn resize_dashboard_tab(
+    state: State<DashboardState>,
+    label: String,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+) -> Result<(), String> {
+    let webviews = state
+        .webviews
+        .lock()
+        .map_err(|e| format!("Erreur mutex: {}", e))?;
+    let webview = webviews
+        .get(&label)
+        .ok_or_else(|| format!("Onglet introuvable: {}", label))?;
+
+    webview
+        .set_position(LogicalPosition::new(x, y))
+        .map_err(|e| format!("Erreur de positionnement: {}", e))?;
+    webview
+        .set_size(LogicalSize::new(width, height))
+        .map_err(|e| format!("Erreur de redimensionnement: {}", e))?;
+    Ok(())
+}
