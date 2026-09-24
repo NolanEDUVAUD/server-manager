@@ -5,6 +5,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { Servers } from "./pages/Servers";
 import { Groups } from "./pages/Groups";
 import { Proxmox } from "./pages/Proxmox";
+import { Dashboards } from "./pages/Dashboards";
 import { Settings } from "./pages/Settings";
 import { useStore } from "./stores/useStore";
 import { usePing } from "./hooks/usePing";
@@ -38,6 +39,7 @@ function AppContent() {
         <Route path="/servers" element={<Servers />} />
         <Route path="/groups" element={<Groups />} />
         <Route path="/proxmox" element={<Proxmox />} />
+        <Route path="/dashboards" element={<Dashboards />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
     </Layout>
