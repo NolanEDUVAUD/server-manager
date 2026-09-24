@@ -233,7 +233,7 @@ impl ProxmoxClient {
 mod tests {
     use super::*;
     use crate::proxmox::models::VmType;
-    use wiremock::matchers::{header, method, path};
+    use wiremock::matchers::{body_string_contains, header, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[tokio::test]
@@ -397,6 +397,8 @@ mod tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({"data": "105"})))
             .mount(&server).await;
         Mock::given(method("POST")).and(path("/api2/json/nodes/pve1/qemu/100/clone"))
+            .and(body_string_contains("newid=105"))
+            .and(body_string_contains("name=web01-clone"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({"data": "UPID:pve1:clone"})))
             .mount(&server).await;
 
