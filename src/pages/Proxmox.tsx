@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
-import { Plus, Server as ServerIcon, AlertCircle } from "lucide-react";
+import { Plus, Server as ServerIcon, AlertCircle, Pencil, Trash2 } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { useProxmoxStatus } from "../hooks/useProxmoxStatus";
 import { useToast } from "../hooks/useToast";
 import { VmCard } from "../components/VmCard";
 import { ProxmoxConnectionForm } from "../components/ProxmoxConnectionForm";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { ProxmoxConnection } from "../types";
 
 export function Proxmox() {
-  const { proxmoxConnections, proxmoxVms, proxmoxErrors, loadProxmoxConnections } = useStore();
+  const { proxmoxConnections, proxmoxVms, proxmoxErrors, loadProxmoxConnections, deleteProxmoxConnection } = useStore();
   const { toasts, removeToast, success, error, info } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ProxmoxConnection | null>(null);
+  const [deleting, setDeleting] = useState<ProxmoxConnection | null>(null);
 
   useEffect(() => {
     loadProxmoxConnections().catch((e) => error(String(e)));
@@ -24,6 +26,18 @@ export function Proxmox() {
     if (type === "success") success(msg);
     else if (type === "error") error(msg);
     else info(msg);
+  }
+
+  async function handleDelete() {
+    if (!deleting) return;
+    try {
+      await deleteProxmoxConnection(deleting.id);
+      success(`Connexion "${deleting.name}" supprimée`);
+    } catch (e) {
+      error(String(e));
+    } finally {
+      setDeleting(null);
+    }
   }
 
   return (
@@ -54,10 +68,32 @@ export function Proxmox() {
             <h2 className="text-text-primary font-medium text-sm">{conn.name}</h2>
             <span className="text-text-secondary text-xs font-mono">{conn.api_url}</span>
             {proxmoxErrors[conn.id] && (
-              <span className="flex items-center gap-1 text-xs text-red-400">
+              <span
+                className="flex items-center gap-1 text-xs text-red-400"
+                title={proxmoxErrors[conn.id] ?? undefined}
+              >
                 <AlertCircle size={12} /> Hors ligne
               </span>
             )}
+            <div className="flex items-center gap-1 ml-auto">
+              <button
+                onClick={() => {
+                  setEditing(conn);
+                  setShowForm(true);
+                }}
+                className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
+                title="Modifier"
+              >
+                <Pencil size={13} />
+              </button>
+              <button
+                onClick={() => setDeleting(conn)}
+                className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all"
+                title="Supprimer"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {(proxmoxVms[conn.id] ?? []).map((vm) => (
@@ -72,6 +108,17 @@ export function Proxmox() {
           connection={editing}
           onClose={() => setShowForm(false)}
           onMessage={onMessage}
+        />
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Supprimer ${deleting.name}`}
+          message="Cette action est irréversible. La connexion Proxmox et ses VM associées seront retirées de la liste."
+          confirmLabel="Supprimer"
+          dangerous
+          onConfirm={handleDelete}
+          onCancel={() => setDeleting(null)}
         />
       )}
 
