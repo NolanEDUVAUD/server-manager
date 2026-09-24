@@ -6,7 +6,10 @@ use crate::{
     models::AppData,
     proxmox::{
         client::ProxmoxClient,
-        models::{ProxmoxConnection, ProxmoxConnectionPayload},
+        models::{
+            ProxmoxConnection, ProxmoxConnectionPayload, ProxmoxSnapshot, ProxmoxVm, VmAction,
+            VmType,
+        },
     },
     storage::AppState,
 };
@@ -147,4 +150,95 @@ pub async fn proxmox_test_connection(
         timeout,
     )?;
     client.test_connection().await
+}
+
+#[tauri::command]
+pub async fn proxmox_list_vms(
+    state: State<'_, AppState>,
+    connection_id: String,
+) -> Result<Vec<ProxmoxVm>, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.list_all_vms().await
+}
+
+#[tauri::command]
+pub async fn proxmox_vm_action(
+    state: State<'_, AppState>,
+    connection_id: String,
+    node: String,
+    vmid: u32,
+    vm_type: VmType,
+    action: VmAction,
+) -> Result<String, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.vm_action(&node, vmid, vm_type, action).await
+}
+
+#[tauri::command]
+pub async fn proxmox_vm_snapshot_list(
+    state: State<'_, AppState>,
+    connection_id: String,
+    node: String,
+    vmid: u32,
+    vm_type: VmType,
+) -> Result<Vec<ProxmoxSnapshot>, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.list_snapshots(&node, vmid, vm_type).await
+}
+
+#[tauri::command]
+pub async fn proxmox_vm_snapshot_create(
+    state: State<'_, AppState>,
+    connection_id: String,
+    node: String,
+    vmid: u32,
+    vm_type: VmType,
+    name: String,
+) -> Result<String, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.create_snapshot(&node, vmid, vm_type, &name).await
+}
+
+#[tauri::command]
+pub async fn proxmox_vm_snapshot_rollback(
+    state: State<'_, AppState>,
+    connection_id: String,
+    node: String,
+    vmid: u32,
+    vm_type: VmType,
+    name: String,
+) -> Result<String, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.rollback_snapshot(&node, vmid, vm_type, &name).await
+}
+
+#[tauri::command]
+pub async fn proxmox_vm_clone(
+    state: State<'_, AppState>,
+    connection_id: String,
+    node: String,
+    vmid: u32,
+    vm_type: VmType,
+    new_name: String,
+) -> Result<String, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.clone_vm(&node, vmid, vm_type, &new_name).await
 }

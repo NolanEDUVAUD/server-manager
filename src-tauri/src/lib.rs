@@ -65,6 +65,12 @@ pub fn run() {
             proxmox_cmd::proxmox_update_connection,
             proxmox_cmd::proxmox_delete_connection,
             proxmox_cmd::proxmox_test_connection,
+            proxmox_cmd::proxmox_list_vms,
+            proxmox_cmd::proxmox_vm_action,
+            proxmox_cmd::proxmox_vm_snapshot_list,
+            proxmox_cmd::proxmox_vm_snapshot_create,
+            proxmox_cmd::proxmox_vm_snapshot_rollback,
+            proxmox_cmd::proxmox_vm_clone,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");
