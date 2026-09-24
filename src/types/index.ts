@@ -71,6 +71,8 @@ export interface NetworkSettings {
   ping_interval_secs: number;
   ping_timeout_ms: number;
   ssh_timeout_secs: number;
+  proxmox_poll_interval_secs: number;
+  proxmox_timeout_secs: number;
 }
 
 export interface AppSettings {
@@ -138,3 +140,45 @@ export const OS_COLORS: Record<OsType, string> = {
 export const DEFAULT_SSH_PORT = 22;
 
 export const OS_TYPES: OsType[] = ["Linux", "Windows", "Proxmox", "TrueNAS", "ESXi"];
+
+// ─── Proxmox ───────────────────────────────────────────────────────────────
+
+export type VmType = "qemu" | "lxc";
+export type VmAction = "start" | "stop" | "shutdown" | "reboot" | "suspend";
+
+export interface ProxmoxConnection {
+  id: string;
+  name: string;
+  api_url: string;
+  token_id: string;
+  /** Toujours vide côté frontend — jamais transmis en clair */
+  token_secret: string;
+  verify_tls: boolean;
+}
+
+export interface ProxmoxConnectionPayload {
+  name: string;
+  api_url: string;
+  token_id: string;
+  token_secret: string;
+  verify_tls: boolean;
+}
+
+export interface ProxmoxVm {
+  vmid: number;
+  name: string;
+  node: string;
+  vm_type: VmType;
+  status: string;
+  cpu: number;
+  mem: number;
+  maxmem: number;
+  disk: number;
+  maxdisk: number;
+}
+
+export interface ProxmoxSnapshot {
+  name: string;
+  description: string;
+  snaptime: number | null;
+}

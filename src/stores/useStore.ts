@@ -9,10 +9,16 @@ import {
   ImportSummary,
   Group,
   PingResult,
+  ProxmoxConnection,
+  ProxmoxConnectionPayload,
+  ProxmoxSnapshot,
+  ProxmoxVm,
   Server,
   ServerPayload,
   ServerStatus,
   SshResult,
+  VmAction,
+  VmType,
 } from "../types";
 import {
   applyTheme,
@@ -72,6 +78,23 @@ interface AppStore {
   updateGeneral: (partial: Partial<GeneralSettings>) => Promise<void>;
   updateNetwork: (partial: Partial<NetworkSettings>) => Promise<void>;
 
+  // ── Proxmox ────────────────────────────────────────────────────────────
+  proxmoxConnections: ProxmoxConnection[];
+  proxmoxVms: Record<string, ProxmoxVm[]>;
+  proxmoxLoading: Record<string, boolean>;
+  proxmoxErrors: Record<string, string | null>;
+  loadProxmoxConnections: () => Promise<void>;
+  addProxmoxConnection: (payload: ProxmoxConnectionPayload) => Promise<ProxmoxConnection>;
+  updateProxmoxConnection: (id: string, payload: ProxmoxConnectionPayload) => Promise<ProxmoxConnection>;
+  deleteProxmoxConnection: (id: string) => Promise<void>;
+  testProxmoxConnection: (payload: ProxmoxConnectionPayload) => Promise<void>;
+  loadProxmoxVms: (connectionId: string) => Promise<void>;
+  proxmoxVmAction: (connectionId: string, node: string, vmid: number, vmType: VmType, action: VmAction) => Promise<string>;
+  proxmoxSnapshotList: (connectionId: string, node: string, vmid: number, vmType: VmType) => Promise<ProxmoxSnapshot[]>;
+  proxmoxSnapshotCreate: (connectionId: string, node: string, vmid: number, vmType: VmType, name: string) => Promise<string>;
+  proxmoxSnapshotRollback: (connectionId: string, node: string, vmid: number, vmType: VmType, name: string) => Promise<string>;
+  proxmoxCloneVm: (connectionId: string, node: string, vmid: number, vmType: VmType, newName: string) => Promise<string>;
+
   // ── Thèmes custom ──────────────────────────────────────────────────────
   saveCustomTheme: (theme: Theme) => Promise<void>;
   deleteCustomTheme: (id: string) => Promise<void>;
@@ -94,7 +117,13 @@ const DEFAULT_SETTINGS: AppSettings = {
     active_theme: 'one-half-dark',
     custom_themes: [],
   },
-  network: { ping_interval_secs: 30, ping_timeout_ms: 2000, ssh_timeout_secs: 30 },
+  network: {
+    ping_interval_secs: 30,
+    ping_timeout_ms: 2000,
+    ssh_timeout_secs: 30,
+    proxmox_poll_interval_secs: 15,
+    proxmox_timeout_secs: 10,
+  },
 };
 
 export const useStore = create<AppStore>((set, get) => ({
@@ -106,6 +135,10 @@ export const useStore = create<AppStore>((set, get) => ({
   statuses: {},
   loading: false,
   initialized: false,
+  proxmoxConnections: [],
+  proxmoxVms: {},
+  proxmoxLoading: {},
+  proxmoxErrors: {},
 
   // ── Initialisation ─────────────────────────────────────────────────────
   initialize: async () => {
@@ -333,6 +366,73 @@ export const useStore = create<AppStore>((set, get) => ({
     });
   },
 
+  // ── Proxmox ────────────────────────────────────────────────────────────
+  loadProxmoxConnections: async () => {
+    const connections = await invoke<ProxmoxConnection[]>("proxmox_list_connections");
+    set({ proxmoxConnections: connections });
+  },
+
+  addProxmoxConnection: async (payload) => {
+    const connection = await invoke<ProxmoxConnection>("proxmox_add_connection", { payload });
+    set((s) => ({ proxmoxConnections: [...s.proxmoxConnections, connection] }));
+    return connection;
+  },
+
+  updateProxmoxConnection: async (id, payload) => {
+    const connection = await invoke<ProxmoxConnection>("proxmox_update_connection", { id, payload });
+    set((s) => ({
+      proxmoxConnections: s.proxmoxConnections.map((c) => (c.id === id ? connection : c)),
+    }));
+    return connection;
+  },
+
+  deleteProxmoxConnection: async (id) => {
+    await invoke("proxmox_delete_connection", { id });
+    set((s) => ({
+      proxmoxConnections: s.proxmoxConnections.filter((c) => c.id !== id),
+      proxmoxVms: Object.fromEntries(Object.entries(s.proxmoxVms).filter(([key]) => key !== id)),
+    }));
+  },
+
+  testProxmoxConnection: async (payload) => {
+    await invoke("proxmox_test_connection", { payload });
+  },
+
+  loadProxmoxVms: async (connectionId) => {
+    set((s) => ({ proxmoxLoading: { ...s.proxmoxLoading, [connectionId]: true } }));
+    try {
+      const vms = await invoke<ProxmoxVm[]>("proxmox_list_vms", { connectionId });
+      set((s) => ({
+        proxmoxVms: { ...s.proxmoxVms, [connectionId]: vms },
+        proxmoxErrors: { ...s.proxmoxErrors, [connectionId]: null },
+      }));
+    } catch (e) {
+      set((s) => ({ proxmoxErrors: { ...s.proxmoxErrors, [connectionId]: String(e) } }));
+    } finally {
+      set((s) => ({ proxmoxLoading: { ...s.proxmoxLoading, [connectionId]: false } }));
+    }
+  },
+
+  proxmoxVmAction: async (connectionId, node, vmid, vmType, action) => {
+    return invoke<string>("proxmox_vm_action", { connectionId, node, vmid, vmType, action });
+  },
+
+  proxmoxSnapshotList: async (connectionId, node, vmid, vmType) => {
+    return invoke<ProxmoxSnapshot[]>("proxmox_vm_snapshot_list", { connectionId, node, vmid, vmType });
+  },
+
+  proxmoxSnapshotCreate: async (connectionId, node, vmid, vmType, name) => {
+    return invoke<string>("proxmox_vm_snapshot_create", { connectionId, node, vmid, vmType, name });
+  },
+
+  proxmoxSnapshotRollback: async (connectionId, node, vmid, vmType, name) => {
+    return invoke<string>("proxmox_vm_snapshot_rollback", { connectionId, node, vmid, vmType, name });
+  },
+
+  proxmoxCloneVm: async (connectionId, node, vmid, vmType, newName) => {
+    return invoke<string>("proxmox_vm_clone", { connectionId, node, vmid, vmType, newName });
+  },
+
   // ── Import/Export (ancienne API) ───────────────────────────────────────
   exportConfig: () => invoke<string>("export_config"),
 
@@ -379,7 +479,13 @@ export const useStore = create<AppStore>((set, get) => ({
         active_theme: 'one-half-dark',
         custom_themes: [],
       },
-      network: { ping_interval_secs: 30, ping_timeout_ms: 2000, ssh_timeout_secs: 30 },
+      network: {
+        ping_interval_secs: 30,
+        ping_timeout_ms: 2000,
+        ssh_timeout_secs: 30,
+        proxmox_poll_interval_secs: 15,
+        proxmox_timeout_secs: 10,
+      },
     };
     await invoke("update_settings", { settings: defaults });
     applyTheme(ONE_HALF_DARK);
