@@ -66,4 +66,12 @@ describe("useDashboardTabSync", () => {
 
     expect(resizeDashboardTab).not.toHaveBeenCalled();
   });
+
+  it("ne fait rien si le conteneur est null", () => {
+    const resizeDashboardTab = vi.fn().mockResolvedValue(undefined);
+    useStore.setState({ activeDashboardTabLabel: "conn-1", resizeDashboardTab });
+    const ref = { current: null };
+    renderHook(() => useDashboardTabSync(ref));
+    expect(resizeDashboardTab).not.toHaveBeenCalled();
+  });
 });
