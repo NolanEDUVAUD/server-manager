@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Plus, Server as ServerIcon, AlertCircle, Pencil, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Server as ServerIcon, AlertCircle, Pencil, Trash2, Globe } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { useProxmoxStatus } from "../hooks/useProxmoxStatus";
 import { useToast } from "../hooks/useToast";
@@ -10,7 +11,8 @@ import { ToastContainer } from "../components/Toast";
 import { ProxmoxConnection } from "../types";
 
 export function Proxmox() {
-  const { proxmoxConnections, proxmoxVms, proxmoxErrors, loadProxmoxConnections, deleteProxmoxConnection } = useStore();
+  const { proxmoxConnections, proxmoxVms, proxmoxErrors, loadProxmoxConnections, deleteProxmoxConnection, openDashboardTab } = useStore();
+  const navigate = useNavigate();
   const { toasts, removeToast, success, error, info } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ProxmoxConnection | null>(null);
@@ -26,6 +28,19 @@ export function Proxmox() {
     if (type === "success") success(msg);
     else if (type === "error") error(msg);
     else info(msg);
+  }
+
+  function openWebGui(conn: (typeof proxmoxConnections)[number]) {
+    navigate("/dashboards");
+    // Géométrie provisoire (plein écran) : useDashboardTabSync corrige la
+    // position/taille dès que le conteneur de la page Dashboards est monté.
+    openDashboardTab(
+      { label: conn.id, connectionId: conn.id, url: conn.api_url, title: conn.name },
+      0,
+      0,
+      window.innerWidth,
+      window.innerHeight
+    ).catch((e) => onMessage(String(e), "error"));
   }
 
   async function handleDelete() {
@@ -76,6 +91,13 @@ export function Proxmox() {
               </span>
             )}
             <div className="flex items-center gap-1 ml-auto">
+              <button
+                onClick={() => openWebGui(conn)}
+                className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
+                title="Ouvrir l'interface web"
+              >
+                <Globe size={13} />
+              </button>
               <button
                 onClick={() => {
                   setEditing(conn);
