@@ -1,3 +1,4 @@
+pub mod dashboards;
 pub mod groups;
 pub mod ping;
 pub mod proxmox;

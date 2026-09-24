@@ -5,7 +5,7 @@ mod models;
 mod proxmox;
 mod storage;
 
-use commands::{groups, ping, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{dashboards, groups, ping, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -73,6 +73,9 @@ pub fn run() {
             proxmox_cmd::proxmox_vm_snapshot_create,
             proxmox_cmd::proxmox_vm_snapshot_rollback,
             proxmox_cmd::proxmox_vm_clone,
+            // ── Onglets web intégrés ────────────────────────
+            dashboards::open_dashboard_tab,
+            dashboards::close_dashboard_tab,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");
