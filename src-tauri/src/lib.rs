@@ -1,6 +1,7 @@
 mod commands;
 mod crypto;
 mod models;
+mod proxmox;
 mod storage;
 
 use commands::{groups, ping, servers, settings, ssh, wol};

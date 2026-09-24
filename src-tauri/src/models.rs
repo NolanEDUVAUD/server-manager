@@ -1,3 +1,4 @@
+use crate::proxmox::models::ProxmoxConnection;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -184,11 +185,29 @@ pub struct NetworkSettings {
     pub ping_interval_secs: u64,
     pub ping_timeout_ms: u64,
     pub ssh_timeout_secs: u64,
+    #[serde(default = "default_proxmox_poll_interval")]
+    pub proxmox_poll_interval_secs: u64,
+    #[serde(default = "default_proxmox_timeout")]
+    pub proxmox_timeout_secs: u64,
+}
+
+fn default_proxmox_poll_interval() -> u64 {
+    15
+}
+
+fn default_proxmox_timeout() -> u64 {
+    10
 }
 
 impl Default for NetworkSettings {
     fn default() -> Self {
-        Self { ping_interval_secs: 30, ping_timeout_ms: 2000, ssh_timeout_secs: 30 }
+        Self {
+            ping_interval_secs: 30,
+            ping_timeout_ms: 2000,
+            ssh_timeout_secs: 30,
+            proxmox_poll_interval_secs: default_proxmox_poll_interval(),
+            proxmox_timeout_secs: default_proxmox_timeout(),
+        }
     }
 }
 
@@ -209,6 +228,8 @@ impl AppSettings {
                 ping_interval_secs: v1.ping_interval_secs,
                 ping_timeout_ms: v1.ping_timeout_ms,
                 ssh_timeout_secs: v1.ssh_timeout_secs,
+                proxmox_poll_interval_secs: default_proxmox_poll_interval(),
+                proxmox_timeout_secs: default_proxmox_timeout(),
             },
         }
     }
@@ -258,6 +279,8 @@ pub struct AppData {
     pub settings: AppSettings,
     /// Salt aléatoire pour dériver la clé de chiffrement des mots de passe
     pub encryption_salt: String,
+    #[serde(default)]
+    pub proxmox_connections: Vec<ProxmoxConnection>,
 }
 
 impl Default for AppData {
@@ -267,6 +290,7 @@ impl Default for AppData {
             groups: Vec::new(),
             settings: AppSettings::default(),
             encryption_salt: crate::crypto::generate_salt(),
+            proxmox_connections: Vec::new(),
         }
     }
 }
@@ -313,5 +337,24 @@ mod tests {
         assert_eq!(settings.network.ping_interval_secs, 30);
         assert_eq!(settings.appearance.font_size, 14);
         assert_eq!(settings.appearance.active_theme, "one-half-dark");
+    }
+
+    #[test]
+    fn app_data_deserializes_without_proxmox_connections_field() {
+        // Simule un data.json v2 existant, écrit avant l'ajout de Proxmox
+        let json = r#"{
+            "servers": [],
+            "groups": [],
+            "settings": {
+                "general": {"start_minimized": false, "auto_start": false, "notifications": true},
+                "appearance": {"brightness": 1.0, "font_size": 14, "density": "Normal", "active_theme": "one-half-dark", "custom_themes": []},
+                "network": {"ping_interval_secs": 30, "ping_timeout_ms": 2000, "ssh_timeout_secs": 30}
+            },
+            "encryption_salt": "abc123"
+        }"#;
+        let data: AppData = serde_json::from_str(json).expect("doit se désérialiser sans le champ proxmox_connections");
+        assert!(data.proxmox_connections.is_empty());
+        assert_eq!(data.settings.network.proxmox_poll_interval_secs, 15);
+        assert_eq!(data.settings.network.proxmox_timeout_secs, 10);
     }
 }
