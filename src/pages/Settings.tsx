@@ -357,6 +357,22 @@ function SectionNetwork() {
           value={net.ssh_timeout_secs}
           onChange={v => setNet(n => ({ ...n, ssh_timeout_secs: Number(v) }))}
         />
+        <InputRow
+          label="Intervalle de rafraîchissement Proxmox (secondes)"
+          type="number"
+          min={5}
+          max={300}
+          value={net.proxmox_poll_interval_secs}
+          onChange={v => setNet(n => ({ ...n, proxmox_poll_interval_secs: Number(v) }))}
+        />
+        <InputRow
+          label="Timeout API Proxmox (secondes)"
+          type="number"
+          min={2}
+          max={60}
+          value={net.proxmox_timeout_secs}
+          onChange={v => setNet(n => ({ ...n, proxmox_timeout_secs: Number(v) }))}
+        />
       </div>
       <button
         onClick={handleSave}
