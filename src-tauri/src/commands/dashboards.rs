@@ -3,10 +3,14 @@ use tauri::{LogicalPosition, LogicalSize, State, WebviewUrl, Window};
 
 use crate::dashboard_state::DashboardState;
 
+// `async` obligatoire : sous Windows, créer une webview (add_child) depuis une
+// commande synchrone bloque définitivement le thread principal (deadlock WebView2).
+// Une commande async tourne sur un thread du runtime, ce qui laisse la boucle
+// de messages libre de terminer la création.
 #[tauri::command]
-pub fn open_dashboard_tab(
+pub async fn open_dashboard_tab(
     window: Window,
-    state: State<DashboardState>,
+    state: State<'_, DashboardState>,
     label: String,
     url: String,
     x: f64,
