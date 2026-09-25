@@ -3,8 +3,11 @@
 /// Les commandes Tauri qui s'appuient sur `tauri-plugin-updater` sont dans
 /// `commands/app_update.rs`.
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use serde::Serialize;
+use reqwest::StatusCode;
+use serde::{Deserialize, Serialize};
 use std::future::Future;
+use std::time::Duration;
+use tauri::Url;
 
 /// Contenu du fichier versionné `src-tauri/updater-pubkey.txt`, figé à la compilation.
 /// Vide tant que le propriétaire n'y a pas mis sa clé publique : mises à jour désactivées.
@@ -157,6 +160,103 @@ where
         Some(remote) => UpdateCheck::available(current_version, &remote),
         None => UpdateCheck::up_to_date(current_version),
     })
+}
+
+// ── Adresse du manifeste latest.json ───────────────────────────────────────
+
+/// Identifiant numérique du dépôt GitHub qui publie les releases. L'adresse du
+/// manifeste `latest.json` est retrouvée à l'exécution par l'API GitHub : aucune URL
+/// portant le nom du compte n'est compilée dans l'application.
+pub const GITHUB_REPOSITORY_ID: u64 = 1_387_686_867;
+/// Nom du manifeste joint à chaque release signée
+pub const MANIFEST_ASSET: &str = "latest.json";
+/// Taille maximale de la réponse de l'API GitHub (métadonnées d'une release)
+pub const MAX_RELEASE_METADATA_BYTES: usize = 1024 * 1024;
+
+const RESPONSE_TOO_LARGE: &str = "Réponse de GitHub trop volumineuse";
+const MANIFEST_URL_REFUSED: &str =
+    "Adresse du manifeste refusée : seul un téléchargement de release sur https://github.com est accepté";
+
+/// Dernière release **publiée** du dépôt (ni brouillon ni préversion)
+pub fn latest_release_api_url() -> String {
+    format!("https://api.github.com/repositories/{GITHUB_REPOSITORY_ID}/releases/latest")
+}
+
+#[derive(Deserialize)]
+struct ReleaseMetadata {
+    #[serde(default)]
+    assets: Vec<ReleaseAsset>,
+}
+
+#[derive(Deserialize)]
+struct ReleaseAsset {
+    name: String,
+    browser_download_url: String,
+}
+
+/// Adresse du manifeste lue dans la réponse de l'API. Seul un téléchargement de
+/// release en HTTPS sur github.com est accepté ; le plugin vérifie de toute façon la
+/// signature de l'installateur avec la clé publique embarquée.
+pub fn manifest_url_from_release(body: &[u8]) -> Result<Url, String> {
+    if body.len() > MAX_RELEASE_METADATA_BYTES {
+        return Err(RESPONSE_TOO_LARGE.to_string());
+    }
+    let release: ReleaseMetadata =
+        serde_json::from_slice(body).map_err(|e| format!("Réponse de GitHub illisible : {e}"))?;
+    let asset = release
+        .assets
+        .iter()
+        .find(|a| a.name == MANIFEST_ASSET)
+        .ok_or("La dernière release ne propose pas de mise à jour automatique (latest.json absent)")?;
+    let url = Url::parse(&asset.browser_download_url).map_err(|_| MANIFEST_URL_REFUSED.to_string())?;
+    let allowed = url.scheme() == "https"
+        && url.host_str() == Some("github.com")
+        && url.port().is_none()
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.query().is_none()
+        && url.fragment().is_none()
+        && url.path().contains("/releases/download/")
+        && url.path().ends_with("/latest.json");
+    if !allowed {
+        return Err(MANIFEST_URL_REFUSED.to_string());
+    }
+    Ok(url)
+}
+
+/// Interroge l'API GitHub (`api_url`) et renvoie l'adresse du manifeste de la dernière
+/// release. La réponse est lue par morceaux, au plus `MAX_RELEASE_METADATA_BYTES`.
+pub async fn fetch_manifest_url(api_url: &str, timeout: Duration) -> Result<Url, String> {
+    let client = reqwest::Client::builder()
+        .timeout(timeout)
+        .user_agent(concat!("server-power-manager/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|e| format!("Client HTTP : {e}"))?;
+    let mut resp = client
+        .get(api_url)
+        .header(reqwest::header::ACCEPT, "application/vnd.github+json")
+        .send()
+        .await
+        .map_err(|e| format!("GitHub injoignable : {e}"))?;
+    match resp.status() {
+        s if s.is_success() => {}
+        StatusCode::NOT_FOUND => return Err("Aucune release publiée pour l'instant".to_string()),
+        StatusCode::FORBIDDEN | StatusCode::TOO_MANY_REQUESTS => {
+            return Err("Limite de requêtes de l'API GitHub atteinte : réessaie plus tard".to_string())
+        }
+        s => return Err(format!("Réponse inattendue de GitHub (HTTP {})", s.as_u16())),
+    }
+    if resp.content_length().is_some_and(|n| n > MAX_RELEASE_METADATA_BYTES as u64) {
+        return Err(RESPONSE_TOO_LARGE.to_string());
+    }
+    let mut body = Vec::new();
+    while let Some(chunk) = resp.chunk().await.map_err(|e| format!("Lecture de la réponse de GitHub : {e}"))? {
+        if body.len() + chunk.len() > MAX_RELEASE_METADATA_BYTES {
+            return Err(RESPONSE_TOO_LARGE.to_string());
+        }
+        body.extend_from_slice(&chunk);
+    }
+    manifest_url_from_release(&body)
 }
 
 // ── Validation et nettoyage ────────────────────────────────────────────────
@@ -439,6 +539,111 @@ mod tests {
         assert_eq!(e, "hors ligne");
     }
 
+    // ── Adresse du manifeste ──
+
+    const MANIFEST: &str = "https://github.com/owner/server-manager/releases/download/v0.4.0/latest.json";
+
+    fn release_json(manifest_url: &str) -> String {
+        serde_json::json!({
+            "tag_name": "v0.4.0",
+            "assets": [
+                { "name": "Server.Power.Manager_0.4.0_x64-setup.exe", "browser_download_url": "https://github.com/owner/server-manager/releases/download/v0.4.0/Server.Power.Manager_0.4.0_x64-setup.exe" },
+                { "name": "latest.json", "browser_download_url": manifest_url }
+            ]
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn api_url_uses_the_numeric_repository_id() {
+        let url = latest_release_api_url();
+        let id = url
+            .strip_prefix("https://api.github.com/repositories/")
+            .and_then(|rest| rest.strip_suffix("/releases/latest"))
+            .expect(&url);
+        assert!(!id.is_empty() && id.chars().all(|c| c.is_ascii_digit()), "{url}");
+    }
+
+    #[test]
+    fn manifest_url_is_read_from_the_latest_release() {
+        let url = manifest_url_from_release(release_json(MANIFEST).as_bytes()).unwrap();
+        assert_eq!(url.as_str(), MANIFEST);
+    }
+
+    #[test]
+    fn manifest_url_outside_github_releases_is_refused() {
+        for bad in [
+            "http://github.com/owner/server-manager/releases/download/v0.4.0/latest.json",
+            "https://example.com/owner/server-manager/releases/download/v0.4.0/latest.json",
+            "https://github.com.example.com/owner/server-manager/releases/download/v0.4.0/latest.json",
+            "https://github.com:8443/owner/server-manager/releases/download/v0.4.0/latest.json",
+            "https://user@github.com/owner/server-manager/releases/download/v0.4.0/latest.json",
+            "https://github.com/owner/server-manager/raw/master/latest.json",
+            "https://github.com/owner/server-manager/releases/download/v0.4.0/latest.json?x=1",
+            "https://github.com/owner/server-manager/releases/download/v0.4.0/latest.json.exe",
+            "pas une adresse",
+        ] {
+            let err = manifest_url_from_release(release_json(bad).as_bytes()).unwrap_err();
+            assert_eq!(err, MANIFEST_URL_REFUSED, "{bad}");
+        }
+    }
+
+    #[test]
+    fn release_without_manifest_or_unreadable_is_an_error() {
+        let no_manifest = serde_json::json!({ "assets": [{ "name": "setup.exe", "browser_download_url": MANIFEST }] });
+        assert!(manifest_url_from_release(no_manifest.to_string().as_bytes()).unwrap_err().contains("latest.json absent"));
+        assert!(manifest_url_from_release(b"{}").unwrap_err().contains("latest.json absent"));
+        assert!(manifest_url_from_release(b"{\"assets\": 5}").unwrap_err().starts_with("Réponse de GitHub illisible"));
+        assert!(manifest_url_from_release(b"<html>").unwrap_err().starts_with("Réponse de GitHub illisible"));
+        let huge = vec![b' '; MAX_RELEASE_METADATA_BYTES + 1];
+        assert_eq!(manifest_url_from_release(&huge).unwrap_err(), RESPONSE_TOO_LARGE);
+    }
+
+    #[tokio::test]
+    async fn fetch_reads_the_manifest_url_from_the_api() {
+        use wiremock::matchers::{header, header_exists, method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/repositories/1/releases/latest"))
+            .and(header("accept", "application/vnd.github+json"))
+            .and(header_exists("user-agent"))
+            .respond_with(ResponseTemplate::new(200).set_body_raw(release_json(MANIFEST), "application/json"))
+            .expect(1)
+            .mount(&server)
+            .await;
+        let api = format!("{}/repositories/1/releases/latest", server.uri());
+        let url = fetch_manifest_url(&api, Duration::from_secs(5)).await.unwrap();
+        assert_eq!(url.as_str(), MANIFEST);
+    }
+
+    #[tokio::test]
+    async fn fetch_refuses_failed_or_oversized_responses() {
+        use wiremock::matchers::path;
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        let huge = format!("{{\"padding\": \"{}\"}}", "x".repeat(MAX_RELEASE_METADATA_BYTES));
+        for (route, response) in [
+            ("/none", ResponseTemplate::new(404)),
+            ("/limited", ResponseTemplate::new(403)),
+            ("/broken", ResponseTemplate::new(500)),
+            ("/huge", ResponseTemplate::new(200).set_body_raw(huge, "application/json")),
+        ] {
+            Mock::given(path(route)).respond_with(response).mount(&server).await;
+        }
+        let uri = server.uri();
+        let err = |route: &str| {
+            let url = format!("{uri}{route}");
+            async move { fetch_manifest_url(&url, Duration::from_secs(5)).await.unwrap_err() }
+        };
+        assert!(err("/none").await.contains("Aucune release publiée"));
+        assert!(err("/limited").await.contains("Limite de requêtes"));
+        assert!(err("/broken").await.contains("HTTP 500"));
+        assert_eq!(err("/huge").await, RESPONSE_TOO_LARGE);
+    }
+
     // ── Version et erreurs ──
 
     #[test]
@@ -543,11 +748,12 @@ mod config_tests {
         let updater = &base["plugins"]["updater"];
         assert_eq!(updater["pubkey"], "", "la clé publique vient de updater-pubkey.txt");
         assert_eq!(updater["windows"]["installMode"], "passive");
-        let endpoints = updater["endpoints"].as_array().unwrap();
-        assert_eq!(endpoints.len(), 1);
-        let url = endpoints[0].as_str().unwrap();
-        assert!(url.starts_with("https://github.com/"), "{url}");
-        assert!(url.ends_with("/releases/latest/download/latest.json"), "{url}");
+        // L'adresse du manifeste est retrouvée à l'exécution (GITHUB_REPOSITORY_ID) : aucune
+        // URL portant le nom du compte n'est compilée dans le binaire
+        assert!(updater.get("endpoints").is_none());
+        for config in [BASE, RELEASE] {
+            assert!(!config.contains("github.com"), "aucune adresse GitHub dans la configuration compilée");
+        }
         for danger in ["dangerousInsecureTransportProtocol", "dangerousAcceptInvalidCerts", "dangerousAcceptInvalidHostnames", "allowDowngrades"] {
             assert!(updater.get(danger).is_none(), "{danger} ne doit pas être activé");
         }

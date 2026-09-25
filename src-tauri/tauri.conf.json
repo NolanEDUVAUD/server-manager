@@ -41,9 +41,6 @@
     "notification": null,
     "updater": {
       "pubkey": "",
-      "endpoints": [
-        "https://github.com/NolanEDUVAUD/server-manager/releases/latest/download/latest.json"
-      ],
       "windows": {
         "installMode": "passive"
       }

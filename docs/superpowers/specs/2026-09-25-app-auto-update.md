@@ -22,9 +22,10 @@ confirmation, signature Authenticode de l'installateur (SmartScreen).
   publique minisign, ou une clé **privée** collée par erreur) = mises à jour désactivées : l'interface affiche
   « Mises à jour automatiques non configurées pour cette version », aucune requête réseau n'est faite.
 - `tauri.conf.json` : `plugins.updater` avec `pubkey: ""` (champ obligatoire du plugin, remplacé au démarrage
-  par la clé embarquée), le point de terminaison GitHub `releases/latest/download/latest.json` (HTTPS) et
-  `windows.installMode: "passive"`. **Pas** de `createUpdaterArtifacts` : un `npm run tauri build` local sans
-  clé fonctionne comme avant.
+  par la clé embarquée) et `windows.installMode: "passive"`. **Aucun point de terminaison** : l'adresse de
+  `latest.json` est retrouvée à l'exécution (voir Backend), pour qu'aucune URL portant le nom du compte GitHub ne
+  soit compilée dans le binaire. **Pas** de `createUpdaterArtifacts` : un `npm run tauri build` local sans clé
+  fonctionne comme avant.
 - `tauri.release.conf.json` (fusionné par `tauri build --config src-tauri/tauri.release.conf.json`, utilisé par
   la CI) : `bundle.createUpdaterArtifacts: true` et `plugins.updater.pubkey: "updater-pubkey.txt"`. La CLI Tauri
   lit alors la clé publique dans ce fichier (chemin relatif à `src-tauri`) pour vérifier les signatures
@@ -48,7 +49,12 @@ confirmation, signature Authenticode de l'installateur (SmartScreen).
   - `ProgressTracker` : cumule les octets reçus, refuse au-delà de 200 Mio (annoncés ou reçus), et ne laisse
     passer un événement de progression qu'à chaque pour-cent (ou tous les 512 Kio si la taille est inconnue) ;
   - `check_with(pubkey, current_version, fetch)` : si la clé n'est pas configurée, renvoie « non configuré »
-    **sans appeler** `fetch` (donc sans réseau).
+    **sans appeler** `fetch` (donc sans réseau) ;
+  - `fetch_manifest_url` : lit `https://api.github.com/repositories/<GITHUB_REPOSITORY_ID>/releases/latest`
+    (identifiant numérique du dépôt, 1 Mio au plus, lu par morceaux) et en extrait l'adresse de la pièce jointe
+    `latest.json`. `manifest_url_from_release` n'accepte qu'un `https://github.com/…/releases/download/…/latest.json`
+    sans port, identifiants, paramètres ni fragment ; 404, limite de requêtes et autres échecs donnent un message
+    lisible.
 - `commands/app_update.rs`, état géré `AppUpdateState { pending: Mutex<Option<Update>>, installing: AtomicBool }` :
   - `app_update_info()` → `{ configured, current_version }` (aucun accès réseau) ;
   - `app_update_check()` → `UpdateCheck`. Délai maximal 20 s. La mise à jour trouvée est mémorisée pour
@@ -85,12 +91,13 @@ confirmation, signature Authenticode de l'installateur (SmartScreen).
 - `tauri-apps/tauri-action@v0` avec `--config src-tauri/tauri.release.conf.json`, secrets de signature,
   `updaterJsonPreferNsis`, release **brouillon** : NSIS + MSI + `.sig` + `latest.json`.
 - `SHA256SUMS.txt` des installateurs joint à la release (`gh release upload`).
-- `latest/download/latest.json` ne pointe que sur la dernière release **publiée** : tant que le brouillon n'est
-  pas publié à la main, aucun client ne voit la version.
+- `releases/latest` ne renvoie que la dernière release **publiée** : tant que le brouillon n'est pas publié à
+  la main, aucun client ne voit la version.
 
 ## Sécurité
 - Aucune installation sans signature valide (vérifiée par le plugin avec la clé embarquée) ni sans confirmation.
-- Point de terminaison HTTPS fixé à la compilation ; aucune option `dangerous*` ; pas de retour en arrière
+- Manifeste lu uniquement sur `https://github.com` (dépôt désigné par son identifiant numérique, fixé à la
+  compilation) ; aucune option `dangerous*` ; pas de retour en arrière
   (comparateur par défaut : version distante strictement supérieure).
 - Aucune permission du plugin côté webview ; version à installer validée côté Rust et comparée à celle
   mémorisée.

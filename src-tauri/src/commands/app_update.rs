@@ -71,9 +71,14 @@ pub async fn app_update_check(
 ) -> Result<UpdateCheck, String> {
     let current = app.package_info().version.to_string();
     let result = app_update::check_with(app_update::configured_pubkey(), &current, |key| async {
+        // Adresse du manifeste retrouvée à l'exécution (voir GITHUB_REPOSITORY_ID)
+        let manifest =
+            app_update::fetch_manifest_url(&app_update::latest_release_api_url(), CHECK_TIMEOUT).await?;
         let updater = app
             .updater_builder()
             .pubkey(key)
+            .endpoints(vec![manifest])
+            .map_err(|e| e.to_string())?
             .timeout(CHECK_TIMEOUT)
             .build()
             .map_err(|e| e.to_string())?;
