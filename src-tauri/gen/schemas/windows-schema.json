@@ -447,6 +447,24 @@
           "markdownDescription": "Enables the lab_power_plan command without any pre-configured scope."
         },
         {
+          "description": "Enables the loki_hosts command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-loki-hosts",
+          "markdownDescription": "Enables the loki_hosts command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the loki_query command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-loki-query",
+          "markdownDescription": "Enables the loki_query command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the loki_units command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-loki-units",
+          "markdownDescription": "Enables the loki_units command without any pre-configured scope."
+        },
+        {
           "description": "Enables the network_scan command without any pre-configured scope.",
           "type": "string",
           "const": "allow-network-scan",
@@ -1045,6 +1063,24 @@
           "type": "string",
           "const": "deny-lab-power-plan",
           "markdownDescription": "Denies the lab_power_plan command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the loki_hosts command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-loki-hosts",
+          "markdownDescription": "Denies the loki_hosts command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the loki_query command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-loki-query",
+          "markdownDescription": "Denies the loki_query command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the loki_units command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-loki-units",
+          "markdownDescription": "Denies the loki_units command without any pre-configured scope."
         },
         {
           "description": "Denies the network_scan command without any pre-configured scope.",

@@ -488,3 +488,7 @@ export interface UpdateReport {
 }
 
 export interface ServerUpdates { server_id: string; name: string; report: UpdateReport | null; error: string | null }
+
+// ─── Logs Loki ──────────────────────────────────────────────────────────────
+
+export interface LogEntry { ts: number; line: string; unit: string; priority: number | null }

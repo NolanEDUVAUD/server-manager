@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-loki-hosts"
+description = "Enables the loki_hosts command without any pre-configured scope."
+commands.allow = ["loki_hosts"]
+
+[[permission]]
+identifier = "deny-loki-hosts"
+description = "Denies the loki_hosts command without any pre-configured scope."
+commands.deny = ["loki_hosts"]

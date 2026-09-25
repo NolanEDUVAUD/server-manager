@@ -111,6 +111,9 @@
     "allow-save-ansible-config",
     "allow-ansible-list-playbooks",
     "allow-ansible-run",
-    "allow-updates-scan"
+    "allow-updates-scan",
+    "allow-loki-hosts",
+    "allow-loki-units",
+    "allow-loki-query"
   ]
 }

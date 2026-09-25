@@ -11,6 +11,7 @@ mod integration_checks;
 mod integrations;
 mod keystore;
 mod lab_power;
+mod loki;
 mod known_hosts;
 mod metrics;
 mod monitor;
@@ -24,7 +25,7 @@ mod terminal;
 mod tray;
 mod updates;
 
-use commands::{updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -206,6 +207,10 @@ pub fn run() {
             batch_cmd::ansible_run,
             // ── Mises à jour ────────────────────────────────────
             updates_cmd::updates_scan,
+            // ── Logs Loki ───────────────────────────────────────
+            loki_cmd::loki_hosts,
+            loki_cmd::loki_units,
+            loki_cmd::loki_query,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,
