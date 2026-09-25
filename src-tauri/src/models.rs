@@ -193,11 +193,21 @@ pub struct GeneralSettings {
     /// pour un fichier existant qui ne connaît pas encore ce réglage)
     #[serde(default = "default_true")]
     pub check_updates: bool,
+    // ── Langue de l'interface (1.6) ──
+    /// « fr » (défaut) ou « en »
+    #[serde(default = "default_language")]
+    pub language: String,
+}
+
+pub const LANGUAGES: [&str; 2] = ["fr", "en"];
+
+fn default_language() -> String {
+    "fr".into()
 }
 
 impl Default for GeneralSettings {
     fn default() -> Self {
-        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false, check_updates: true }
+        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false, check_updates: true, language: default_language() }
     }
 }
 
@@ -507,6 +517,14 @@ mod tests {
         assert_eq!(data.settings.network.proxmox_poll_interval_secs, 15);
         assert_eq!(data.settings.network.proxmox_timeout_secs, 10);
         assert_eq!(data.settings.history, HistorySettings::default());
+    }
+
+    #[test]
+    fn language_defaults_to_french_for_old_settings() {
+        let old: GeneralSettings = serde_json::from_str(r#"{"start_minimized": false, "auto_start": false, "notifications": true}"#).unwrap();
+        assert_eq!(old.language, "fr");
+        assert_eq!(GeneralSettings::default().language, "fr");
+        assert!(LANGUAGES.contains(&"en"));
     }
 
     #[test]

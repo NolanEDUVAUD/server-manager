@@ -42,6 +42,7 @@ import {
   ONE_HALF_DARK,
 } from "../utils/theme";
 import { appendSample, mergeSamples } from "../utils";
+import { setLanguage } from "../i18n";
 
 /** 120 points × 15 s = 30 min d'historique par serveur */
 export const METRICS_HISTORY_MAX = 120;
@@ -189,7 +190,7 @@ interface AppStore {
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: [], onboarding_done: true, check_updates: true },
+  general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: [], onboarding_done: true, check_updates: true, language: 'fr' },
   appearance: {
     brightness: 1.0,
     font_size: 14,
@@ -249,6 +250,7 @@ export const useStore = create<AppStore>((set, get) => ({
       applyFontSize(settings.appearance.font_size);
       applyBrightness(settings.appearance.brightness);
       applyDensity(settings.appearance.density);
+      setLanguage(settings.general.language);
       set({
         servers,
         groups,
@@ -413,6 +415,7 @@ export const useStore = create<AppStore>((set, get) => ({
     const newGeneral = { ...state.settings.general, ...partial };
     const newSettings = { ...state.settings, general: newGeneral };
     await invoke("update_settings", { settings: newSettings });
+    if (partial.language !== undefined) setLanguage(partial.language);
     set({ settings: newSettings });
   },
 
@@ -768,7 +771,7 @@ export const useStore = create<AppStore>((set, get) => ({
   // ── Réinitialisation des paramètres ───────────────────────────────────
   resetSettings: async () => {
     const defaults: AppSettings = {
-      general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: [], onboarding_done: true, check_updates: true },
+      general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: [], onboarding_done: true, check_updates: true, language: 'fr' },
       appearance: {
         brightness: 1.0,
         font_size: 14,
@@ -792,6 +795,7 @@ export const useStore = create<AppStore>((set, get) => ({
     applyFontSize(14);
     applyBrightness(1.0);
     applyDensity('Normal');
+    setLanguage('fr');
     set({ settings: defaults, allThemes: [...BUILTIN_THEMES] });
   },
 

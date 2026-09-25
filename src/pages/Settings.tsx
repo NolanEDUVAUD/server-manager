@@ -11,6 +11,7 @@ import { ThemeCard } from '../components/ThemeCard';
 import { ThemeEditor } from '../components/ThemeEditor';
 import { IntegrationsSettings } from '../components/IntegrationsSettings';
 import { HistorySettingsPanel } from '../components/HistorySettingsPanel';
+import { LanguageSelect } from '../components/LanguageSelect';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
 import { useAppUpdate } from '../stores/useAppUpdate';
@@ -192,6 +193,7 @@ function SectionGeneral() {
   return (
     <div className="space-y-6 max-w-lg">
       <h2 className="text-text-primary font-medium text-base">Général</h2>
+      <LanguageSelect />
       <div className="bg-bg-tertiary rounded-win p-4 card">
         <ToggleRow
           label="Démarrer minimisé"

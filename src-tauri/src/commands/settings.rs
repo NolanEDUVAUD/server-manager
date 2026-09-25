@@ -32,6 +32,9 @@ pub fn update_settings(state: State<AppState>, settings: AppSettings) -> Result<
         return Err("Le timeout SSH doit être entre 5 et 120 secondes".to_string());
     }
     settings.history.validate()?;
+    if !crate::models::LANGUAGES.contains(&settings.general.language.as_str()) {
+        return Err("Langue non prise en charge".to_string());
+    }
 
     let mut data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
     data.settings = settings;

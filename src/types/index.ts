@@ -80,6 +80,8 @@ export interface GeneralSettings {
   // ── Mise à jour automatique de l'application (1.5) ──
   /** Rechercher une nouvelle version au démarrage */
   check_updates: boolean;
+  /** Langue de l'interface */
+  language: "fr" | "en";
 }
 
 export interface AppearanceSettings {
