@@ -207,6 +207,12 @@
           "markdownDescription": "Enables the apply_import_config command without any pre-configured scope."
         },
         {
+          "description": "Enables the batch_send_input command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-batch-send-input",
+          "markdownDescription": "Enables the batch_send_input command without any pre-configured scope."
+        },
+        {
           "description": "Enables the clear_events command without any pre-configured scope.",
           "type": "string",
           "const": "allow-clear-events",
@@ -823,6 +829,12 @@
           "type": "string",
           "const": "deny-apply-import-config",
           "markdownDescription": "Denies the apply_import_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the batch_send_input command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-batch-send-input",
+          "markdownDescription": "Denies the batch_send_input command without any pre-configured scope."
         },
         {
           "description": "Denies the clear_events command without any pre-configured scope.",
