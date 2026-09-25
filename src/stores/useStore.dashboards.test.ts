@@ -70,4 +70,29 @@ describe("dashboard tabs store", () => {
     expect(useStore.getState().dashboardTabs).toEqual([]);
     expect(useStore.getState().activeDashboardTabLabel).toBeNull();
   });
+
+  it("closeDashboardTab n'écrase pas un onglet ouvert pendant le ré-affichage du repli", async () => {
+    const tabC: DashboardTab = { label: "conn-c", connectionId: "conn-c", url: "https://c:8006", title: "C" };
+    await useStore.getState().openDashboardTab(tabA, 0, 0, 100, 100);
+    await useStore.getState().openDashboardTab(tabB, 0, 0, 100, 100);
+
+    // On bloque le ré-affichage de conn-a pour ouvrir conn-c pendant l'attente IPC
+    let releaseShow!: () => void;
+    vi.mocked(invoke).mockImplementation((cmd, args) => {
+      const a = args as { label?: string; visible?: boolean } | undefined;
+      if (cmd === "set_dashboard_tab_visible" && a?.label === "conn-a" && a.visible) {
+        return new Promise<undefined>((resolve) => { releaseShow = () => resolve(undefined); });
+      }
+      return Promise.resolve(undefined);
+    });
+
+    const closing = useStore.getState().closeDashboardTab("conn-b");
+    await vi.waitFor(() => expect(releaseShow).toBeDefined());
+    await useStore.getState().openDashboardTab(tabC, 0, 0, 100, 100);
+    releaseShow();
+    await closing;
+
+    expect(useStore.getState().dashboardTabs).toEqual([tabA, tabC]);
+    expect(useStore.getState().activeDashboardTabLabel).toBe("conn-c");
+  });
 });

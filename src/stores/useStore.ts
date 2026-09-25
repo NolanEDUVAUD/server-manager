@@ -463,16 +463,20 @@ export const useStore = create<AppStore>((set, get) => ({
   closeDashboardTab: async (label) => {
     await invoke("close_dashboard_tab", { label });
 
-    const s = get();
-    const remaining = s.dashboardTabs.filter((t) => t.label !== label);
-    const activeDashboardTabLabel =
-      s.activeDashboardTabLabel === label ? (remaining[0]?.label ?? null) : s.activeDashboardTabLabel;
+    // Mise à jour atomique AVANT le ré-affichage : une action lancée pendant l'await
+    // ci-dessous part ainsi de l'état à jour, au lieu d'être écrasée par un instantané périmé.
+    let promoted = null as string | null;
+    set((s) => {
+      const remaining = s.dashboardTabs.filter((t) => t.label !== label);
+      if (s.activeDashboardTabLabel !== label) return { dashboardTabs: remaining };
+      promoted = remaining[0]?.label ?? null;
+      return { dashboardTabs: remaining, activeDashboardTabLabel: promoted };
+    });
 
-    if (s.activeDashboardTabLabel === label && activeDashboardTabLabel) {
-      await invoke("set_dashboard_tab_visible", { label: activeDashboardTabLabel, visible: true }).catch(() => {});
+    // L'onglet de repli avait pu être masqué quand un autre était passé au premier plan
+    if (promoted) {
+      await invoke("set_dashboard_tab_visible", { label: promoted, visible: true }).catch(() => {});
     }
-
-    set({ dashboardTabs: remaining, activeDashboardTabLabel });
   },
 
   setActiveDashboardTab: async (label) => {
