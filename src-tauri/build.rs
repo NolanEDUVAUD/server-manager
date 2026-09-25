@@ -60,6 +60,7 @@ fn app_manifest() -> tauri_build::AppManifest {
         "ansible_list_playbooks",
         "ansible_run",
         "apply_import_config",
+        "batch_send_input",
         "clear_events",
         "close_dashboard_tab",
         "cron_list",

@@ -44,6 +44,7 @@ pub fn run() {
             app.manage(state);
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
+            app.manage(batch::BatchInputs::default());
             app.manage(events::EventLog::load(app.handle()));
             app.manage(alerts::AlertEngine::new(app.handle()));
             app.manage(probes::ProbeState::default());
@@ -201,6 +202,7 @@ pub fn run() {
             batch_cmd::save_batch_task,
             batch_cmd::delete_batch_task,
             batch_cmd::run_batch,
+            batch_cmd::batch_send_input,
             batch_cmd::get_ansible_config,
             batch_cmd::save_ansible_config,
             batch_cmd::ansible_list_playbooks,

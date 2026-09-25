@@ -4,7 +4,7 @@ use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
 use crate::{
-    batch::{self, list_playbooks_command, playbook_command, wrap_script, AnsibleConfig, BatchMode, BatchTask, SshTarget},
+    batch::{self, list_playbooks_command, playbook_command, wrap_script, AnsibleConfig, BatchInputs, BatchMode, BatchTask, SshTarget},
     commands::{servers::get_decrypted_password, ssh::execute_ssh},
     events::{EventKind, EventLog},
     models::AppData,
@@ -27,13 +27,13 @@ fn targets(data: &AppData, ids: &[String]) -> Result<Vec<SshTarget>, String> {
         .collect()
 }
 
-fn spawn_run(app: &AppHandle, targets: Vec<SshTarget>, command: String, mode: BatchMode, stop_on_error: bool) -> String {
+fn spawn_run(app: &AppHandle, inputs: &BatchInputs, targets: Vec<SshTarget>, command: String, mode: BatchMode, stop_on_error: bool) -> String {
     let run_id = Uuid::new_v4().to_string();
     let emitter = app.clone();
     let emit: batch::Emit = Arc::new(move |u| {
         let _ = emitter.emit("batch-update", &u);
     });
-    tauri::async_runtime::spawn(batch::run(run_id.clone(), targets, command, mode, stop_on_error, emit));
+    tauri::async_runtime::spawn(batch::run(run_id.clone(), targets, command, mode, stop_on_error, emit, inputs.clone()));
     run_id
 }
 
@@ -73,6 +73,7 @@ pub fn run_batch(
     app: AppHandle,
     state: State<AppState>,
     events: State<EventLog>,
+    inputs: State<BatchInputs>,
     script: String,
     server_ids: Vec<String>,
     mode: BatchMode,
@@ -88,7 +89,16 @@ pub fn run_batch(
     let names: Vec<String> = t.iter().map(|x| x.name.clone()).collect();
     let first_line = script.lines().next().unwrap_or("").chars().take(80).collect::<String>();
     events.record(EventKind::VmAction, None, "Tâche en lot", format!("« {} » sur {}", first_line, names.join(", ")));
-    Ok(spawn_run(&app, t, wrap_script(&script), mode, stop_on_error))
+    Ok(spawn_run(&app, &inputs, t, wrap_script(&script), mode, stop_on_error))
+}
+
+/// Réponse saisie pendant une exécution (ex. « N » à une question de dpkg)
+#[tauri::command]
+pub fn batch_send_input(inputs: State<BatchInputs>, run_id: String, server_id: String, text: String) -> Result<(), String> {
+    if text.len() > 4096 {
+        return Err("Saisie trop longue".into());
+    }
+    inputs.send(&run_id, &server_id, text.into_bytes())
 }
 
 #[tauri::command]
@@ -128,6 +138,7 @@ pub fn ansible_run(
     app: AppHandle,
     state: State<AppState>,
     events: State<EventLog>,
+    inputs: State<BatchInputs>,
     playbook: String,
     check: bool,
     limit: Option<String>,
@@ -143,7 +154,7 @@ pub fn ansible_run(
         "Ansible",
         format!("{} {}{}", if check { "Simulation de" } else { "Exécution de" }, playbook, limit.map(|l| format!(" (limite : {})", l)).unwrap_or_default()),
     );
-    Ok(spawn_run(&app, vec![t], command, BatchMode::Sequential, false))
+    Ok(spawn_run(&app, &inputs, vec![t], command, BatchMode::Sequential, false))
 }
 
 #[cfg(test)]
@@ -160,6 +171,6 @@ mod live {
         let ids: Vec<String> = data.servers.iter().filter(|s| ["minipc", "FwNode"].contains(&s.name.as_str())).map(|s| s.id.clone()).collect();
         let targets = super::targets(&data, &ids).unwrap();
         let emit: crate::batch::Emit = std::sync::Arc::new(|u| println!("{:?}", u));
-        crate::batch::run("live".into(), targets, crate::batch::wrap_script("hostname\nuptime"), crate::batch::BatchMode::Parallel, false, emit).await;
+        crate::batch::run("live".into(), targets, crate::batch::wrap_script("hostname\nuptime"), crate::batch::BatchMode::Parallel, false, emit, crate::batch::BatchInputs::default()).await;
     }
 }

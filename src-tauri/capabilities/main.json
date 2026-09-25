@@ -114,6 +114,7 @@
     "allow-updates-scan",
     "allow-loki-hosts",
     "allow-loki-units",
-    "allow-loki-query"
+    "allow-loki-query",
+    "allow-batch-send-input"
   ]
 }

@@ -61,7 +61,70 @@ export const FLUENT_DARK: Theme = {
   },
 };
 
-export const BUILTIN_THEMES: Theme[] = [ONE_HALF_DARK, FLUENT_DARK];
+/** Palette réduite d'un pack de couleurs → jeu complet de variables du thème */
+interface Palette {
+  bg0: string; bg1: string; bg2: string; bgInput: string; hover: string; active: string;
+  fg: string; fg2: string; muted: string;
+  accent: string; accent2: string; success: string; warning: string; error: string; info: string;
+  border: string;
+}
+
+function pack(id: string, name: string, p: Palette): Theme {
+  return {
+    id, name, builtin: true,
+    colors: {
+      '--bg-primary': p.bg0, '--bg-secondary': p.bg1, '--bg-tertiary': p.bg2,
+      '--bg-input': p.bgInput, '--bg-hover': p.hover, '--bg-active': p.active,
+      '--text-primary': p.fg, '--text-secondary': p.fg2, '--text-muted': p.muted,
+      '--accent-primary': p.accent, '--accent-secondary': p.accent2,
+      '--accent-success': p.success, '--accent-warning': p.warning,
+      '--accent-error': p.error, '--accent-info': p.info,
+      '--border-primary': p.border, '--border-secondary': p.bg2,
+      '--shadow-color': 'rgba(0, 0, 0, 0.4)',
+      '--scrollbar-thumb': p.border, '--scrollbar-track': p.bg1,
+      '--font-size-base': '14px',
+    },
+  };
+}
+
+// Packs de couleurs populaires (valeurs issues des palettes officielles).
+// L'accent principal est la teinte la plus sombre de la palette : le texte blanc des boutons reste lisible.
+export const GRUVBOX_DARK = pack('gruvbox-dark', 'Gruvbox Dark', {
+  bg0: '#282828', bg1: '#1d2021', bg2: '#32302f', bgInput: '#1d2021', hover: '#3c3836', active: '#504945',
+  fg: '#ebdbb2', fg2: '#bdae93', muted: '#928374',
+  accent: '#458588', accent2: '#689d6a', success: '#b8bb26', warning: '#fabd2f', error: '#fb4934', info: '#83a598',
+  border: '#504945',
+});
+
+export const NORD = pack('nord', 'Nord', {
+  bg0: '#2e3440', bg1: '#272c36', bg2: '#3b4252', bgInput: '#272c36', hover: '#434c5e', active: '#4c566a',
+  fg: '#eceff4', fg2: '#d8dee9', muted: '#7b88a1',
+  accent: '#5e81ac', accent2: '#81a1c1', success: '#a3be8c', warning: '#ebcb8b', error: '#bf616a', info: '#88c0d0',
+  border: '#4c566a',
+});
+
+export const DRACULA = pack('dracula', 'Dracula', {
+  bg0: '#282a36', bg1: '#21222c', bg2: '#343746', bgInput: '#1e1f29', hover: '#3d4052', active: '#44475a',
+  fg: '#f8f8f2', fg2: '#c0c2d4', muted: '#6272a4',
+  accent: '#7c5fc9', accent2: '#bd93f9', success: '#50fa7b', warning: '#f1fa8c', error: '#ff5555', info: '#8be9fd',
+  border: '#44475a',
+});
+
+export const CATPPUCCIN_MOCHA = pack('catppuccin-mocha', 'Catppuccin Mocha', {
+  bg0: '#1e1e2e', bg1: '#181825', bg2: '#313244', bgInput: '#11111b', hover: '#45475a', active: '#585b70',
+  fg: '#cdd6f4', fg2: '#bac2de', muted: '#7f849c',
+  accent: '#5a7fd6', accent2: '#89b4fa', success: '#a6e3a1', warning: '#f9e2af', error: '#f38ba8', info: '#89dceb',
+  border: '#45475a',
+});
+
+export const TOKYO_NIGHT = pack('tokyo-night', 'Tokyo Night', {
+  bg0: '#1a1b26', bg1: '#16161e', bg2: '#24283b', bgInput: '#13131a', hover: '#292e42', active: '#3b4261',
+  fg: '#c0caf5', fg2: '#a9b1d6', muted: '#565f89',
+  accent: '#3d59a1', accent2: '#7aa2f7', success: '#9ece6a', warning: '#e0af68', error: '#f7768e', info: '#7dcfff',
+  border: '#3b4261',
+});
+
+export const BUILTIN_THEMES: Theme[] = [ONE_HALF_DARK, FLUENT_DARK, GRUVBOX_DARK, NORD, DRACULA, CATPPUCCIN_MOCHA, TOKYO_NIGHT];
 
 // ─── Application du thème ─────────────────────────────────────────────────────
 

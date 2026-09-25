@@ -34,3 +34,56 @@ export const TEMPLATES: BatchTemplate[] = [
   { name: "Mettre à jour les paquets (Debian/Proxmox)", script: "export DEBIAN_FRONTEND=noninteractive\napt-get update\napt-get -y full-upgrade" },
   { name: "Nettoyer les images Docker inutilisées", script: "docker image prune -af" },
 ];
+
+/** Réponse rapide proposée pour une question détectée dans la sortie */
+export interface PromptChoice {
+  label: string;
+  /** Texte envoyé au serveur (retour à la ligne compris) */
+  send: string;
+  hint?: string;
+}
+
+export interface DetectedPrompt {
+  question: string;
+  choices: PromptChoice[];
+}
+
+/**
+ * Détecte une question en attente à la fin de la sortie d'une commande.
+ * Seule la dernière ligne compte : si la commande a écrit autre chose après,
+ * c'est qu'elle n'attend plus de réponse.
+ */
+export function detectPrompt(output: string): DetectedPrompt | null {
+  const last = output.replace(/\r/g, "").split("\n").pop()?.trim() ?? "";
+  if (!last) return null;
+
+  // dpkg : fichier de configuration modifié localement (Y/I/N/O/D/Z)
+  if (/\(Y\/I\/N\/O\/D\/Z\)/i.test(last)) {
+    const file = /Configuration file '([^']+)'/.exec(output.slice(-2000))?.[1];
+    return {
+      question: file ? `Fichier de configuration modifié : ${file}` : last,
+      choices: [
+        { label: "Garder ma version", send: "N\n", hint: "N — choix par défaut, conserve la configuration actuelle" },
+        { label: "Version du paquet", send: "Y\n", hint: "Y — remplace par la version du mainteneur" },
+        { label: "Voir les différences", send: "D\n", hint: "D — affiche le diff (q pour quitter)" },
+      ],
+    };
+  }
+
+  // Oui/non : [Y/n], [y/N], [O/n] (apt en français), (yes/no)
+  const yn = /\[([YyOo])\/([Nn])\]\s*\??$|\(yes\/no(?:\/\[fingerprint\])?\)\??\s*$/.exec(last);
+  if (yn) {
+    const yes = yn[1] ? yn[1].toLowerCase() : "yes";
+    const no = yn[2] ? "n" : "no";
+    return { question: last, choices: [{ label: "Oui", send: `${yes}\n` }, { label: "Non", send: `${no}\n` }] };
+  }
+
+  // Pager (ex. après « D » de dpkg) ou « Press [ENTER] to continue »
+  if (/^:$|\(END\)$|press \[?enter\]?/i.test(last)) {
+    return { question: last, choices: [{ label: "Continuer", send: "\n" }, { label: "Quitter (q)", send: "q" }] };
+  }
+
+  // Question générique : la ligne se termine par « ? » ou « : » sans retour à la ligne
+  if (!output.endsWith("\n") && /[?:]\s*$/.test(last)) return { question: last, choices: [] };
+  return null;
+}

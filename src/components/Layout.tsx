@@ -41,14 +41,14 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div id="app-root" className="flex h-screen bg-bg-primary text-text-primary overflow-hidden select-none">
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="w-56 flex flex-col bg-bg-secondary border-r border-border-primary shrink-0">
+      <aside className="w-14 md:w-56 flex flex-col bg-bg-secondary border-r border-border-primary shrink-0 min-h-0">
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-border-primary">
+        <div className="px-3 md:px-5 py-4 md:py-5 border-b border-border-primary shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-win bg-accent-primary/15">
               <Server size={18} className="text-accent-primary" />
             </div>
-            <div>
+            <div className="hidden md:block">
               <p className="text-sm font-semibold text-text-primary leading-tight">
                 Server Manager
               </p>
@@ -57,37 +57,38 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1">
+        {/* Navigation : défile quand la fenêtre est trop basse pour tous les onglets */}
+        <nav className="flex-1 min-h-0 overflow-y-auto p-2 md:p-3 space-y-0.5">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
               to={to}
               end={to === "/"}
+              title={label}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-win text-sm transition-all duration-150",
+                  "flex items-center justify-center md:justify-start gap-3 px-3 py-2 rounded-win text-sm transition-all duration-150",
                   isActive
                     ? "bg-accent-primary text-white shadow-sm"
                     : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
                 )
               }
             >
-              <Icon size={16} />
-              {label}
+              <Icon size={16} className="shrink-0" />
+              <span className="hidden md:inline truncate">{label}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Compteur en ligne */}
         {totalCount > 0 && (
-          <div className="px-4 py-3 border-t border-border-primary">
-            <div className="flex items-center gap-2 text-xs">
+          <div className="px-2 md:px-4 py-3 border-t border-border-primary shrink-0" title={`${onlineCount}/${totalCount} en ligne`}>
+            <div className="flex items-center justify-center md:justify-start gap-2 text-xs">
               <Wifi
                 size={12}
                 className={onlineCount > 0 ? "text-green-400" : "text-gray-500"}
               />
-              <span className="text-text-secondary">
+              <span className="text-text-secondary hidden md:inline">
                 <span
                   className={
                     onlineCount > 0 ? "text-green-400 font-semibold" : "text-gray-500"

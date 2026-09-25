@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { AlertTriangle, CheckCircle2, Loader2, MinusCircle, Play, Save, Trash2, XCircle, ListChecks, BookOpen, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, MinusCircle, Play, Save, Trash2, XCircle, ListChecks, BookOpen, RefreshCw, MessageSquareWarning, CornerDownLeft } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { AnsibleConfig, BatchMode, BatchTask, BatchUpdate } from "../types";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
-import { looksModifying, TEMPLATES } from "../utils/batch";
+import { detectPrompt, looksModifying, TEMPLATES } from "../utils/batch";
 import { cn } from "../utils";
 
 /** Pré-remplissage depuis une autre page (ex. Mises à jour) : rien n'est lancé sans confirmation */
@@ -21,22 +21,67 @@ type ServerRun = { status: "pending" | "running" | "ok" | "failed" | "skipped"; 
 
 const inputClass = "w-full bg-bg-input border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent-primary";
 
+/** Sortie d'un serveur ; tant que la commande tourne, on peut répondre à ses questions */
+function ServerRunCard({ name, run, single, onSend }: { name: string; run: ServerRun; single: boolean; onSend?: (text: string) => Promise<void> }) {
+  const [answer, setAnswer] = useState("");
+  const pre = useRef<HTMLPreElement>(null);
+  const running = run.status === "running";
+  const prompt = running ? detectPrompt(run.output) : null;
+
+  // Suit la fin de la sortie, comme un terminal
+  useEffect(() => {
+    if (pre.current) pre.current.scrollTop = pre.current.scrollHeight;
+  }, [run.output]);
+
+  async function send(text: string) {
+    if (!onSend) return;
+    await onSend(text);
+    setAnswer("");
+  }
+
+  return (
+    <details open={run.status === "failed" || single || !!prompt} className={cn("bg-bg-tertiary border rounded-win", prompt ? "border-accent-warning" : "border-border-primary")}>
+      <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm">
+        {prompt ? <MessageSquareWarning size={13} className="text-accent-warning" />
+          : running || run.status === "pending" ? <Loader2 size={13} className="animate-spin text-accent-primary" />
+          : run.status === "ok" ? <CheckCircle2 size={13} className="text-accent-success" />
+          : run.status === "skipped" ? <MinusCircle size={13} className="text-text-muted" />
+          : <XCircle size={13} className="text-accent-error" />}
+        <span className="text-text-primary">{name}</span>
+        {prompt && <span className="text-xs text-accent-warning">attend une réponse</span>}
+        <span className="text-xs text-text-muted ml-auto">{run.detail}{run.ms !== undefined && ` · ${(run.ms / 1000).toFixed(1)} s`}</span>
+      </summary>
+      <pre ref={pre} className="px-3 pb-3 text-[11px] font-mono text-text-secondary whitespace-pre-wrap break-all max-h-72 overflow-y-auto select-text">{run.output || "(pas de sortie)"}</pre>
+      {running && onSend && (
+        <div className="px-3 pb-3 space-y-2">
+          {prompt && (
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="text-accent-warning">{prompt.question}</span>
+              {prompt.choices.map((c) => (
+                <button key={c.label} onClick={() => send(c.send)} title={c.hint} className="px-2.5 py-1 rounded-win border border-accent-warning/50 text-text-primary hover:bg-bg-hover">
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <form onSubmit={(e) => { e.preventDefault(); send(answer + "\n"); }} className="flex items-center gap-2">
+            <input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Réponse à envoyer (Entrée pour valider)" aria-label={`Réponse pour ${name}`} className="flex-1 bg-bg-input border border-border-primary rounded-win px-3 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-accent-primary" />
+            <button type="submit" className="p-1.5 rounded-win border border-border-primary text-text-secondary hover:text-accent-primary" title="Envoyer"><CornerDownLeft size={13} /></button>
+            <button type="button" onClick={() => send("\x03")} className="px-2 py-1 rounded-win border border-border-primary text-xs text-text-secondary hover:text-accent-error" title="Interrompre la commande (Ctrl+C)">Ctrl+C</button>
+          </form>
+        </div>
+      )}
+    </details>
+  );
+}
+
 /** Sortie par serveur d'une exécution (script en lot ou playbook) */
-function RunOutput({ runs, names }: { runs: Record<string, ServerRun>; names: Record<string, string> }) {
+function RunOutput({ runs, names, onSend }: { runs: Record<string, ServerRun>; names: Record<string, string>; onSend: (serverId: string, text: string) => Promise<void> }) {
+  const ids = Object.keys(runs);
   return (
     <div className="space-y-2">
-      {Object.entries(runs).map(([id, r]) => (
-        <details key={id} open={r.status === "failed" || Object.keys(runs).length === 1} className="bg-bg-tertiary border border-border-primary rounded-win">
-          <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm">
-            {r.status === "running" || r.status === "pending" ? <Loader2 size={13} className="animate-spin text-accent-primary" />
-              : r.status === "ok" ? <CheckCircle2 size={13} className="text-accent-success" />
-              : r.status === "skipped" ? <MinusCircle size={13} className="text-text-muted" />
-              : <XCircle size={13} className="text-accent-error" />}
-            <span className="text-text-primary">{names[id] ?? id}</span>
-            <span className="text-xs text-text-muted ml-auto">{r.detail}{r.ms !== undefined && ` · ${(r.ms / 1000).toFixed(1)} s`}</span>
-          </summary>
-          <pre className="px-3 pb-3 text-[11px] font-mono text-text-secondary whitespace-pre-wrap break-all max-h-72 overflow-y-auto select-text">{r.output || "(pas de sortie)"}</pre>
-        </details>
+      {ids.map((id) => (
+        <ServerRunCard key={id} name={names[id] ?? id} run={runs[id]} single={ids.length === 1} onSend={(text) => onSend(id, text)} />
       ))}
     </div>
   );
@@ -104,6 +149,16 @@ export function Batch() {
     setRuns({ [ansible.server_id]: { status: "pending", output: "" } });
     try {
       runId.current = await invoke<string>("ansible_run", { playbook, check, limit: limit || null });
+    } catch (e) {
+      error(String(e));
+    }
+  }
+
+  /** Réponse à une question posée pendant l'exécution */
+  async function sendInput(serverId: string, text: string) {
+    if (!runId.current) return;
+    try {
+      await invoke("batch_send_input", { runId: runId.current, serverId, text });
     } catch (e) {
       error(String(e));
     }
@@ -225,7 +280,7 @@ export function Batch() {
         </div>
       )}
 
-      {Object.keys(runs).length > 0 && <RunOutput runs={runs} names={names} />}
+      {Object.keys(runs).length > 0 && <RunOutput runs={runs} names={names} onSend={sendInput} />}
 
       {confirming && (
         <ConfirmDialog

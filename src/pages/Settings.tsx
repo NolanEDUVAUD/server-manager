@@ -31,7 +31,7 @@ export function Settings() {
   return (
     <div className="flex h-full">
       {/* Sidebar de navigation */}
-      <nav className="w-44 shrink-0 bg-bg-secondary border-r border-border-primary flex flex-col py-4">
+      <nav className="w-36 md:w-44 shrink-0 bg-bg-secondary border-r border-border-primary flex flex-col py-4 overflow-y-auto">
         {SECTIONS.map(s => (
           <button
             key={s.id}

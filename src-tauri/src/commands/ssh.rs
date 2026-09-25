@@ -83,6 +83,69 @@ pub(crate) async fn connect_ssh(
     Ok(session)
 }
 
+/// Exécution interactive (tâches en lot) : la commande tourne dans un pseudo-terminal,
+/// ce qui fait apparaître les questions (dpkg, apt…), et `input` relaie les réponses
+/// saisies dans l'app. Terminal « dumb » et large : pas de couleurs ni de barres de
+/// progression, peu de retours à la ligne forcés.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn execute_ssh_interactive(
+    ip: &str,
+    port: u16,
+    user: &str,
+    password: &str,
+    command: &str,
+    timeout_secs: u64,
+    on_chunk: &(dyn Fn(&str) + Send + Sync),
+    mut input: tokio::sync::mpsc::UnboundedReceiver<Vec<u8>>,
+) -> Result<SshResult, String> {
+    let session = connect_ssh(ip, port, user, password, timeout_secs).await?;
+    let mut channel = session
+        .channel_open_session()
+        .await
+        .map_err(|e| format!("Impossible d'ouvrir un canal SSH: {}", e))?;
+    channel
+        .request_pty(false, "dumb", 200, 50, 0, 0, &[])
+        .await
+        .map_err(|e| format!("Impossible d'obtenir un terminal (PTY): {}", e))?;
+    channel
+        .exec(true, command)
+        .await
+        .map_err(|e| format!("Erreur d'exécution de la commande '{}': {}", command, e))?;
+
+    let mut output = String::new();
+    let mut exit_code: Option<u32> = None;
+    // Quand l'app ne peut plus envoyer d'entrée, on continue d'attendre la fin de la commande
+    let mut input_open = true;
+    loop {
+        tokio::select! {
+            data = input.recv(), if input_open => match data {
+                Some(bytes) => {
+                    channel.data(&bytes[..]).await.map_err(|e| format!("Erreur d'envoi : {}", e))?;
+                }
+                None => input_open = false,
+            },
+            msg = channel.wait() => match msg {
+                Some(russh::ChannelMsg::Data { ref data }) | Some(russh::ChannelMsg::ExtendedData { ref data, .. }) => {
+                    // Le PTY termine les lignes par \r\n : on garde des \n simples
+                    let chunk = String::from_utf8_lossy(data).replace("\r\n", "\n");
+                    on_chunk(&chunk);
+                    output.push_str(&chunk);
+                }
+                Some(russh::ChannelMsg::ExitStatus { exit_status }) => exit_code = Some(exit_status),
+                None => break,
+                _ => {}
+            },
+        }
+    }
+
+    let success = exit_code.map_or(true, |c| c == 0);
+    Ok(SshResult {
+        success,
+        output: output.trim().to_string(),
+        error: if success { None } else { Some(format!("Code de sortie: {}", exit_code.unwrap_or(1))) },
+    })
+}
+
 // ── Fonction interne d'exécution SSH ──────────────────────────────────────
 pub(crate) async fn execute_ssh(
     ip: &str,
