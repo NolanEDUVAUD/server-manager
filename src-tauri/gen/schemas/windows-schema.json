@@ -381,6 +381,24 @@
           "markdownDescription": "Enables the import_full_config command without any pre-configured scope."
         },
         {
+          "description": "Enables the lab_power_cancel command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lab-power-cancel",
+          "markdownDescription": "Enables the lab_power_cancel command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lab_power_execute command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lab-power-execute",
+          "markdownDescription": "Enables the lab_power_execute command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lab_power_plan command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lab-power-plan",
+          "markdownDescription": "Enables the lab_power_plan command without any pre-configured scope."
+        },
+        {
           "description": "Enables the open_dashboard_tab command without any pre-configured scope.",
           "type": "string",
           "const": "allow-open-dashboard-tab",
@@ -877,6 +895,24 @@
           "type": "string",
           "const": "deny-import-full-config",
           "markdownDescription": "Denies the import_full_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lab_power_cancel command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lab-power-cancel",
+          "markdownDescription": "Denies the lab_power_cancel command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lab_power_execute command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lab-power-execute",
+          "markdownDescription": "Denies the lab_power_execute command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lab_power_plan command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lab-power-plan",
+          "markdownDescription": "Denies the lab_power_plan command without any pre-configured scope."
         },
         {
           "description": "Denies the open_dashboard_tab command without any pre-configured scope.",

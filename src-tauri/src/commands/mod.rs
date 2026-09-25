@@ -4,6 +4,7 @@ pub mod docker;
 pub mod events;
 pub mod groups;
 pub mod integrations;
+pub mod lab_power;
 pub mod metrics;
 pub mod ping;
 pub mod probes;

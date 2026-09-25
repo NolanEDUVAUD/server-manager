@@ -428,3 +428,20 @@ export interface MigrationPlan {
   local_disks: string[];
   notes: string[];
 }
+
+// ─── Arrêt / démarrage ordonnés du lab ──────────────────────────────────────
+
+export interface LabGuest { vmid: number; name: string; node: string; kind: string; running: boolean }
+
+export type LabAction =
+  | { type: "ShutdownServer"; server_id: string }
+  | { type: "WakeServer"; server_id: string }
+  | { type: "ShutdownGuests"; guests: LabGuest[] }
+  | { type: "StartGuests"; guests: LabGuest[] };
+
+export interface LabPlan {
+  steps: { title: string; detail: string; actions: LabAction[] }[];
+  warnings: string[];
+}
+
+export interface LabProgress { step: number; status: "running" | "done" | "error" | "cancelled"; message: string }

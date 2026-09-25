@@ -309,6 +309,9 @@ pub struct AppData {
     pub alert_rules: Vec<crate::alerts::AlertRule>,
     #[serde(default)]
     pub probes: Vec<crate::probes::Probe>,
+    /// Invités allumés au moment du dernier arrêt ordonné (relancés au démarrage)
+    #[serde(default)]
+    pub last_lab_running: Vec<crate::lab_power::Guest>,
     /// Schéma de la clé de chiffrement des secrets (voir crypto::KEY_VERSION_MASTER)
     #[serde(default = "legacy_key_version")]
     pub key_version: u8,
@@ -331,6 +334,7 @@ impl Default for AppData {
             integrations: Vec::new(),
             alert_rules: crate::alerts::default_rules(),
             probes: Vec::new(),
+            last_lab_running: Vec::new(),
         }
     }
 }

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lab-power-plan"
+description = "Enables the lab_power_plan command without any pre-configured scope."
+commands.allow = ["lab_power_plan"]
+
+[[permission]]
+identifier = "deny-lab-power-plan"
+description = "Denies the lab_power_plan command without any pre-configured scope."
+commands.deny = ["lab_power_plan"]

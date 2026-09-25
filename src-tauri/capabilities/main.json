@@ -94,6 +94,9 @@
     "allow-proxmox-backup-now",
     "allow-proxmox-migration-plan",
     "allow-proxmox-migrate",
-    "allow-proxmox-task-status"
+    "allow-proxmox-task-status",
+    "allow-lab-power-plan",
+    "allow-lab-power-execute",
+    "allow-lab-power-cancel"
   ]
 }

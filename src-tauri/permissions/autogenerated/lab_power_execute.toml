@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lab-power-execute"
+description = "Enables the lab_power_execute command without any pre-configured scope."
+commands.allow = ["lab_power_execute"]
+
+[[permission]]
+identifier = "deny-lab-power-execute"
+description = "Denies the lab_power_execute command without any pre-configured scope."
+commands.deny = ["lab_power_execute"]

@@ -8,6 +8,7 @@ mod events;
 mod integration_checks;
 mod integrations;
 mod keystore;
+mod lab_power;
 mod known_hosts;
 mod metrics;
 mod monitor;
@@ -20,7 +21,7 @@ mod storage;
 mod terminal;
 mod tray;
 
-use commands::{probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -42,6 +43,7 @@ pub fn run() {
             app.manage(events::EventLog::load(app.handle()));
             app.manage(alerts::AlertEngine::new(app.handle()));
             app.manage(probes::ProbeState::default());
+            app.manage(commands::lab_power::LabPowerState::default());
             // Boucle du planificateur (tâches WoL / arrêt programmées)
             scheduler::start(app.handle().clone());
             // Surveillance continue (ping + métriques), indépendante de la fenêtre
@@ -179,6 +181,10 @@ pub fn run() {
             proxmox_cmd::proxmox_migration_plan,
             proxmox_cmd::proxmox_migrate,
             proxmox_cmd::proxmox_task_status,
+            // ── Arrêt / démarrage du lab ────────────────────────
+            lab_power_cmd::lab_power_plan,
+            lab_power_cmd::lab_power_execute,
+            lab_power_cmd::lab_power_cancel,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,
