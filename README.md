@@ -21,6 +21,10 @@ Construit avec **Tauri v2** (backend Rust) et **React + TypeScript + Tailwind** 
 - **Planificateur** : tâches programmées, avec création des cronjobs directement sur les serveurs Linux
 - **Mises à jour** (apt), **réseau**, **logs** (Loki), zone de notification Windows
 - **Thèmes** : One Half Dark, Fluent, Gruvbox Dark, Nord, Dracula, Catppuccin Mocha, Tokyo Night, ou thème personnalisé
+- **Langues** : français (par défaut) et anglais, au choix dans Paramètres → Général
+- **Verrouillage** : PIN, Windows Hello et mot de passe maître optionnel ; verrouillage automatique après inactivité ou avec la session Windows
+- **Sauvegarde chiffrée** de toute la configuration (`.spmbackup`), manuelle ou automatique, restaurable sur un autre PC
+- **Mise à jour automatique** signée, proposée au démarrage et toujours installée après confirmation
 
 ## Téléchargement
 
@@ -115,7 +119,15 @@ Les raccourcis à une touche sont ignorés pendant la saisie dans un champ et da
 - L'export JSON de la configuration ne contient aucun secret (à ressaisir après un import). Tags, dossiers, favoris et champs personnalisés y figurent : ce ne sont pas des secrets, l'interface le rappelle et avertit si un champ personnalisé ressemble à un mot de passe ou un jeton.
 - **Verrouillage** (optionnel, Paramètres → Sécurité) : PIN ou Windows Hello, verrouillage après inactivité ou avec la session Windows. Verrouillée, l'app efface la clé maître de la mémoire. Un **mot de passe maître** (Argon2id) peut chiffrer la clé dans le coffre : l'app démarre alors verrouillée et lui seul la déverrouille ; oublié, les secrets sont irrécupérables.
 - Les clés privées SSH gérées par l'app sont chiffrées de la même façon : seule la clé publique est affichée, et aucune n'est exportée.
-- Clés d'hôte SSH vérifiées (mémorisées à la première connexion), commandes Tauri limitées à la fenêtre principale, CSP stricte.
+- Clés d'hôte SSH vérifiées à chaque saut (mémorisées à la première connexion, y compris via un hôte de rebond), commandes Tauri limitées à la fenêtre principale, CSP stricte.
+- Les mises à jour ne s'installent qu'après vérification de leur signature (clé publique embarquée dans l'app) et confirmation.
+
+### Avis de sécurité connus des dépendances
+
+`cargo audit` et `npm audit --omit=dev` sont lancés à chaque version. Avis restants en 0.3.0, sans correctif disponible ou sans impact ici :
+
+- **`rsa` (RUSTSEC-2023-0071, attaque « Marvin »)** : aucun correctif en amont. Ne concerne que les clés SSH **RSA** (signature). Les clés générées par l'app sont en ed25519, à préférer.
+- **`quick-xml` (RUSTSEC-2026-0194 / 0195)** : tiré par les notifications Windows. Il ne lit que les modèles de notification produits par l'app elle-même, jamais de XML venant du réseau.
 
 ## Développement
 
