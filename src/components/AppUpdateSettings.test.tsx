@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { AppUpdateSettings } from "./AppUpdateSettings";
-import { NOT_CONFIGURED_MESSAGE, useAppUpdate } from "../stores/useAppUpdate";
+import { NOT_CONFIGURED_KEY, useAppUpdate } from "../stores/useAppUpdate";
 import { useStore } from "../stores/useStore";
+import { t } from "../i18n";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn(() => Promise.resolve(() => {})) }));
@@ -29,7 +30,8 @@ describe("AppUpdateSettings", () => {
     backend(false);
     render(<AppUpdateSettings />);
 
-    expect(await screen.findByText(NOT_CONFIGURED_MESSAGE)).toBeInTheDocument();
+    expect(await screen.findByText(t(NOT_CONFIGURED_KEY))).toBeInTheDocument();
+    expect(screen.getByText("Mises à jour automatiques non configurées pour cette version")).toBeInTheDocument();
     expect(screen.getByText("0.2.0")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Rechercher maintenant/ })).toBeDisabled();
     expect(invoke).not.toHaveBeenCalledWith("app_update_check");

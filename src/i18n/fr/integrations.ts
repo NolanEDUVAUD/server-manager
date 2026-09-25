@@ -1,0 +1,88 @@
+/** Paramètres → Intégrations (champs décrits dans utils/integrations.ts) */
+export const integrations = {
+  title: "Intégrations",
+  intro: "Services externes utilisés par l'app. Les secrets sont chiffrés avec la clé maître (Gestionnaire d'identification Windows).",
+  categories: {
+    notifications: "Notifications",
+    supervision: "Supervision",
+    infrastructure: "Infrastructure",
+  },
+  status: {
+    configured: "configuré",
+    disabled: "désactivé",
+    notConfigured: "non configuré",
+  },
+  secretSaved: "Secret enregistré",
+  keepEmpty: " (laisser vide = inchangé)",
+  enabled: "Activée",
+  tlsHint: "Décocher pour un certificat auto-signé",
+  verifyTls: "Vérifier le certificat TLS",
+  save: "Enregistrer",
+  saveAndTest: "Enregistrer et tester",
+  password: "Mot de passe",
+  zabbix: {
+    url: "URL de Zabbix",
+    secret: "Jeton API",
+    secretPlaceholder: "Administration → Jetons API → Créer",
+    help: "Zabbix ≥ 5.4. Utilisateur avec droits d'écriture sur les groupes d'hôtes pour créer les maintenances.",
+  },
+  loki: {
+    url: "URL de Loki",
+    username: "Utilisateur (optionnel)",
+    usernamePlaceholder: "si Loki est derrière une authentification",
+    secret: "Mot de passe (optionnel)",
+    help: "Les logs doivent être envoyés à Loki (Promtail / Alloy) avec un label host ou hostname.",
+  },
+  npm: {
+    url: "URL de l'interface",
+    username: "E-mail du compte",
+    help: "Un compte dédié en lecture suffit. NPM n'a pas de jeton API : le mot de passe est chiffré avec la clé maître.",
+  },
+  truenas: {
+    url: "URL de TrueNAS",
+    secret: "Clé API",
+    secretPlaceholder: "Menu utilisateur → API Keys → Add",
+    help: "Pools ZFS, datasets et SMART via l'API REST — ne nécessite pas le SSH.",
+  },
+  pbs: {
+    url: "URL de PBS",
+    username: "Jeton (user@realm!nom)",
+    secret: "Secret du jeton",
+    help: "Optionnel : seulement si tu as un Proxmox Backup Server.",
+  },
+  homeAssistant: {
+    url: "URL de Home Assistant",
+    secret: "Jeton d'accès longue durée",
+    secretPlaceholder: "Profil → Sécurité → Jetons d'accès longue durée",
+    help: "Chaque événement du homelab est publié dans Home Assistant (type server_manager_event) pour tes automatisations.",
+  },
+  opnsense: {
+    url: "URL d'OPNsense",
+    username: "Clé API",
+    usernamePlaceholder: "Système → Accès → Utilisateurs → Clés API",
+    secret: "Secret API",
+    help: "Trafic et état des interfaces.",
+  },
+  mikrotik: {
+    url: "URL du routeur",
+    username: "Utilisateur",
+    help: "RouterOS v7 avec l'API REST (service www-ssl activé).",
+  },
+  ntfy: {
+    url: "Serveur ntfy",
+    topic: "Topic",
+    topicPlaceholder: "homelab-x7q2k9 (difficile à deviner)",
+    secret: "Jeton (optionnel)",
+    secretPlaceholder: "pour un topic protégé",
+    help: "Installe l'app ntfy sur ton téléphone et abonne-toi au même topic.",
+  },
+  discord: {
+    secret: "URL du webhook",
+    help: "Paramètres du salon → Intégrations → Webhooks → Nouveau webhook → Copier l'URL.",
+  },
+  telegram: {
+    secret: "Jeton du bot",
+    chatId: "Chat ID",
+    help: "Crée un bot avec @BotFather, envoie-lui un message, puis récupère ton chat_id.",
+  },
+};

@@ -10,6 +10,7 @@ import { createShortcutMatcher } from "../utils/shortcuts";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ToastContainer } from "./Toast";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 interface PaletteItem {
   id: string;
@@ -33,6 +34,7 @@ export function CommandPalette({ pages }: { pages: { to: string; label: string }
   const navigate = useNavigate();
   const { servers, groups, openTerminal, pingServer, wakeGroup, wakeServer, shutdownServer, rebootServer, setShortcutsHelpOpen } = useStore();
   const toast = useToast();
+  const { t, lang } = useT();
   const lockEnabled = useLockStore((s) => !!s.status?.enabled);
   const lockNow = useLockStore((s) => s.lockNow);
   const [open, setOpen] = useState(false);
@@ -60,51 +62,54 @@ export function CommandPalette({ pages }: { pages: { to: string; label: string }
 
   const items: PaletteItem[] = useMemo(() => [
     ...(lockEnabled
-      ? [{ id: "lock", label: "Verrouiller maintenant", hint: "Ctrl+Maj+L", icon: Lock, run: () => { lockNow().catch(() => {}); } }]
+      ? [{ id: "lock", label: t("palette.lockNow"), hint: t("shortcuts.lockCombo"), icon: Lock, run: () => { lockNow().catch(() => {}); } }]
       : []),
-    ...pages.map((p) => ({ id: `page:${p.to}`, label: `Aller à ${p.label}`, hint: "page", icon: ArrowRight, run: () => navigate(p.to) })),
+    ...pages.map((p) => ({ id: `page:${p.to}`, label: t("palette.goTo", { page: p.label }), hint: t("palette.pageHint"), icon: ArrowRight, run: () => navigate(p.to) })),
     ...servers.flatMap((s): PaletteItem[] => [
       {
-        id: `console:${s.id}`, label: `Ouvrir la console sur ${s.name}`, hint: s.ip, icon: TerminalSquare,
+        id: `console:${s.id}`, label: t("palette.openConsole", { name: s.name }), hint: s.ip, icon: TerminalSquare,
         run: () => { openTerminal(s.id); navigate("/console"); },
       },
       {
-        id: `ping:${s.id}`, label: `Pinger ${s.name}`, hint: s.ip, icon: Wifi,
+        id: `ping:${s.id}`, label: t("palette.ping", { name: s.name }), hint: s.ip, icon: Wifi,
         run: () => {
           pingServer(s.id)
-            .then((r) => (r.online ? toast.success(`${s.name} répond${r.latency_ms !== null ? ` (${r.latency_ms} ms)` : ""}`) : toast.warning(`${s.name} ne répond pas`)))
+            .then((r) => (r.online
+              ? toast.success(r.latency_ms !== null ? t("palette.pingOkLatency", { name: s.name, latency: r.latency_ms }) : t("palette.pingOk", { name: s.name }))
+              : toast.warning(t("palette.pingKo", { name: s.name }))))
             .catch((e) => toast.error(String(e)));
         },
       },
       ...(s.mac_address
         ? [{
-            id: `wake:${s.id}`, label: `Réveiller ${s.name}`, hint: "Wake-on-LAN", icon: Zap,
-            confirm: { message: `Envoyer un paquet Wake-on-LAN à ${s.name} (MAC ${s.mac_address}) pour l'allumer ?`, label: "Réveiller" },
-            run: report(() => wakeServer(s.id), `Paquet Wake-on-LAN envoyé à ${s.name}`),
+            id: `wake:${s.id}`, label: t("palette.wake", { name: s.name }), hint: "Wake-on-LAN", icon: Zap,
+            confirm: { message: t("palette.wakeConfirm", { name: s.name, mac: s.mac_address }), label: t("palette.wakeLabel") },
+            run: report(() => wakeServer(s.id), t("palette.wakeDone", { name: s.name })),
           }]
         : []),
       {
-        id: `shutdown:${s.id}`, label: `Arrêter ${s.name}`, hint: s.ip, icon: Power,
-        confirm: { message: `${s.name} (${s.ip}) va être éteint via SSH.\nCommande exécutée : ${s.shutdown_command}`, label: "Arrêter", dangerous: true },
-        run: report(() => shutdownServer(s.id), `Commande d'arrêt envoyée à ${s.name}`),
+        id: `shutdown:${s.id}`, label: t("palette.shutdown", { name: s.name }), hint: s.ip, icon: Power,
+        confirm: { message: t("palette.shutdownConfirm", { name: s.name, ip: s.ip, command: s.shutdown_command }), label: t("palette.shutdownLabel"), dangerous: true },
+        run: report(() => shutdownServer(s.id), t("palette.shutdownDone", { name: s.name })),
       },
       {
-        id: `reboot:${s.id}`, label: `Redémarrer ${s.name}`, hint: s.ip, icon: RotateCcw,
-        confirm: { message: `${s.name} (${s.ip}) va redémarrer via SSH.\nCommande exécutée : ${s.reboot_command}`, label: "Redémarrer", dangerous: true },
-        run: report(() => rebootServer(s.id), `Commande de redémarrage envoyée à ${s.name}`),
+        id: `reboot:${s.id}`, label: t("palette.reboot", { name: s.name }), hint: s.ip, icon: RotateCcw,
+        confirm: { message: t("palette.rebootConfirm", { name: s.name, ip: s.ip, command: s.reboot_command }), label: t("palette.rebootLabel"), dangerous: true },
+        run: report(() => rebootServer(s.id), t("palette.rebootDone", { name: s.name })),
       },
       {
-        id: `edit:${s.id}`, label: `Modifier ${s.name}`, hint: s.ip, icon: Pencil,
+        id: `edit:${s.id}`, label: t("palette.edit", { name: s.name }), hint: s.ip, icon: Pencil,
         run: () => navigate("/servers", { state: { editServerId: s.id } }),
       },
     ]),
     ...groups.map((g) => ({
-      id: `wol:${g.id}`, label: `Réveiller le groupe ${g.name}`, hint: "Wake-on-LAN", icon: Zap,
-      confirm: { message: `Envoyer un Wake-on-LAN à tous les serveurs du groupe « ${g.name} » ?`, label: "Réveiller" },
-      run: report(() => wakeGroup(g.id), `Wake-on-LAN envoyé au groupe ${g.name}`),
+      id: `wol:${g.id}`, label: t("palette.wakeGroup", { name: g.name }), hint: "Wake-on-LAN", icon: Zap,
+      confirm: { message: t("palette.wakeGroupConfirm", { name: g.name }), label: t("palette.wakeLabel") },
+      run: report(() => wakeGroup(g.id), t("palette.wakeGroupDone", { name: g.name })),
     })),
-    { id: "help", label: "Afficher les raccourcis clavier", hint: "?", icon: Keyboard, run: () => setShortcutsHelpOpen(true) },
-  ], [pages, servers, groups, lockEnabled, lockNow]);
+    { id: "help", label: t("palette.showShortcuts"), hint: "?", icon: Keyboard, run: () => setShortcutsHelpOpen(true) },
+    // `lang` : les libellés sont recalculés au changement de langue
+  ], [pages, servers, groups, lockEnabled, lockNow, lang]);
 
   const results = fuzzyFilter(items, query, (i) => `${i.label} ${i.hint}`, 10);
 
@@ -135,14 +140,14 @@ export function CommandPalette({ pages }: { pages: { to: string; label: string }
                   else if (id === "palette-prev") setIndex((i) => Math.max(i - 1, 0));
                   else choose(results[index]);
                 }}
-                placeholder="Page, serveur, action…  (ex. « cons mini », « arr mini »)"
+                placeholder={t("palette.placeholder")}
                 className="flex-1 bg-transparent py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none"
-                aria-label="Recherche de commande"
+                aria-label={t("palette.searchLabel")}
               />
-              <kbd className="text-[10px] text-text-muted border border-border-primary rounded px-1.5 py-0.5">Échap</kbd>
+              <kbd className="text-[10px] text-text-muted border border-border-primary rounded px-1.5 py-0.5">{t("shortcuts.keys.escape")}</kbd>
             </div>
             <ul className="max-h-80 overflow-y-auto py-1">
-              {results.length === 0 && <li className="px-4 py-3 text-sm text-text-muted">Aucun résultat</li>}
+              {results.length === 0 && <li className="px-4 py-3 text-sm text-text-muted">{t("palette.noResults")}</li>}
               {results.map((r, i) => {
                 const Icon = r.icon;
                 return (

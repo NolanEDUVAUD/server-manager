@@ -1,6 +1,7 @@
 // src/components/ThemeCard.tsx
 import { Copy, Trash2 } from 'lucide-react';
 import { Theme } from '../types';
+import { useT } from '../i18n';
 
 interface Props {
   theme: Theme;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ThemeCard({ theme, active, onSelect, onDuplicate, onDelete }: Props) {
+  const { t } = useT();
   const c = theme.colors;
   return (
     <div
@@ -41,7 +43,7 @@ export function ThemeCard({ theme, active, onSelect, onDuplicate, onDelete }: Pr
         <button
           onClick={e => { e.stopPropagation(); onDuplicate(); }}
           className="p-1 rounded hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors duration-150"
-          title="Dupliquer"
+          title={t('themes.duplicate')}
         >
           <Copy size={11} />
         </button>
@@ -49,7 +51,7 @@ export function ThemeCard({ theme, active, onSelect, onDuplicate, onDelete }: Pr
           <button
             onClick={e => { e.stopPropagation(); onDelete(); }}
             className="p-1 rounded hover:bg-bg-hover text-text-muted hover:text-accent-error transition-colors duration-150"
-            title="Supprimer"
+            title={t('common.delete')}
           >
             <Trash2 size={11} />
           </button>

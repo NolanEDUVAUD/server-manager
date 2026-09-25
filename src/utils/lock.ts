@@ -1,5 +1,6 @@
 import { LockStatus } from "../types";
 import { createShortcutMatcher } from "./shortcuts";
+import { t, TKey } from "../i18n";
 
 /** Saisie proposée par l'écran de verrouillage */
 export type UnlockMode = "password" | "hello" | "pin";
@@ -24,27 +25,24 @@ export const ACTIVITY_INTERVAL_MS = 20_000;
 /** Délais d'inactivité proposés (minutes, 0 = jamais) */
 export const IDLE_CHOICES = [0, 1, 5, 10, 15, 30, 60, 120, 240];
 
-/** Ce qui s'arrête pendant le verrouillage (texte des réglages) */
-export const SUSPENDED_WHILE_LOCKED =
-  "Pendant le verrouillage, la collecte des ressources, les sondes avec secret, les notifications " +
-  "dont le canal contient un secret et les tâches planifiées d'arrêt ou de redémarrage sont suspendues ; " +
-  "le ping continue.";
+/** Ce qui s'arrête pendant le verrouillage (clé du texte des réglages, traduit à l'affichage) */
+export const SUSPENDED_WHILE_LOCKED_KEY: TKey = "lock.settings.suspended";
 
 /** Message d'erreur du PIN, ou null s'il est valide (4 à 12 chiffres) */
 export function pinError(pin: string, confirm?: string): string | null {
   if (!new RegExp(`^\\d{${PIN_MIN},${PIN_MAX}}$`).test(pin)) {
-    return `Le PIN doit comporter de ${PIN_MIN} à ${PIN_MAX} chiffres`;
+    return t("lock.errors.pinFormat", { min: PIN_MIN, max: PIN_MAX });
   }
-  if (confirm !== undefined && pin !== confirm) return "Les deux PIN ne correspondent pas";
+  if (confirm !== undefined && pin !== confirm) return t("lock.errors.pinMismatch");
   return null;
 }
 
 /** Message d'erreur du mot de passe maître, ou null s'il est acceptable */
 export function masterPasswordError(password: string, confirm: string): string | null {
   const length = [...password].length;
-  if (length < MASTER_MIN || !password.trim()) return `Le mot de passe maître doit comporter au moins ${MASTER_MIN} caractères`;
-  if (length > MASTER_MAX) return `Le mot de passe maître ne peut pas dépasser ${MASTER_MAX} caractères`;
-  if (password !== confirm) return "Les deux saisies ne correspondent pas";
+  if (length < MASTER_MIN || !password.trim()) return t("lock.errors.masterTooShort", { min: MASTER_MIN });
+  if (length > MASTER_MAX) return t("lock.errors.masterTooLong", { max: MASTER_MAX });
+  if (password !== confirm) return t("lock.errors.masterMismatch");
   return null;
 }
 
@@ -58,7 +56,7 @@ export function formatWait(ms: number): string {
 }
 
 export function formatIdle(minutes: number): string {
-  if (minutes === 0) return "Jamais";
+  if (minutes === 0) return t("lock.idleNever");
   if (minutes < 60) return `${minutes} min`;
   return minutes % 60 === 0 ? `${minutes / 60} h` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
 }

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act, within } from "@testing-library/react";
 import { ShortcutsHelp } from "./ShortcutsHelp";
 import { useStore } from "../stores/useStore";
 import { SHORTCUTS, ShortcutDef, shortcutKeys } from "../utils/shortcuts";
+import { t } from "../i18n";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn().mockResolvedValue(undefined) }));
 
@@ -20,12 +21,14 @@ describe("aide des raccourcis clavier", () => {
     expect(rows.sort()).toEqual(SHORTCUTS.map((s) => s.id).sort());
     for (const s of SHORTCUTS as readonly ShortcutDef[]) {
       const row = container.querySelector(`[data-shortcut="${s.id}"]`) as HTMLElement;
-      expect(within(row).getByText(s.description)).toBeTruthy();
+      expect(within(row).getByText(t(s.descriptionKey))).toBeTruthy();
       const shown = [...row.querySelectorAll("kbd")].map((k) => k.textContent);
       expect(shown).toEqual(shortcutKeys(s).flat());
     }
     expect(within(dialog).getAllByText("Ctrl").length).toBeGreaterThan(0);
     expect(within(dialog).getByText("Maj")).toBeTruthy();
+    expect(within(dialog).getByText("Aller aux serveurs")).toBeTruthy();
+    expect(within(dialog).getByText("Navigation")).toBeTruthy();
   });
 
   it("se ferme avec Échap, et « ? » est ignoré pendant la saisie", () => {

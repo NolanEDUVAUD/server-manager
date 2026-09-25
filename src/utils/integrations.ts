@@ -1,14 +1,26 @@
 import { IntegrationKind } from "../types";
+import type { TKey } from "../i18n";
+
+/**
+ * Champ d'une intégration : libellé traduit (clé), et exemple affiché dans le champ,
+ * soit une valeur technique telle quelle (`placeholder`), soit un texte traduit (`placeholderKey`).
+ * Les clés sont résolues à l'affichage, jamais ici.
+ */
+export interface FieldText {
+  label: TKey;
+  placeholder: string;
+  placeholderKey?: TKey;
+}
 
 export interface FieldSpec {
   /** Libellé du champ URL (absent = pas d'URL pour ce service) */
-  url?: { label: string; placeholder: string };
-  username?: { label: string; placeholder: string };
-  secret?: { label: string; placeholder: string };
-  extra?: { key: string; label: string; placeholder: string }[];
+  url?: FieldText;
+  username?: FieldText;
+  secret?: FieldText;
+  extra?: ({ key: string } & FieldText)[];
   /** Case « vérifier le certificat TLS » pertinente (services en HTTPS auto-signé) */
   tls?: boolean;
-  help: string;
+  help: TKey;
 }
 
 export interface IntegrationSpec {
@@ -23,98 +35,98 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "Zabbix", name: "Zabbix", category: "Supervision",
     fields: {
-      url: { label: "URL de Zabbix", placeholder: "http://192.168.1.x/zabbix" },
-      secret: { label: "Jeton API", placeholder: "Administration → Jetons API → Créer" },
-      help: "Zabbix ≥ 5.4. Utilisateur avec droits d'écriture sur les groupes d'hôtes pour créer les maintenances.",
+      url: { label: "integrations.zabbix.url", placeholder: "http://192.168.1.x/zabbix" },
+      secret: { label: "integrations.zabbix.secret", placeholder: "", placeholderKey: "integrations.zabbix.secretPlaceholder" },
+      help: "integrations.zabbix.help",
     },
   },
   {
     kind: "Loki", name: "Loki", category: "Supervision",
     fields: {
-      url: { label: "URL de Loki", placeholder: "http://192.168.1.x:3100" },
-      username: { label: "Utilisateur (optionnel)", placeholder: "si Loki est derrière une authentification" },
-      secret: { label: "Mot de passe (optionnel)", placeholder: "" },
-      help: "Les logs doivent être envoyés à Loki (Promtail / Alloy) avec un label host ou hostname.",
+      url: { label: "integrations.loki.url", placeholder: "http://192.168.1.x:3100" },
+      username: { label: "integrations.loki.username", placeholder: "", placeholderKey: "integrations.loki.usernamePlaceholder" },
+      secret: { label: "integrations.loki.secret", placeholder: "" },
+      help: "integrations.loki.help",
     },
   },
   {
     kind: "Npm", name: "Nginx Proxy Manager", category: "Infrastructure",
     fields: {
-      url: { label: "URL de l'interface", placeholder: "http://192.168.1.x:81" },
-      username: { label: "E-mail du compte", placeholder: "admin@example.com" },
-      secret: { label: "Mot de passe", placeholder: "" },
-      help: "Un compte dédié en lecture suffit. NPM n'a pas de jeton API : le mot de passe est chiffré avec la clé maître.",
+      url: { label: "integrations.npm.url", placeholder: "http://192.168.1.x:81" },
+      username: { label: "integrations.npm.username", placeholder: "admin@example.com" },
+      secret: { label: "integrations.password", placeholder: "" },
+      help: "integrations.npm.help",
     },
   },
   {
     kind: "TrueNas", name: "TrueNAS", category: "Infrastructure",
     fields: {
-      url: { label: "URL de TrueNAS", placeholder: "https://192.168.1.x" },
-      secret: { label: "Clé API", placeholder: "Menu utilisateur → API Keys → Add" },
+      url: { label: "integrations.truenas.url", placeholder: "https://192.168.1.x" },
+      secret: { label: "integrations.truenas.secret", placeholder: "", placeholderKey: "integrations.truenas.secretPlaceholder" },
       tls: true,
-      help: "Pools ZFS, datasets et SMART via l'API REST — ne nécessite pas le SSH.",
+      help: "integrations.truenas.help",
     },
   },
   {
     kind: "Pbs", name: "Proxmox Backup Server", category: "Infrastructure",
     fields: {
-      url: { label: "URL de PBS", placeholder: "https://192.168.1.x:8007" },
-      username: { label: "Jeton (user@realm!nom)", placeholder: "root@pam!servermanager" },
-      secret: { label: "Secret du jeton", placeholder: "" },
+      url: { label: "integrations.pbs.url", placeholder: "https://192.168.1.x:8007" },
+      username: { label: "integrations.pbs.username", placeholder: "root@pam!servermanager" },
+      secret: { label: "integrations.pbs.secret", placeholder: "" },
       tls: true,
-      help: "Optionnel : seulement si tu as un Proxmox Backup Server.",
+      help: "integrations.pbs.help",
     },
   },
   {
     kind: "HomeAssistant", name: "Home Assistant", category: "Infrastructure",
     fields: {
-      url: { label: "URL de Home Assistant", placeholder: "http://192.168.1.x:8123" },
-      secret: { label: "Jeton d'accès longue durée", placeholder: "Profil → Sécurité → Jetons d'accès longue durée" },
-      help: "Chaque événement du homelab est publié dans Home Assistant (type server_manager_event) pour tes automatisations.",
+      url: { label: "integrations.homeAssistant.url", placeholder: "http://192.168.1.x:8123" },
+      secret: { label: "integrations.homeAssistant.secret", placeholder: "", placeholderKey: "integrations.homeAssistant.secretPlaceholder" },
+      help: "integrations.homeAssistant.help",
     },
   },
   {
     kind: "OpnSense", name: "OPNsense", category: "Infrastructure",
     fields: {
-      url: { label: "URL d'OPNsense", placeholder: "https://192.168.1.1" },
-      username: { label: "Clé API", placeholder: "Système → Accès → Utilisateurs → Clés API" },
-      secret: { label: "Secret API", placeholder: "" },
+      url: { label: "integrations.opnsense.url", placeholder: "https://192.168.1.1" },
+      username: { label: "integrations.opnsense.username", placeholder: "", placeholderKey: "integrations.opnsense.usernamePlaceholder" },
+      secret: { label: "integrations.opnsense.secret", placeholder: "" },
       tls: true,
-      help: "Trafic et état des interfaces.",
+      help: "integrations.opnsense.help",
     },
   },
   {
     kind: "MikroTik", name: "MikroTik", category: "Infrastructure",
     fields: {
-      url: { label: "URL du routeur", placeholder: "https://192.168.1.1" },
-      username: { label: "Utilisateur", placeholder: "api-read" },
-      secret: { label: "Mot de passe", placeholder: "" },
+      url: { label: "integrations.mikrotik.url", placeholder: "https://192.168.1.1" },
+      username: { label: "integrations.mikrotik.username", placeholder: "api-read" },
+      secret: { label: "integrations.password", placeholder: "" },
       tls: true,
-      help: "RouterOS v7 avec l'API REST (service www-ssl activé).",
+      help: "integrations.mikrotik.help",
     },
   },
   {
     kind: "Ntfy", name: "ntfy", category: "Notifications",
     fields: {
-      url: { label: "Serveur ntfy", placeholder: "https://ntfy.sh" },
-      extra: [{ key: "topic", label: "Topic", placeholder: "homelab-x7q2k9 (difficile à deviner)" }],
-      secret: { label: "Jeton (optionnel)", placeholder: "pour un topic protégé" },
-      help: "Installe l'app ntfy sur ton téléphone et abonne-toi au même topic.",
+      url: { label: "integrations.ntfy.url", placeholder: "https://ntfy.sh" },
+      extra: [{ key: "topic", label: "integrations.ntfy.topic", placeholder: "", placeholderKey: "integrations.ntfy.topicPlaceholder" }],
+      secret: { label: "integrations.ntfy.secret", placeholder: "", placeholderKey: "integrations.ntfy.secretPlaceholder" },
+      help: "integrations.ntfy.help",
     },
   },
   {
     kind: "Discord", name: "Discord", category: "Notifications",
     fields: {
-      secret: { label: "URL du webhook", placeholder: "https://discord.com/api/webhooks/…" },
-      help: "Paramètres du salon → Intégrations → Webhooks → Nouveau webhook → Copier l'URL.",
+      secret: { label: "integrations.discord.secret", placeholder: "https://discord.com/api/webhooks/…" },
+      help: "integrations.discord.help",
     },
   },
   {
     kind: "Telegram", name: "Telegram", category: "Notifications",
     fields: {
-      secret: { label: "Jeton du bot", placeholder: "123456:ABC… (via @BotFather)" },
-      extra: [{ key: "chat_id", label: "Chat ID", placeholder: "via @userinfobot" }],
-      help: "Crée un bot avec @BotFather, envoie-lui un message, puis récupère ton chat_id.",
+      secret: { label: "integrations.telegram.secret", placeholder: "123456:ABC… (via @BotFather)" },
+      extra: [{ key: "chat_id", label: "integrations.telegram.chatId", placeholder: "via @userinfobot" }],
+      help: "integrations.telegram.help",
     },
   },
 ];

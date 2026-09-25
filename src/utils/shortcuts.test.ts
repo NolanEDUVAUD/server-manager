@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createShortcutMatcher, isEditableTarget, NAV_SHORTCUTS, SEQUENCE_TIMEOUT_MS, SHORTCUTS, ShortcutDef, ShortcutId, shortcutKeys } from "./shortcuts";
+import { setLanguage, t } from "../i18n";
 
 const ALL = SHORTCUTS.map((s) => s.id) as ShortcutId[];
 
@@ -18,7 +19,8 @@ describe("table des raccourcis", () => {
     const combos = SHORTCUTS.map((s) => `${s.context}:${"ctrl" in s ? "ctrl+" : ""}${"shift" in s ? "shift+" : ""}${s.keys.join(">")}`);
     expect(new Set(combos).size).toBe(combos.length);
     for (const s of SHORTCUTS) {
-      expect(s.description.length).toBeGreaterThan(5);
+      expect(t(s.descriptionKey).length).toBeGreaterThan(5);
+      expect(t(s.groupKey)).not.toBe(s.groupKey);
       expect(s.keys.length).toBeGreaterThanOrEqual(1);
       expect(s.keys.length).toBeLessThanOrEqual(2);
     }
@@ -81,6 +83,20 @@ describe("table des raccourcis", () => {
     expect(shortcutKeys(byId("go-servers"))).toEqual([["g"], ["s"]]);
     expect(shortcutKeys(byId("close"))).toEqual([["Échap"]]);
     expect(shortcutKeys(byId("palette-next"))).toEqual([["↓"]]);
+    expect(shortcutKeys(byId("lock"))).toEqual([["Ctrl", "Maj", "L"]]);
+  });
+
+  it("noms de touches et descriptions en anglais", () => {
+    const byId = (id: string) => SHORTCUTS.find((s) => s.id === id)! as ShortcutDef;
+    setLanguage("en");
+    try {
+      expect(shortcutKeys(byId("close"))).toEqual([["Esc"]]);
+      expect(shortcutKeys(byId("palette-run"))).toEqual([["Enter"]]);
+      expect(shortcutKeys(byId("lock"))).toEqual([["Ctrl", "Shift", "L"]]);
+      expect(t(byId("go-servers").descriptionKey)).toBe("Go to servers");
+    } finally {
+      setLanguage("fr");
+    }
   });
 
   it("champs de saisie reconnus", () => {

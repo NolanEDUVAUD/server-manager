@@ -3,7 +3,9 @@
  * clavier (`useShortcuts`, palette) et pour l'aide affichée avec « ? ».
  * Ajouter un raccourci ici suffit à le documenter ; les raccourcis de navigation
  * (`to`) sont même branchés automatiquement par la mise en page.
+ * Descriptions et groupes sont des clés de traduction, résolues à l'affichage.
  */
+import { t, TKey } from "../i18n";
 
 /** global : n'importe où · page : pages Serveurs et Services · palette : champ de la palette */
 export type ShortcutContext = "global" | "page" | "palette";
@@ -16,8 +18,8 @@ export interface ShortcutDef {
   ctrl?: boolean;
   /** Avec Maj, en plus de Ctrl (Ctrl+Maj+L) */
   shift?: boolean;
-  description: string;
-  group: string;
+  descriptionKey: TKey;
+  groupKey: TKey;
   context: ShortcutContext;
   /** Actif aussi quand le focus est dans un champ de saisie */
   inInputs?: boolean;
@@ -27,20 +29,20 @@ export interface ShortcutDef {
 
 export const SHORTCUTS = [
   // ── Existant avant la v0.3 : Ctrl+K, Échap et ↑ ↓ Entrée dans la palette ──
-  { id: "palette", keys: ["k"], ctrl: true, description: "Ouvrir ou fermer la palette de commandes", group: "Général", context: "global", inInputs: true },
-  { id: "close", keys: ["Escape"], description: "Fermer la palette, l'aide ou la demande de confirmation", group: "Général", context: "global", inInputs: true },
-  { id: "palette-next", keys: ["ArrowDown"], description: "Résultat suivant", group: "Palette de commandes", context: "palette", inInputs: true },
-  { id: "palette-prev", keys: ["ArrowUp"], description: "Résultat précédent", group: "Palette de commandes", context: "palette", inInputs: true },
-  { id: "palette-run", keys: ["Enter"], description: "Exécuter l'action choisie (les actions sur un serveur demandent confirmation)", group: "Palette de commandes", context: "palette", inInputs: true },
+  { id: "palette", keys: ["k"], ctrl: true, descriptionKey: "shortcuts.desc.palette", groupKey: "shortcuts.groups.general", context: "global", inInputs: true },
+  { id: "close", keys: ["Escape"], descriptionKey: "shortcuts.desc.close", groupKey: "shortcuts.groups.general", context: "global", inInputs: true },
+  { id: "palette-next", keys: ["ArrowDown"], descriptionKey: "shortcuts.desc.paletteNext", groupKey: "shortcuts.groups.palette", context: "palette", inInputs: true },
+  { id: "palette-prev", keys: ["ArrowUp"], descriptionKey: "shortcuts.desc.palettePrev", groupKey: "shortcuts.groups.palette", context: "palette", inInputs: true },
+  { id: "palette-run", keys: ["Enter"], descriptionKey: "shortcuts.desc.paletteRun", groupKey: "shortcuts.groups.palette", context: "palette", inInputs: true },
   // ── Nouveaux ──
-  { id: "lock", keys: ["l"], ctrl: true, shift: true, description: "Verrouiller l'application (si un verrouillage est configuré)", group: "Général", context: "global", inInputs: true },
-  { id: "help", keys: ["?"], description: "Afficher cette aide", group: "Général", context: "global" },
-  { id: "search", keys: ["/"], description: "Aller à la recherche (pages Serveurs et Services)", group: "Pages Serveurs et Services", context: "page" },
-  { id: "go-dashboard", keys: ["g", "d"], description: "Aller au tableau de bord", group: "Navigation", context: "global", to: "/" },
-  { id: "go-servers", keys: ["g", "s"], description: "Aller aux serveurs", group: "Navigation", context: "global", to: "/servers" },
-  { id: "go-services", keys: ["g", "v"], description: "Aller aux services", group: "Navigation", context: "global", to: "/services" },
-  { id: "go-console", keys: ["g", "c"], description: "Aller à la console SSH", group: "Navigation", context: "global", to: "/console" },
-  { id: "go-settings", keys: ["g", "p"], description: "Aller aux paramètres", group: "Navigation", context: "global", to: "/settings" },
+  { id: "lock", keys: ["l"], ctrl: true, shift: true, descriptionKey: "shortcuts.desc.lock", groupKey: "shortcuts.groups.general", context: "global", inInputs: true },
+  { id: "help", keys: ["?"], descriptionKey: "shortcuts.desc.help", groupKey: "shortcuts.groups.general", context: "global" },
+  { id: "search", keys: ["/"], descriptionKey: "shortcuts.desc.search", groupKey: "shortcuts.groups.pages", context: "page" },
+  { id: "go-dashboard", keys: ["g", "d"], descriptionKey: "shortcuts.desc.goDashboard", groupKey: "shortcuts.groups.navigation", context: "global", to: "/" },
+  { id: "go-servers", keys: ["g", "s"], descriptionKey: "shortcuts.desc.goServers", groupKey: "shortcuts.groups.navigation", context: "global", to: "/servers" },
+  { id: "go-services", keys: ["g", "v"], descriptionKey: "shortcuts.desc.goServices", groupKey: "shortcuts.groups.navigation", context: "global", to: "/services" },
+  { id: "go-console", keys: ["g", "c"], descriptionKey: "shortcuts.desc.goConsole", groupKey: "shortcuts.groups.navigation", context: "global", to: "/console" },
+  { id: "go-settings", keys: ["g", "p"], descriptionKey: "shortcuts.desc.goSettings", groupKey: "shortcuts.groups.navigation", context: "global", to: "/settings" },
 ] as const satisfies readonly ShortcutDef[];
 
 export type ShortcutId = (typeof SHORTCUTS)[number]["id"];
@@ -53,11 +55,16 @@ export const NAV_SHORTCUTS: readonly NavShortcut[] = SHORTCUTS.filter((s): s is 
 /** Délai maximal entre les deux touches d'une séquence */
 export const SEQUENCE_TIMEOUT_MS = 1500;
 
-const KEY_LABELS: Record<string, string> = {
-  Escape: "Échap",
+/** Touches dont le nom se traduit (« Échap » / « Esc ») */
+const KEY_NAMES: Record<string, TKey> = {
+  Escape: "shortcuts.keys.escape",
+  Enter: "shortcuts.keys.enter",
+};
+
+/** Touches affichées par un symbole */
+const KEY_SYMBOLS: Record<string, string> = {
   ArrowDown: "↓",
   ArrowUp: "↑",
-  Enter: "Entrée",
 };
 
 /**
@@ -65,8 +72,10 @@ const KEY_LABELS: Record<string, string> = {
  * combinaison (ex. [["Ctrl", "K"]] ou [["g"], ["s"]] pour « g puis s »)
  */
 export function shortcutKeys(def: ShortcutDef): string[][] {
-  const label = (k: string) => KEY_LABELS[k] ?? (def.ctrl ? k.toUpperCase() : k);
-  return def.ctrl ? [["Ctrl", ...(def.shift ? ["Maj"] : []), ...def.keys.map(label)]] : def.keys.map((k) => [label(k)]);
+  const label = (k: string) => (KEY_NAMES[k] ? t(KEY_NAMES[k]) : KEY_SYMBOLS[k] ?? (def.ctrl ? k.toUpperCase() : k));
+  return def.ctrl
+    ? [["Ctrl", ...(def.shift ? [t("shortcuts.keys.shift")] : []), ...def.keys.map(label)]]
+    : def.keys.map((k) => [label(k)]);
 }
 
 /** Évènement clavier réduit à ce qui compte pour la correspondance */

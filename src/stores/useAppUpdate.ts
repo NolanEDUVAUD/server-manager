@@ -2,9 +2,10 @@ import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { AppUpdateCheck, AppUpdateInfo, AppUpdateProgress } from "../types";
+import type { TKey } from "../i18n";
 
-/** Message affiché quand aucune clé publique de signature n'est embarquée */
-export const NOT_CONFIGURED_MESSAGE = "Mises à jour automatiques non configurées pour cette version";
+/** Clé du message affiché quand aucune clé publique de signature n'est embarquée (traduit à l'affichage) */
+export const NOT_CONFIGURED_KEY: TKey = "appUpdate.notConfigured";
 
 export type AppUpdateStatus =
   | "idle"

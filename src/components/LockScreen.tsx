@@ -4,6 +4,7 @@ import { LockStatus } from "../types";
 import { useLockStore } from "../stores/useLockStore";
 import { formatWait, PIN_MAX, unlockMode } from "../utils/lock";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 const inputClass =
   "w-full bg-bg-input border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary text-center " +
@@ -15,6 +16,7 @@ const inputClass =
  */
 export function LockScreen({ status }: { status: LockStatus }) {
   const mode = unlockMode(status);
+  const { t } = useT();
   const { unlockWithPin, unlockWithPassword, unlockWithHello, load } = useLockStore();
   const [secret, setSecret] = useState("");
   const [busy, setBusy] = useState<"secret" | "hello" | null>(null);
@@ -52,13 +54,13 @@ export function LockScreen({ status }: { status: LockStatus }) {
   }
 
   const isPassword = mode === "password";
-  const label = isPassword ? "Mot de passe maître" : "PIN";
+  const label = isPassword ? t("lock.masterPassword") : t("lock.pin");
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Application verrouillée"
+      aria-label={t("lock.screen.label")}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-primary text-text-primary select-none"
     >
       <div className="w-full max-w-sm mx-4 bg-bg-secondary border border-border-primary rounded-win-lg shadow-win-hover p-6 space-y-5 animate-fade-in">
@@ -66,13 +68,13 @@ export function LockScreen({ status }: { status: LockStatus }) {
           <div className="p-3 rounded-full bg-accent-primary/15">
             <Lock size={22} className="text-accent-primary" />
           </div>
-          <h1 className="text-base font-semibold">Server Manager est verrouillé</h1>
+          <h1 className="text-base font-semibold">{t("lock.screen.title")}</h1>
           <p className="text-xs text-text-secondary">
             {isPassword
-              ? "Saisis le mot de passe maître pour déchiffrer tes secrets."
+              ? t("lock.screen.promptPassword")
               : mode === "hello"
-                ? "Déverrouille avec Windows Hello, ou avec ton PIN."
-                : "Saisis ton PIN pour continuer."}
+                ? t("lock.screen.promptHello")
+                : t("lock.screen.promptPin")}
           </p>
         </div>
 
@@ -85,11 +87,11 @@ export function LockScreen({ status }: { status: LockStatus }) {
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-win bg-accent-primary text-white hover:bg-accent-secondary disabled:opacity-60 transition-colors duration-150"
             >
               {busy === "hello" ? <Loader2 size={16} className="animate-spin" /> : <ScanFace size={16} />}
-              {busy === "hello" ? "En attente de Windows Hello…" : "Déverrouiller avec Windows Hello"}
+              {busy === "hello" ? t("lock.screen.helloWaiting") : t("lock.screen.helloButton")}
             </button>
             <div className="flex items-center gap-3 text-[11px] text-text-muted">
               <span className="flex-1 border-t border-border-primary" />
-              ou avec le PIN de secours
+              {t("lock.screen.orBackupPin")}
               <span className="flex-1 border-t border-border-primary" />
             </div>
           </>
@@ -118,7 +120,7 @@ export function LockScreen({ status }: { status: LockStatus }) {
             )}
           >
             {busy === "secret" && <Loader2 size={14} className="animate-spin" />}
-            {busy === "secret" ? "Vérification…" : wait > 0 ? `Patiente ${formatWait(wait)}` : "Déverrouiller"}
+            {busy === "secret" ? t("lock.verifying") : wait > 0 ? t("lock.screen.wait", { time: formatWait(wait) }) : t("lock.screen.unlock")}
           </button>
         </form>
 
@@ -130,8 +132,7 @@ export function LockScreen({ status }: { status: LockStatus }) {
 
         {isPassword && (
           <p className="text-[11px] text-text-muted text-center leading-relaxed">
-            Un mot de passe maître protège la clé des secrets : Windows Hello et le PIN ne permettent pas de la
-            déchiffrer, seul ce mot de passe déverrouille l'application.
+            {t("lock.screen.passwordNote")}
           </p>
         )}
       </div>

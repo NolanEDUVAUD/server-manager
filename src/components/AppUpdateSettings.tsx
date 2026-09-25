@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw, ArrowUpCircle } from "lucide-react";
 import { useStore } from "../stores/useStore";
-import { NOT_CONFIGURED_MESSAGE, useAppUpdate } from "../stores/useAppUpdate";
+import { NOT_CONFIGURED_KEY, useAppUpdate } from "../stores/useAppUpdate";
+import { useT } from "../i18n";
 
 /** Paramètres → Général : mises à jour de l'application */
 export function AppUpdateSettings() {
+  const { t } = useT();
   const checkOnStartup = useStore((s) => s.settings.general.check_updates !== false);
   const updateGeneral = useStore((s) => s.updateGeneral);
   const { info, status, update, error, dismissed, loadInfo, check } = useAppUpdate();
@@ -28,10 +30,10 @@ export function AppUpdateSettings() {
 
   return (
     <>
-      <h2 className="text-text-primary font-medium text-base">Mises à jour de l'application</h2>
+      <h2 className="text-text-primary font-medium text-base">{t("appUpdate.settings.title")}</h2>
       <div className="bg-bg-tertiary rounded-win p-4 card space-y-3 text-sm">
         <div className="flex justify-between">
-          <span className="text-text-secondary">Version installée</span>
+          <span className="text-text-secondary">{t("appUpdate.settings.installedVersion")}</span>
           <span className="text-text-primary font-mono">{info?.current_version ?? "…"}</span>
         </div>
 
@@ -43,9 +45,9 @@ export function AppUpdateSettings() {
             className="accent-accent-primary mt-0.5"
           />
           <span>
-            <span className="text-text-primary">Vérifier les mises à jour au démarrage</span>
+            <span className="text-text-primary">{t("appUpdate.settings.checkOnStartup")}</span>
             <span className="block text-text-muted text-xs mt-0.5">
-              Rien n'est installé sans ta confirmation ; chaque version est signée et vérifiée avant installation.
+              {t("appUpdate.settings.checkOnStartupHelp")}
             </span>
           </span>
         </label>
@@ -58,7 +60,7 @@ export function AppUpdateSettings() {
             className="flex items-center gap-2 px-3 py-1.5 rounded-win border border-border-primary text-text-primary hover:bg-bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw size={13} className={status === "checking" ? "animate-spin" : undefined} />
-            Rechercher maintenant
+            {t("appUpdate.settings.checkNow")}
           </button>
           <UpdateStatusLine
             status={status}
@@ -82,10 +84,11 @@ function UpdateStatusLine({ status, notConfigured, version, current, error, dism
   error: string | null;
   dismissed: boolean;
 }) {
+  const { t } = useT();
   if (notConfigured) {
     return (
       <span className="flex items-center gap-1.5 text-xs text-text-secondary">
-        <Info size={13} className="shrink-0" /> {NOT_CONFIGURED_MESSAGE}
+        <Info size={13} className="shrink-0" /> {t(NOT_CONFIGURED_KEY)}
       </span>
     );
   }
@@ -93,33 +96,33 @@ function UpdateStatusLine({ status, notConfigured, version, current, error, dism
     case "checking":
       return (
         <span className="flex items-center gap-1.5 text-xs text-text-secondary">
-          <Loader2 size={13} className="animate-spin" /> Recherche en cours…
+          <Loader2 size={13} className="animate-spin" /> {t("appUpdate.settings.checking")}
         </span>
       );
     case "up-to-date":
       return (
         <span className="flex items-center gap-1.5 text-xs text-green-400">
-          <CheckCircle2 size={13} /> L'application est à jour{current ? ` (version ${current})` : ""}
+          <CheckCircle2 size={13} /> {current ? t("appUpdate.settings.upToDateVersion", { version: current }) : t("appUpdate.settings.upToDate")}
         </span>
       );
     case "available":
     case "installing":
       return (
         <span className="flex items-center gap-1.5 text-xs text-accent-primary">
-          <ArrowUpCircle size={13} /> Version {version} disponible
+          <ArrowUpCircle size={13} /> {t("appUpdate.available", { version: version ?? "" })}
           {dismissed ? (
             <button onClick={() => useAppUpdate.setState({ dismissed: false })} className="underline hover:no-underline">
-              Afficher la bannière
+              {t("appUpdate.settings.showBanner")}
             </button>
           ) : (
-            <span className="text-text-secondary">: voir la bannière en haut de la fenêtre</span>
+            <span className="text-text-secondary">{t("appUpdate.settings.seeBanner")}</span>
           )}
         </span>
       );
     case "error":
       return (
         <span className="flex items-start gap-1.5 text-xs text-red-400 break-words">
-          <AlertTriangle size={13} className="shrink-0 mt-px" /> {error ?? "Recherche impossible"}
+          <AlertTriangle size={13} className="shrink-0 mt-px" /> {error ?? t("appUpdate.settings.checkFailed")}
         </span>
       );
     default:

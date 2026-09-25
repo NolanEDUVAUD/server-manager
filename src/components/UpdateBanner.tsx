@@ -4,6 +4,7 @@ import { useAppUpdate } from "../stores/useAppUpdate";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { cn } from "../utils";
 import { formatReleaseDate, installConfirmMessage, progressLabel, progressPercent } from "../utils/appUpdate";
+import { useT } from "../i18n";
 
 /**
  * Bannière affichée en haut du contenu quand une nouvelle version signée est
@@ -11,6 +12,7 @@ import { formatReleaseDate, installConfirmMessage, progressLabel, progressPercen
  */
 export function UpdateBanner() {
   const { status, update, error, progress, dismissed, install, dismiss } = useAppUpdate();
+  const { t } = useT();
   const [confirming, setConfirming] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
 
@@ -21,14 +23,14 @@ export function UpdateBanner() {
   const pct = progressPercent(progress);
 
   return (
-    <div role="status" aria-label="Mise à jour disponible" className="shrink-0 border-b border-accent-primary/30 bg-accent-primary/10 px-4 py-2.5 text-sm">
+    <div role="status" aria-label={t("appUpdate.banner.label")} className="shrink-0 border-b border-accent-primary/30 bg-accent-primary/10 px-4 py-2.5 text-sm">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <ArrowUpCircle size={16} className="text-accent-primary shrink-0" />
         <p className="text-text-primary">
-          <span className="font-medium">Version {update.version} disponible</span>
+          <span className="font-medium">{t("appUpdate.available", { version: update.version })}</span>
           <span className="text-text-secondary">
-            {" "}· installée : {update.current_version}
-            {date && ` · publiée le ${date}`}
+            {" "}· {t("appUpdate.banner.installed", { version: update.current_version })}
+            {date && ` · ${t("appUpdate.banner.published", { date })}`}
           </span>
         </p>
 
@@ -39,7 +41,7 @@ export function UpdateBanner() {
               aria-expanded={showNotes}
               className="flex items-center gap-1 px-2 py-1 rounded-win text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
             >
-              Notes de version {showNotes ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              {t("appUpdate.banner.notes")} {showNotes ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
           )}
           {installing ? (
@@ -52,12 +54,12 @@ export function UpdateBanner() {
                 onClick={() => setConfirming(true)}
                 className="px-3 py-1.5 rounded-win text-xs font-medium bg-accent-primary hover:bg-accent-secondary text-white transition-colors"
               >
-                {error ? "Réessayer l'installation" : "Installer et redémarrer"}
+                {error ? t("appUpdate.banner.retry") : t("appUpdate.install")}
               </button>
               <button
                 onClick={dismiss}
-                title="Plus tard"
-                aria-label="Plus tard"
+                title={t("appUpdate.banner.later")}
+                aria-label={t("appUpdate.banner.later")}
                 className="p-1 rounded-win text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
               >
                 <X size={14} />
@@ -91,9 +93,9 @@ export function UpdateBanner() {
 
       {confirming && (
         <ConfirmDialog
-          title={`Installer la version ${update.version} ?`}
+          title={t("appUpdate.confirmTitle", { version: update.version })}
           message={installConfirmMessage(update.version)}
-          confirmLabel="Installer et redémarrer"
+          confirmLabel={t("appUpdate.install")}
           onConfirm={() => {
             setConfirming(false);
             install();

@@ -1,0 +1,96 @@
+import type { Dict } from "..";
+
+export const lock: Dict["lock"] = {
+  gateError: "Unable to read the lock state.",
+  screen: {
+    label: "Application locked",
+    title: "Server Manager is locked",
+    promptPassword: "Enter the master password to decrypt your secrets.",
+    promptHello: "Unlock with Windows Hello, or with your PIN.",
+    promptPin: "Enter your PIN to continue.",
+    helloWaiting: "Waiting for Windows Hello…",
+    helloButton: "Unlock with Windows Hello",
+    orBackupPin: "or with the backup PIN",
+    wait: "Wait {time}",
+    unlock: "Unlock",
+    passwordNote:
+      "A master password protects the secrets key: Windows Hello and the PIN cannot decrypt it, only this password unlocks the application.",
+  },
+  pin: "PIN",
+  masterPassword: "Master password",
+  verifying: "Verifying…",
+  errors: {
+    pinFormat: "The PIN must have {min} to {max} digits",
+    pinMismatch: "The two PINs do not match",
+    masterTooShort: "The master password must have at least {min} characters",
+    masterTooLong: "The master password cannot exceed {max} characters",
+    masterMismatch: "The two entries do not match",
+  },
+  idleNever: "Never",
+  settings: {
+    title: "Security",
+    loadError: "Unable to read the lock configuration: {message}",
+    currentMaster: "Current master password",
+    currentPin: "Current PIN",
+    currentConfirmation: "{label} (confirmation)",
+    saved: "Lock settings saved",
+    pinDisabled: "PIN lock disabled",
+    methodNone: "None",
+    methodNoneHint: "The application never locks (default behavior)",
+    methodPinHint: "{min} to {max} digits, specific to this application",
+    methodHelloHint: "Face, fingerprint or Windows PIN; an application PIN is the fallback",
+    helloUnavailable: "Windows Hello is not set up on this PC",
+    sectionTitle: "Application lock",
+    lockNow: "Lock now",
+    method: "Unlock method",
+    masterActiveNote:
+      "A master password is active: it alone unlocks the application. The PIN and Windows Hello only apply once the master password is removed.",
+    newPin: "New PIN",
+    pinUnchanged: "Unchanged if empty",
+    pinDigits: "{min} to {max} digits",
+    confirmPin: "Confirm PIN",
+    idleAfter: "Lock after inactivity of",
+    idleLabel: "Inactivity delay",
+    sessionLock: "Lock when the Windows session is locked",
+    sessionHelp: "Win+L, sleep with sign-in required",
+    sessionUnavailable: "Detection only available on Windows",
+    save: "Save",
+    suspended:
+      "While locked, resource collection, probes with a secret, notifications whose channel contains a secret and scheduled shutdown or restart tasks are paused; ping keeps running.",
+  },
+  master: {
+    active: "Active",
+    intro:
+      "Optional. It encrypts the key of all your secrets (Argon2id + AES-256-GCM) instead of leaving it readable in Windows Credential Manager. The application then starts locked and only this password unlocks it: Windows Hello and the PIN cannot decrypt the key. A forgotten password makes the secrets unrecoverable.",
+    enterCurrentMaster: "Enter the current master password",
+    enterCurrentPin: "Enter the current PIN",
+    enabled: "Master password enabled",
+    changed: "Master password changed",
+    removed: "Master password removed",
+    newPassword: "New password",
+    newMasterLabel: "New master password",
+    confirm: "Confirm",
+    confirmLabel: "Confirm master password",
+    change: "Change password",
+    remove: "Remove master password",
+    enable: "Enable master password",
+    confirmEnable: {
+      title: "Enable the master password?",
+      label: "Enable",
+      message:
+        "The key that encrypts all your secrets (SSH passwords, Proxmox tokens, integration and service secrets) will be encrypted with this password.\n\nIf you forget it, these secrets are permanently unrecoverable: there is no way to recover them.\n\nThe application will start locked and only this password will unlock it: Windows Hello and the PIN will no longer be enough.",
+    },
+    confirmChange: {
+      title: "Change the master password?",
+      label: "Change",
+      message:
+        "The old password will stop working. The new one will be the only way to unlock the application; if you forget it, the saved secrets are permanently unrecoverable.",
+    },
+    confirmRemove: {
+      title: "Remove the master password?",
+      label: "Remove",
+      message:
+        "The master key will again be stored without a password in Windows Credential Manager. The application will no longer start locked, unless a PIN or Windows Hello is configured.",
+    },
+  },
+};

@@ -7,6 +7,7 @@ import { useLockStore } from "../stores/useLockStore";
 import { ACTIVITY_INTERVAL_MS, createActivityThrottle, isLockShortcut } from "../utils/lock";
 import { applyBrightness, applyDensity, applyFontSize, applyTheme, findTheme } from "../utils/theme";
 import { LockScreen } from "./LockScreen";
+import { setLanguage, useT } from "../i18n";
 
 const ACTIVITY_EVENTS = ["keydown", "mousedown", "mousemove", "wheel", "touchstart"] as const;
 
@@ -23,6 +24,7 @@ export function LockGate({ children }: { children: ReactNode }) {
   const setStatus = useLockStore((s) => s.setStatus);
   const lockNow = useLockStore((s) => s.lockNow);
   const themed = useRef(false);
+  const { t } = useT();
 
   useEffect(() => {
     load();
@@ -33,16 +35,17 @@ export function LockGate({ children }: { children: ReactNode }) {
   }, [load, setStatus]);
 
   // Démarrage verrouillé : le store principal n'est pas encore chargé, on applique
-  // quand même le thème pour que l'écran de verrouillage ait la bonne apparence
+  // quand même le thème (et la langue) pour que l'écran de verrouillage ait la bonne apparence
   useEffect(() => {
     if (!status?.locked || themed.current) return;
     themed.current = true;
     invoke<AppSettings>("get_settings")
-      .then(({ appearance }) => {
+      .then(({ appearance, general }) => {
         applyTheme(findTheme(appearance.active_theme, appearance.custom_themes));
         applyFontSize(appearance.font_size);
         applyBrightness(appearance.brightness);
         applyDensity(appearance.density);
+        setLanguage(general?.language);
       })
       .catch(() => {});
   }, [status?.locked]);
@@ -79,13 +82,13 @@ export function LockGate({ children }: { children: ReactNode }) {
       <div className="flex items-center justify-center h-screen bg-bg-primary text-text-primary">
         <div className="max-w-sm mx-4 text-center space-y-3">
           <AlertTriangle size={22} className="mx-auto text-yellow-400" />
-          <p className="text-sm">Impossible de lire l'état du verrouillage.</p>
+          <p className="text-sm">{t("lock.gateError")}</p>
           <p className="text-xs text-text-muted break-words">{error}</p>
           <button
             onClick={() => load()}
             className="px-4 py-2 text-sm rounded-win bg-accent-primary text-white hover:bg-accent-secondary transition-colors duration-150"
           >
-            Réessayer
+            {t("common.retry")}
           </button>
         </div>
       </div>

@@ -1,0 +1,26 @@
+/** Paramètres → Apparence : éditeur et cartes de thèmes (les noms des thèmes intégrés ne se traduisent pas) */
+export const themes = {
+  name: "Nom du thème",
+  duplicate: "Dupliquer",
+  vars: {
+    bgPrimary: "Fond principal",
+    bgSecondary: "Fond sidebar",
+    bgTertiary: "Fond cards",
+    bgInput: "Fond champs",
+    bgHover: "Fond survol",
+    bgActive: "Fond actif",
+    textPrimary: "Texte principal",
+    textSecondary: "Texte secondaire",
+    textMuted: "Texte discret",
+    accentPrimary: "Accent principal",
+    accentSecondary: "Accent secondaire",
+    accentSuccess: "Succès",
+    accentWarning: "Avertissement",
+    accentError: "Erreur",
+    accentInfo: "Information",
+    borderPrimary: "Bordure principale",
+    borderSecondary: "Bordure subtile",
+    scrollbarThumb: "Scrollbar poignée",
+    scrollbarTrack: "Scrollbar rail",
+  },
+};

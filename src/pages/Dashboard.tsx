@@ -8,10 +8,12 @@ import { Server as ServerType, ServerPayload } from "../types";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
 import { sortFavoritesFirst } from "../utils/filters";
+import { useT } from "../i18n";
 
 export function Dashboard() {
   const { servers, statuses, pingAll, addServer, updateServer, deleteServer } = useStore();
   const toast = useToast();
+  const { t } = useT();
 
   const [refreshing, setRefreshing] = useState(false);
   const [editingServer, setEditingServer] = useState<ServerType | null>(null);
@@ -34,7 +36,7 @@ export function Dashboard() {
   async function handleAddServer(payload: ServerPayload) {
     try {
       await addServer(payload);
-      toast.success(`Serveur "${payload.name}" ajouté`);
+      toast.success(t("dashboard.added", { name: payload.name }));
       setShowAddForm(false);
     } catch (e) {
       toast.error(String(e));
@@ -46,7 +48,7 @@ export function Dashboard() {
     if (!editingServer) return;
     try {
       await updateServer(editingServer.id, payload);
-      toast.success(`Serveur "${payload.name}" mis à jour`);
+      toast.success(t("dashboard.updated", { name: payload.name }));
       setEditingServer(null);
     } catch (e) {
       toast.error(String(e));
@@ -58,7 +60,7 @@ export function Dashboard() {
     if (!deletingServer) return;
     try {
       await deleteServer(deletingServer.id);
-      toast.success(`Serveur "${deletingServer.name}" supprimé`);
+      toast.success(t("dashboard.deleted", { name: deletingServer.name }));
     } catch (e) {
       toast.error(String(e));
     } finally {
@@ -71,11 +73,11 @@ export function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Dashboard</h1>
+          <h1 className="text-xl font-bold text-text-primary">{t("dashboard.title")}</h1>
           <p className="text-sm text-text-secondary mt-0.5">
             {servers.length === 0
-              ? "Aucun serveur configuré"
-              : `${onlineCount} / ${servers.length} serveur${servers.length > 1 ? "s" : ""} en ligne`}
+              ? t("dashboard.noServers")
+              : t("dashboard.onlineSummary", { online: onlineCount, count: servers.length })}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -87,7 +89,7 @@ export function Dashboard() {
                        transition-all disabled:opacity-50"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-            Rafraîchir
+            {t("dashboard.refresh")}
           </button>
           <button
             onClick={() => setShowAddForm(true)}
@@ -95,7 +97,7 @@ export function Dashboard() {
                        bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
           >
             <Server size={14} />
-            Ajouter
+            {t("common.add")}
           </button>
         </div>
       </div>
@@ -110,7 +112,7 @@ export function Dashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-text-primary">{servers.length}</p>
-                <p className="text-xs text-text-secondary">Serveurs</p>
+                <p className="text-xs text-text-secondary">{t("dashboard.statServers")}</p>
               </div>
             </div>
           </div>
@@ -121,7 +123,7 @@ export function Dashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-400">{onlineCount}</p>
-                <p className="text-xs text-text-secondary">En ligne</p>
+                <p className="text-xs text-text-secondary">{t("common.online")}</p>
               </div>
             </div>
           </div>
@@ -134,7 +136,7 @@ export function Dashboard() {
                 <p className="text-2xl font-bold text-red-400">
                   {servers.length - onlineCount}
                 </p>
-                <p className="text-xs text-text-secondary">Hors ligne</p>
+                <p className="text-xs text-text-secondary">{t("common.offline")}</p>
               </div>
             </div>
           </div>
@@ -147,15 +149,15 @@ export function Dashboard() {
           <div className="p-4 rounded-full bg-bg-tertiary border border-border-primary mb-4">
             <Server size={32} className="text-text-secondary" />
           </div>
-          <h3 className="text-text-primary font-semibold mb-2">Aucun serveur configuré</h3>
+          <h3 className="text-text-primary font-semibold mb-2">{t("dashboard.noServers")}</h3>
           <p className="text-text-secondary text-sm mb-4">
-            Ajoutez votre premier serveur pour commencer à le gérer
+            {t("dashboard.emptyHint")}
           </p>
           <button
             onClick={() => setShowAddForm(true)}
             className="px-5 py-2.5 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
           >
-            Ajouter un serveur
+            {t("dashboard.addServer")}
           </button>
         </div>
       ) : (
@@ -187,9 +189,9 @@ export function Dashboard() {
       )}
       {deletingServer && (
         <ConfirmDialog
-          title={`Supprimer ${deletingServer.name}`}
-          message="Cette action est irréversible. Le serveur sera retiré de tous les groupes."
-          confirmLabel="Supprimer"
+          title={t("dashboard.deleteTitle", { name: deletingServer.name })}
+          message={t("dashboard.deleteMessage")}
+          confirmLabel={t("common.delete")}
           dangerous
           onConfirm={handleDeleteServer}
           onCancel={() => setDeletingServer(null)}

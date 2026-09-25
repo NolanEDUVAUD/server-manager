@@ -1,0 +1,28 @@
+/** Barre latérale : navigation, verrouillage, compteur en ligne */
+export const layout = {
+  nav: {
+    dashboard: "Dashboard",
+    servers: "Serveurs",
+    groups: "Groupes",
+    power: "Arrêt / démarrage",
+    resources: "Ressources",
+    services: "Services",
+    network: "Réseau",
+    docker: "Docker",
+    console: "Console",
+    batch: "Tâches en lot",
+    updates: "Mises à jour",
+    history: "Historique",
+    logs: "Logs",
+    alerts: "Alertes",
+    scheduler: "Planificateur",
+    proxmox: "Proxmox",
+    backups: "Sauvegardes",
+    web: "Onglets web",
+    settings: "Paramètres",
+  },
+  lock: "Verrouiller",
+  lockNowTitle: "Verrouiller maintenant ({combo})",
+  onlineTitle: "{online}/{total} en ligne",
+  onlineSuffix: "/{total} en ligne",
+};

@@ -26,9 +26,11 @@ import { useMetrics } from "./hooks/useMetrics";
 import { useEventFeed } from "./hooks/useEventFeed";
 import { useTraySync } from "./hooks/useTraySync";
 import { useAppUpdateCheck } from "./hooks/useAppUpdateCheck";
+import { useT } from "./i18n";
 
 function AppContent() {
   const { initialize, loading } = useStore();
+  const { t } = useT();
 
   // Charger les données Tauri au démarrage
   useEffect(() => {
@@ -55,7 +57,7 @@ function AppContent() {
       <div className="flex items-center justify-center h-screen bg-bg-primary">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-accent-primary/30 border-t-accent-primary rounded-full animate-spin" />
-          <p className="text-text-secondary text-sm">Chargement…</p>
+          <p className="text-text-secondary text-sm">{t("common.loading")}</p>
         </div>
       </div>
     );

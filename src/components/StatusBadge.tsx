@@ -1,5 +1,6 @@
 import { cn, formatLatency } from "../utils";
 import { ServerStatus } from "../types";
+import { useT } from "../i18n";
 
 interface StatusBadgeProps {
   status?: ServerStatus;
@@ -7,6 +8,7 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
+  const { t } = useT();
   if (!status) {
     return (
       <span
@@ -17,7 +19,7 @@ export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
         )}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
-        Inconnu
+        {t("common.unknown")}
       </span>
     );
   }
@@ -32,7 +34,7 @@ export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
         )}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-        En ligne
+        {t("common.online")}
         {status.latency_ms != null && (
           <span className="opacity-70">{formatLatency(status.latency_ms)}</span>
         )}
@@ -49,7 +51,7 @@ export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
       )}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-      Hors ligne
+      {t("common.offline")}
     </span>
   );
 }

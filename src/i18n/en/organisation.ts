@@ -1,0 +1,31 @@
+import type { Dict } from "..";
+
+export const organisation: Dict["organisation"] = {
+  dialogLabel: "Organize tags and folders",
+  title: "Organize",
+  intro: "Tags and folders apply to servers and services alike. Groups remain reserved for batch actions.",
+  color: "Color {color}",
+  customColor: "Custom color",
+  name: "Name",
+  newItemName: "New item name",
+  newName: "New name",
+  save: "Save",
+  rename: "Rename",
+  services: { one: "{count} service", other: "{count} services" },
+  serversAndServices: "{servers} and {services}",
+  deleteTagMessage: "Tag \"{name}\" will be deleted and removed from {targets}.\nThese servers and services are not deleted.",
+  deleteFolderMessage:
+    "Folder \"{name}\" will be deleted: {targets} will move to \"No folder\".\nThese servers and services are not deleted.",
+  tags: "Tags",
+  noTags: "No tags. Examples: \"Production\", \"Media\", \"To watch\".",
+  editTag: "Edit tag {name}",
+  deleteTag: "Delete tag {name}",
+  newTag: "New tag",
+  folders: "Folders",
+  noFolders: "No folders. A server or service goes in a single folder (examples: \"Home\", \"Lab\").",
+  renameFolder: "Rename folder {name}",
+  deleteFolder: "Delete folder {name}",
+  newFolder: "New folder",
+  deleteTagTitle: "Delete tag \"{name}\"",
+  deleteFolderTitle: "Delete folder \"{name}\"",
+};

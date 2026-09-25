@@ -1,27 +1,47 @@
+import { t } from "../i18n";
+import type { Dict } from "../i18n";
+
 /** Modules optionnels : chacun peut être masqué de la barre latérale selon ce qu'on utilise */
 export interface AppModule {
   key: string;
-  label: string;
-  description: string;
+  /** Libellé et description traduits dans la langue active, lus au moment de l'affichage */
+  readonly label: string;
+  readonly description: string;
   /** Proposé par défaut au premier lancement */
   essential: boolean;
 }
 
+type ModuleKey = keyof Dict["modules"];
+
+/** Textes résolus à chaque lecture (jamais à l'import) : ils suivent le changement de langue */
+function defineModule(key: ModuleKey, essential: boolean): AppModule {
+  return {
+    key,
+    essential,
+    get label() {
+      return t(`modules.${key}.label` as const);
+    },
+    get description() {
+      return t(`modules.${key}.description` as const);
+    },
+  };
+}
+
 export const MODULES: AppModule[] = [
-  { key: "power", label: "Arrêt / démarrage", description: "Éteindre ou rallumer tout le lab dans le bon ordre", essential: true },
-  { key: "resources", label: "Ressources", description: "CPU, RAM et disques des serveurs en temps réel", essential: true },
-  { key: "services", label: "Services", description: "Surveiller n'importe quel service web (catalogue Home Assistant, Jellyfin, Pi-hole…)", essential: true },
-  { key: "console", label: "Console SSH", description: "Terminal SSH intégré avec onglets", essential: true },
-  { key: "history", label: "Historique", description: "Journal des coupures, redémarrages et actions", essential: true },
-  { key: "alerts", label: "Alertes", description: "Notifications ntfy, Discord, Telegram…", essential: true },
-  { key: "network", label: "Réseau", description: "Appareils du réseau local et adresses MAC", essential: false },
-  { key: "docker", label: "Docker", description: "Conteneurs et images des hôtes Docker", essential: false },
-  { key: "batch", label: "Tâches en lot", description: "Un script sur plusieurs serveurs, playbooks Ansible", essential: false },
-  { key: "updates", label: "Mises à jour", description: "Paquets apt en attente et conteneurs dépassés", essential: false },
-  { key: "logs", label: "Logs", description: "Journaux centralisés dans Grafana Loki", essential: false },
-  { key: "scheduler", label: "Planificateur", description: "Tâches programmées et cronjobs sur les serveurs", essential: false },
-  { key: "proxmox", label: "Proxmox", description: "Cluster Proxmox VE : VM, conteneurs, sauvegardes, migration", essential: false },
-  { key: "web", label: "Onglets web", description: "Interfaces web des services dans l'application", essential: false },
+  defineModule("power", true),
+  defineModule("resources", true),
+  defineModule("services", true),
+  defineModule("console", true),
+  defineModule("history", true),
+  defineModule("alerts", true),
+  defineModule("network", false),
+  defineModule("docker", false),
+  defineModule("batch", false),
+  defineModule("updates", false),
+  defineModule("logs", false),
+  defineModule("scheduler", false),
+  defineModule("proxmox", false),
+  defineModule("web", false),
 ];
 
 /** Modules masqués pour ne garder que la sélection (utilisé par l'écran d'accueil) */
