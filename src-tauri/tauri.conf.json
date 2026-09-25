@@ -32,8 +32,8 @@
     }
   },
   "plugins": {
-    "dialog": {},
-    "notification": {}
+    "dialog": null,
+    "notification": null
   },
   "bundle": {
     "active": true,
