@@ -94,7 +94,7 @@ pub async fn wake_group(
 }
 
 // ── Construire et envoyer le magic packet ─────────────────────────────────
-fn send_magic_packet(mac_address: &str) -> Result<(), String> {
+pub(crate) fn send_magic_packet(mac_address: &str) -> Result<(), String> {
     // Parser l'adresse MAC (format XX:XX:XX:XX:XX:XX)
     let mac_bytes: Vec<u8> = mac_address
         .split(':')

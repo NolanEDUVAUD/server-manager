@@ -22,6 +22,7 @@ import {
   DashboardTab,
   MetricsSample,
   AppEvent,
+  Schedule,
   TerminalSession,
   ServerMetrics,
 } from "../types";
@@ -121,6 +122,13 @@ interface AppStore {
   addEvent: (event: AppEvent) => void;
   clearEvents: () => Promise<void>;
 
+  // ── Planificateur ──────────────────────────────────────────────────────
+  schedules: Schedule[];
+  loadSchedules: () => Promise<void>;
+  saveSchedule: (schedule: Schedule) => Promise<Schedule>;
+  deleteSchedule: (id: string) => Promise<void>;
+  runScheduleNow: (id: string) => Promise<void>;
+
   // ── Console SSH ────────────────────────────────────────────────────────
   terminalSessions: TerminalSession[];
   activeTerminalKey: string | null;
@@ -189,6 +197,7 @@ export const useStore = create<AppStore>((set, get) => ({
   terminalSessions: [],
   activeTerminalKey: null,
   events: [],
+  schedules: [],
 
   // ── Initialisation ─────────────────────────────────────────────────────
   initialize: async () => {
@@ -561,6 +570,30 @@ export const useStore = create<AppStore>((set, get) => ({
   clearEvents: async () => {
     await invoke("clear_events");
     set({ events: [] });
+  },
+
+  // ── Planificateur ──────────────────────────────────────────────────────
+  loadSchedules: async () => {
+    set({ schedules: await invoke<Schedule[]>("get_schedules") });
+  },
+
+  saveSchedule: async (schedule) => {
+    const saved = await invoke<Schedule>("save_schedule", { schedule });
+    set((s) => ({
+      schedules: s.schedules.some((x) => x.id === saved.id)
+        ? s.schedules.map((x) => (x.id === saved.id ? saved : x))
+        : [...s.schedules, saved],
+    }));
+    return saved;
+  },
+
+  deleteSchedule: async (id) => {
+    await invoke("delete_schedule", { id });
+    set((s) => ({ schedules: s.schedules.filter((x) => x.id !== id) }));
+  },
+
+  runScheduleNow: async (id) => {
+    await invoke("run_schedule_now", { id });
   },
 
   // ── Console SSH ────────────────────────────────────────────────────────

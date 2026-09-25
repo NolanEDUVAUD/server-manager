@@ -3,6 +3,7 @@ pub mod events;
 pub mod groups;
 pub mod metrics;
 pub mod ping;
+pub mod schedules;
 pub mod proxmox;
 pub mod servers;
 pub mod settings;

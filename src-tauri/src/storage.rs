@@ -81,6 +81,7 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
             settings: crate::models::AppSettings::from_v1(v1.settings),
             encryption_salt: v1.encryption_salt,
             proxmox_connections: Vec::new(),
+            schedules: Vec::new(),
         };
         // Sauvegarder immédiatement en format v2
         if let Ok(json) = serde_json::to_string_pretty(&data) {

@@ -264,3 +264,21 @@ export interface ServerEventStats {
   outages: number;
   downtime_ms: number;
 }
+
+// ─── Planificateur ──────────────────────────────────────────────────────────
+
+export type ScheduleAction = "Wake" | "Shutdown" | "Reboot";
+
+export interface Schedule {
+  /** Vide pour une nouvelle tâche (généré côté Rust) */
+  id: string;
+  name: string;
+  enabled: boolean;
+  action: ScheduleAction;
+  target: { kind: "Server" | "Group"; id: string };
+  /** 0 = lundi … 6 = dimanche */
+  days: number[];
+  /** « HH:MM », heure locale */
+  time: string;
+  last_run: number | null;
+}

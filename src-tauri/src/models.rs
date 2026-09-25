@@ -297,6 +297,8 @@ pub struct AppData {
     pub encryption_salt: String,
     #[serde(default)]
     pub proxmox_connections: Vec<ProxmoxConnection>,
+    #[serde(default)]
+    pub schedules: Vec<crate::scheduler::Schedule>,
 }
 
 impl Default for AppData {
@@ -307,6 +309,7 @@ impl Default for AppData {
             settings: AppSettings::default(),
             encryption_salt: crate::crypto::generate_salt(),
             proxmox_connections: Vec::new(),
+            schedules: Vec::new(),
         }
     }
 }

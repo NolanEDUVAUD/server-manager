@@ -5,10 +5,11 @@ mod events;
 mod metrics;
 mod models;
 mod proxmox;
+mod scheduler;
 mod storage;
 mod terminal;
 
-use commands::{dashboards, events as events_cmd, groups, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{dashboards, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -24,6 +25,8 @@ pub fn run() {
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
             app.manage(events::EventLog::load(app.handle()));
+            // Boucle du planificateur (tâches WoL / arrêt programmées)
+            scheduler::start(app.handle().clone());
             Ok(())
         })
         .plugin(tauri_plugin_dialog::init())
@@ -89,6 +92,11 @@ pub fn run() {
             events_cmd::get_events,
             events_cmd::get_event_stats,
             events_cmd::clear_events,
+            // ── Planificateur ─────────────────────────────────
+            schedules::get_schedules,
+            schedules::save_schedule,
+            schedules::delete_schedule,
+            schedules::run_schedule_now,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,
