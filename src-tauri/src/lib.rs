@@ -1,11 +1,12 @@
 mod commands;
 mod crypto;
 mod dashboard_state;
+mod metrics;
 mod models;
 mod proxmox;
 mod storage;
 
-use commands::{dashboards, groups, ping, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{dashboards, groups, metrics as metrics_cmd, ping, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -78,6 +79,8 @@ pub fn run() {
             dashboards::close_dashboard_tab,
             dashboards::set_dashboard_tab_visible,
             dashboards::resize_dashboard_tab,
+            // ── Monitoring des ressources ─────────────────────
+            metrics_cmd::get_server_metrics,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

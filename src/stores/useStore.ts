@@ -20,6 +20,8 @@ import {
   VmAction,
   VmType,
   DashboardTab,
+  MetricsSample,
+  ServerMetrics,
 } from "../types";
 import {
   applyTheme,
@@ -30,6 +32,10 @@ import {
   BUILTIN_THEMES,
   ONE_HALF_DARK,
 } from "../utils/theme";
+import { appendSample } from "../utils";
+
+/** 120 points × 15 s = 30 min d'historique par serveur */
+export const METRICS_HISTORY_MAX = 120;
 
 // ── État global de l'application ──────────────────────────────────────────
 interface AppStore {
@@ -99,6 +105,12 @@ interface AppStore {
   // ── Onglets web intégrés ───────────────────────────────────────────────
   dashboardTabs: DashboardTab[];
   activeDashboardTabLabel: string | null;
+
+  // ── Monitoring des ressources ──────────────────────────────────────────
+  metrics: Record<string, ServerMetrics>;
+  metricsErrors: Record<string, string>;
+  metricsHistory: Record<string, MetricsSample[]>;
+  fetchMetrics: (serverId: string) => Promise<void>;
   openDashboardTab: (tab: DashboardTab, x: number, y: number, width: number, height: number) => Promise<void>;
   closeDashboardTab: (label: string) => Promise<void>;
   setActiveDashboardTab: (label: string | null) => Promise<void>;
@@ -132,6 +144,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     ssh_timeout_secs: 30,
     proxmox_poll_interval_secs: 15,
     proxmox_timeout_secs: 10,
+    metrics_enabled: true,
+    metrics_interval_secs: 15,
   },
 };
 
@@ -150,6 +164,9 @@ export const useStore = create<AppStore>((set, get) => ({
   proxmoxErrors: {},
   dashboardTabs: [],
   activeDashboardTabLabel: null,
+  metrics: {},
+  metricsErrors: {},
+  metricsHistory: {},
 
   // ── Initialisation ─────────────────────────────────────────────────────
   initialize: async () => {
@@ -479,6 +496,36 @@ export const useStore = create<AppStore>((set, get) => ({
     }
   },
 
+  // ── Monitoring des ressources ──────────────────────────────────────────
+  fetchMetrics: async (serverId) => {
+    try {
+      const m = await invoke<ServerMetrics>("get_server_metrics", { serverId });
+      const sample: MetricsSample = {
+        t: Date.now(),
+        cpu: m.cpu_percent,
+        mem: m.mem_total_bytes > 0 ? (m.mem_used_bytes * 100) / m.mem_total_bytes : 0,
+      };
+      set((s) => {
+        const { [serverId]: _cleared, ...metricsErrors } = s.metricsErrors;
+        return {
+          metrics: { ...s.metrics, [serverId]: m },
+          metricsErrors,
+          metricsHistory: {
+            ...s.metricsHistory,
+            [serverId]: appendSample(s.metricsHistory[serverId], sample, METRICS_HISTORY_MAX),
+          },
+        };
+      });
+    } catch (e) {
+      // On retire les valeurs périmées pour ne pas les afficher comme actuelles ;
+      // l'historique déjà collecté reste visible.
+      set((s) => {
+        const { [serverId]: _stale, ...metrics } = s.metrics;
+        return { metrics, metricsErrors: { ...s.metricsErrors, [serverId]: String(e) } };
+      });
+    }
+  },
+
   setActiveDashboardTab: async (label) => {
     const prev = get().activeDashboardTabLabel;
     if (prev === label) return;
@@ -548,6 +595,8 @@ export const useStore = create<AppStore>((set, get) => ({
         ssh_timeout_secs: 30,
         proxmox_poll_interval_secs: 15,
         proxmox_timeout_secs: 10,
+        metrics_enabled: true,
+        metrics_interval_secs: 15,
       },
     };
     await invoke("update_settings", { settings: defaults });

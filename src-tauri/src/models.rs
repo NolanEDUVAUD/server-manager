@@ -189,6 +189,10 @@ pub struct NetworkSettings {
     pub proxmox_poll_interval_secs: u64,
     #[serde(default = "default_proxmox_timeout")]
     pub proxmox_timeout_secs: u64,
+    #[serde(default = "default_metrics_enabled")]
+    pub metrics_enabled: bool,
+    #[serde(default = "default_metrics_interval")]
+    pub metrics_interval_secs: u64,
 }
 
 fn default_proxmox_poll_interval() -> u64 {
@@ -199,6 +203,14 @@ fn default_proxmox_timeout() -> u64 {
     10
 }
 
+fn default_metrics_enabled() -> bool {
+    true
+}
+
+fn default_metrics_interval() -> u64 {
+    15
+}
+
 impl Default for NetworkSettings {
     fn default() -> Self {
         Self {
@@ -207,6 +219,8 @@ impl Default for NetworkSettings {
             ssh_timeout_secs: 30,
             proxmox_poll_interval_secs: default_proxmox_poll_interval(),
             proxmox_timeout_secs: default_proxmox_timeout(),
+            metrics_enabled: default_metrics_enabled(),
+            metrics_interval_secs: default_metrics_interval(),
         }
     }
 }
@@ -230,6 +244,8 @@ impl AppSettings {
                 ssh_timeout_secs: v1.ssh_timeout_secs,
                 proxmox_poll_interval_secs: default_proxmox_poll_interval(),
                 proxmox_timeout_secs: default_proxmox_timeout(),
+            metrics_enabled: default_metrics_enabled(),
+            metrics_interval_secs: default_metrics_interval(),
             },
         }
     }

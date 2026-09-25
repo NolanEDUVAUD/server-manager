@@ -373,6 +373,20 @@ function SectionNetwork() {
           value={net.proxmox_timeout_secs}
           onChange={v => setNet(n => ({ ...n, proxmox_timeout_secs: Number(v) }))}
         />
+        <ToggleRow
+          label="Monitoring des ressources"
+          description="Collecte CPU / RAM / disques des serveurs en ligne via SSH"
+          checked={net.metrics_enabled}
+          onChange={v => setNet(n => ({ ...n, metrics_enabled: v }))}
+        />
+        <InputRow
+          label="Intervalle du monitoring (secondes)"
+          type="number"
+          min={5}
+          max={300}
+          value={net.metrics_interval_secs}
+          onChange={v => setNet(n => ({ ...n, metrics_interval_secs: Number(v) }))}
+        />
       </div>
       <button
         onClick={handleSave}

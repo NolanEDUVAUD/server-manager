@@ -73,6 +73,8 @@ export interface NetworkSettings {
   ssh_timeout_secs: number;
   proxmox_poll_interval_secs: number;
   proxmox_timeout_secs: number;
+  metrics_enabled: boolean;
+  metrics_interval_secs: number;
 }
 
 export interface AppSettings {
@@ -190,4 +192,30 @@ export interface DashboardTab {
   connectionId: string;
   url: string;
   title: string;
+}
+
+// ─── Monitoring des ressources ──────────────────────────────────────────────
+
+export interface DiskUsage {
+  name: string;
+  mount: string;
+  fs_type: string;
+  total_bytes: number;
+  used_bytes: number;
+}
+
+export interface ServerMetrics {
+  cpu_percent: number;
+  mem_total_bytes: number;
+  mem_used_bytes: number;
+  uptime_secs: number;
+  load_avg: [number, number, number];
+  disks: DiskUsage[];
+}
+
+/** Point d'historique en mémoire (CPU et RAM en %) */
+export interface MetricsSample {
+  t: number;
+  cpu: number;
+  mem: number;
 }

@@ -28,7 +28,7 @@ impl client::Handler for SshHandler {
 }
 
 // ── Fonction interne d'exécution SSH ──────────────────────────────────────
-async fn execute_ssh(
+pub(crate) async fn execute_ssh(
     ip: &str,
     port: u16,
     user: &str,

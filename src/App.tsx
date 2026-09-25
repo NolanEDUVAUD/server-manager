@@ -6,9 +6,11 @@ import { Servers } from "./pages/Servers";
 import { Groups } from "./pages/Groups";
 import { Proxmox } from "./pages/Proxmox";
 import { Dashboards } from "./pages/Dashboards";
+import { Resources } from "./pages/Resources";
 import { Settings } from "./pages/Settings";
 import { useStore } from "./stores/useStore";
 import { usePing } from "./hooks/usePing";
+import { useMetrics } from "./hooks/useMetrics";
 
 function AppContent() {
   const { initialize, loading } = useStore();
@@ -20,6 +22,9 @@ function AppContent() {
 
   // Démarrer le ping automatique
   usePing();
+
+  // Collecter les ressources (CPU / RAM / disques) des serveurs en ligne
+  useMetrics();
 
   if (loading) {
     return (
@@ -38,6 +43,7 @@ function AppContent() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/servers" element={<Servers />} />
         <Route path="/groups" element={<Groups />} />
+        <Route path="/resources" element={<Resources />} />
         <Route path="/proxmox" element={<Proxmox />} />
         <Route path="/dashboards" element={<Dashboards />} />
         <Route path="/settings" element={<Settings />} />

@@ -1,5 +1,6 @@
 pub mod dashboards;
 pub mod groups;
+pub mod metrics;
 pub mod ping;
 pub mod proxmox;
 pub mod servers;

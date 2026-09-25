@@ -41,7 +41,27 @@ export function formatBytes(bytes: number): string {
   if (gb < 1) {
     return `${Math.round(bytes / 1024 / 1024)} Mo`;
   }
+  if (gb >= 1024) {
+    return `${(gb / 1024).toFixed(1)} To`;
+  }
   return `${gb.toFixed(1)} Go`;
+}
+
+export function formatUptime(secs: number): string {
+  const days = Math.floor(secs / 86400);
+  const hours = Math.floor((secs % 86400) / 3600);
+  const minutes = Math.floor((secs % 3600) / 60);
+  if (days > 0) return `${days} j ${hours} h`;
+  if (hours > 0) return `${hours} h ${minutes} min`;
+  return `${minutes} min`;
+}
+
+// ── Historique de métriques ───────────────────────────────────────────────
+
+/** Ajoute un point à un historique borné (fenêtre glissante), sans muter l'original. */
+export function appendSample<T>(history: T[] | undefined, sample: T, max: number): T[] {
+  const next = [...(history ?? []), sample];
+  return next.length > max ? next.slice(next.length - max) : next;
 }
 
 // ── Génération d'IDs ──────────────────────────────────────────────────────
