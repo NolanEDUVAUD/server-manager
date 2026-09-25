@@ -179,31 +179,28 @@ pub fn generate_key() -> [u8; 32] {
 /// de l'ancienne clé vers la nouvelle. Tout ou rien : en cas d'échec, `data`
 /// n'est pas modifié.
 pub fn reencrypt_all(data: &mut AppData, from: &[u8; 32], to: &[u8; 32]) -> Result<(), String> {
-    let servers = data
-        .servers
+    let mut fields = secret_fields_mut(data);
+    let reencrypted = fields
         .iter()
-        .map(|s| encrypt(&decrypt(&s.ssh_password, from)?, to))
+        .map(|f| encrypt(&Zeroizing::new(decrypt(f, from)?), to))
         .collect::<Result<Vec<_>, String>>()?;
-    let tokens = data
-        .proxmox_connections
-        .iter()
-        .map(|c| encrypt(&decrypt(&c.token_secret, from)?, to))
-        .collect::<Result<Vec<_>, String>>()?;
-    let integrations = data
-        .integrations
-        .iter()
-        .map(|i| encrypt(&decrypt(&i.secret, from)?, to))
-        .collect::<Result<Vec<_>, String>>()?;
-    for (s, enc) in data.servers.iter_mut().zip(servers) {
-        s.ssh_password = enc;
-    }
-    for (c, enc) in data.proxmox_connections.iter_mut().zip(tokens) {
-        c.token_secret = enc;
-    }
-    for (i, enc) in data.integrations.iter_mut().zip(integrations) {
-        i.secret = enc;
+    for (field, enc) in fields.iter_mut().zip(reencrypted) {
+        **field = enc;
     }
     Ok(())
+}
+
+/// Tous les champs secrets (chiffrés par la clé maître) de la configuration. Source
+/// unique utilisée par le rechiffrement (`reencrypt_all`) et par les exports JSON, qui
+/// les vident : un nouveau secret ajouté ici est automatiquement couvert par les deux.
+pub fn secret_fields_mut(data: &mut AppData) -> Vec<&mut String> {
+    let mut fields: Vec<&mut String> = Vec::new();
+    fields.extend(data.servers.iter_mut().map(|s| &mut s.ssh_password));
+    fields.extend(data.proxmox_connections.iter_mut().map(|c| &mut c.token_secret));
+    fields.extend(data.integrations.iter_mut().map(|i| &mut i.secret));
+    fields.extend(data.probes.iter_mut().map(|p| &mut p.secret));
+    fields.push(&mut data.backup.passphrase);
+    fields
 }
 
 /// Génère un salt aléatoire de 32 bytes encodé en base64
@@ -412,6 +409,37 @@ pub fn verify_secret_phc(secret: &[u8], phc: &str) -> bool {
 #[cfg(test)]
 pub(crate) const TEST_KDF_PARAMS: KdfParams = KdfParams { m_kib: 64, t: 1, p: 1 };
 
+/// Données de test partagées : une configuration où chaque type de secret est renseigné
+#[cfg(test)]
+pub(crate) mod test_support {
+    use super::*;
+
+    /// Configuration où chaque type de secret est renseigné (chiffré par `key`)
+    pub(crate) fn data_with_every_secret(key: &[u8; 32]) -> AppData {
+        let mut data = AppData::default();
+        let enc = |s: &str| encrypt(s, key).unwrap();
+        data.servers.push(crate::models::Server::new(
+            "minipc".into(), "192.168.1.10".into(), String::new(), "root".into(), enc("secret-ssh"), 22, crate::models::OsType::Linux, None, None,
+        ));
+        data.proxmox_connections.push(crate::proxmox::models::ProxmoxConnection::new(
+            "Lab".into(), "https://192.168.1.10:8006".into(), "root@pam!spm".into(), enc("secret-proxmox"), false,
+        ));
+        let mut integration: crate::integrations::Integration =
+            serde_json::from_value(serde_json::json!({ "kind": "Ntfy", "enabled": true, "url": "https://ntfy.example" })).unwrap();
+        integration.secret = enc("secret-ntfy");
+        data.integrations.push(integration);
+        let mut probe: crate::probes::Probe = serde_json::from_value(serde_json::json!({
+            "id": "p", "name": "API", "enabled": true, "interval_secs": 60,
+            "kind": { "type": "Http", "url": "https://svc.example/api" }, "auth": { "type": "Bearer" }
+        }))
+        .unwrap();
+        probe.secret = enc("secret-sonde");
+        data.probes.push(probe);
+        data.backup.passphrase = enc("secret-sauvegarde");
+        data
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -452,6 +480,16 @@ mod tests {
         }
         assert!(reencrypt_all(&mut data, &legacy, &generate_key()).is_err());
         assert_eq!(data.servers[0].ssh_password, ok);
+    }
+
+    #[test]
+    fn every_secret_field_is_reencrypted() {
+        let old = generate_key();
+        let new = generate_key();
+        let mut data = test_support::data_with_every_secret(&old);
+        reencrypt_all(&mut data, &old, &new).unwrap();
+        let plain: Vec<String> = secret_fields_mut(&mut data).iter().map(|f| decrypt(f, &new).unwrap()).collect();
+        assert_eq!(plain, ["secret-ssh", "secret-proxmox", "secret-ntfy", "secret-sonde", "secret-sauvegarde"]);
     }
 
     #[test]

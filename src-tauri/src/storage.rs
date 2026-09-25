@@ -96,6 +96,7 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
             tags: Vec::new(),
             folders: Vec::new(),
             lock: crate::lock::LockConfig::default(),
+            backup: crate::backup::BackupConfig::default(),
         };
         // Sauvegarder immédiatement en format v2
         if let Ok(json) = serde_json::to_string_pretty(&data) {

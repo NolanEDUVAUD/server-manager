@@ -225,6 +225,36 @@
           "markdownDescription": "Enables the apply_import_config command without any pre-configured scope."
         },
         {
+          "description": "Enables the backup_apply command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-backup-apply",
+          "markdownDescription": "Enables the backup_apply command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the backup_cancel command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-backup-cancel",
+          "markdownDescription": "Enables the backup_cancel command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the backup_export command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-backup-export",
+          "markdownDescription": "Enables the backup_export command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the backup_inspect command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-backup-inspect",
+          "markdownDescription": "Enables the backup_inspect command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the backup_run_now command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-backup-run-now",
+          "markdownDescription": "Enables the backup_run_now command without any pre-configured scope."
+        },
+        {
           "description": "Enables the batch_send_input command without any pre-configured scope.",
           "type": "string",
           "const": "allow-batch-send-input",
@@ -373,6 +403,12 @@
           "type": "string",
           "const": "allow-get-autostart",
           "markdownDescription": "Enables the get_autostart command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_backup_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-backup-settings",
+          "markdownDescription": "Enables the get_backup_settings command without any pre-configured scope."
         },
         {
           "description": "Enables the get_batch_tasks command without any pre-configured scope.",
@@ -741,6 +777,12 @@
           "markdownDescription": "Enables the save_ansible_config command without any pre-configured scope."
         },
         {
+          "description": "Enables the save_backup_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-backup-settings",
+          "markdownDescription": "Enables the save_backup_settings command without any pre-configured scope."
+        },
+        {
           "description": "Enables the save_batch_task command without any pre-configured scope.",
           "type": "string",
           "const": "allow-save-batch-task",
@@ -987,6 +1029,36 @@
           "markdownDescription": "Denies the apply_import_config command without any pre-configured scope."
         },
         {
+          "description": "Denies the backup_apply command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-backup-apply",
+          "markdownDescription": "Denies the backup_apply command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the backup_cancel command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-backup-cancel",
+          "markdownDescription": "Denies the backup_cancel command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the backup_export command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-backup-export",
+          "markdownDescription": "Denies the backup_export command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the backup_inspect command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-backup-inspect",
+          "markdownDescription": "Denies the backup_inspect command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the backup_run_now command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-backup-run-now",
+          "markdownDescription": "Denies the backup_run_now command without any pre-configured scope."
+        },
+        {
           "description": "Denies the batch_send_input command without any pre-configured scope.",
           "type": "string",
           "const": "deny-batch-send-input",
@@ -1135,6 +1207,12 @@
           "type": "string",
           "const": "deny-get-autostart",
           "markdownDescription": "Denies the get_autostart command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_backup_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-backup-settings",
+          "markdownDescription": "Denies the get_backup_settings command without any pre-configured scope."
         },
         {
           "description": "Denies the get_batch_tasks command without any pre-configured scope.",
@@ -1501,6 +1579,12 @@
           "type": "string",
           "const": "deny-save-ansible-config",
           "markdownDescription": "Denies the save_ansible_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_backup_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-backup-settings",
+          "markdownDescription": "Denies the save_backup_settings command without any pre-configured scope."
         },
         {
           "description": "Denies the save_batch_task command without any pre-configured scope.",

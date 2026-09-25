@@ -430,6 +430,11 @@ pub struct AppData {
     /// quel au frontend (vue `lock::LockStatus`) ni exporté
     #[serde(default)]
     pub lock: crate::lock::LockConfig,
+    // ── Sauvegarde chiffrée automatique (1.4) ────────────────────────────
+    /// Dossier, fréquence et phrase de passe (chiffrée) : vue sans secret pour le
+    /// frontend (`backup::BackupConfigView`), jamais exportée en JSON
+    #[serde(default)]
+    pub backup: crate::backup::BackupConfig,
 }
 
 fn legacy_key_version() -> u8 {
@@ -457,6 +462,7 @@ impl Default for AppData {
             tags: Vec::new(),
             folders: Vec::new(),
             lock: crate::lock::LockConfig::default(),
+            backup: crate::backup::BackupConfig::default(),
         }
     }
 }

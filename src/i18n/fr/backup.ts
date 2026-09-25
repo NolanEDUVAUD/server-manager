@@ -1,0 +1,50 @@
+/** Paramètres → Configuration → Sauvegarde chiffrée (.spmbackup) */
+export const backup = {
+  title: "Sauvegarde chiffrée",
+  intro:
+    "Contient toute la configuration, mots de passe et jetons compris, chiffrée par une phrase de passe. Elle permet de tout retrouver sur un autre PC. Sans la phrase de passe, la sauvegarde est illisible : personne ne peut la récupérer.",
+  passphrase: "Phrase de passe",
+  passphraseConfirm: "Confirmer la phrase de passe",
+  passphraseHint: "{min} caractères minimum. Une phrase de plusieurs mots est plus sûre et plus facile à retenir.",
+  tooShort: "Phrase de passe trop courte ({min} caractères minimum)",
+  mismatch: "Les deux phrases de passe sont différentes",
+  export: {
+    button: "Exporter une sauvegarde chiffrée…",
+    running: "Chiffrement…",
+    done: "Sauvegarde enregistrée : {path}",
+  },
+  restore: {
+    title: "Restaurer une sauvegarde",
+    choose: "Choisir une sauvegarde…",
+    reading: "Déchiffrement…",
+    summaryTitle: "Sauvegarde du {date} (version {version})",
+    summary:
+      "{servers} serveur(s), {groups} groupe(s), {probes} service(s), {proxmox} connexion(s) Proxmox, {integrations} intégration(s), {schedules} tâche(s) planifiée(s)",
+    apply: "Restaurer",
+    confirmTitle: "Remplacer toute la configuration",
+    confirmMessage:
+      "Toute la configuration actuelle (serveurs, groupes, services, intégrations, tâches, paramètres) sera remplacée par celle de la sauvegarde. Une copie de la configuration actuelle est conservée à côté des données (data.json.before-restore.bak). Le verrouillage et la sauvegarde automatique de ce PC ne changent pas. Continuer ?",
+    done: "Configuration restaurée",
+  },
+  auto: {
+    title: "Sauvegarde automatique",
+    enable: "Activer la sauvegarde automatique",
+    enableHelp: "Écrit une sauvegarde chiffrée dans un dossier (disque externe, NAS monté…) et ne garde que les plus récentes.",
+    folder: "Dossier de destination",
+    browse: "Parcourir…",
+    frequency: "Fréquence",
+    daily: "Tous les jours",
+    weekly: "Toutes les semaines",
+    keep: "Nombre de sauvegardes conservées",
+    passphraseStored: "Phrase de passe enregistrée : laisse vide pour la conserver",
+    lockedNote: "Pendant que l'application est verrouillée, aucune sauvegarde automatique n'est faite.",
+    save: "Enregistrer",
+    saved: "Sauvegarde automatique enregistrée",
+    runNow: "Sauvegarder maintenant",
+    running: "Sauvegarde en cours…",
+    ran: "Sauvegarde écrite : {path}",
+    lastRun: "Dernière sauvegarde : {date}",
+    never: "Aucune sauvegarde automatique pour l'instant",
+    lastError: "Dernier échec : {message}",
+  },
+};

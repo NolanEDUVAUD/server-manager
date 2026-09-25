@@ -1,5 +1,6 @@
 mod alerts;
 mod app_update;
+mod backup;
 mod batch;
 mod commands;
 mod cron;
@@ -29,7 +30,7 @@ mod terminal;
 mod tray;
 mod updates;
 
-use commands::{lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use commands::organisation as organisation_cmd;
 use storage::AppState;
 use tauri::Manager;
@@ -64,6 +65,7 @@ pub fn run() {
             probe_state.restore(&app.state::<db::Db>(), &probe_ids, events::now_ms());
             app.manage(probe_state);
             app.manage(commands::lab_power::LabPowerState::default());
+            app.manage(commands::backup::BackupState::default());
             // Boucle du planificateur (tâches WoL / arrêt programmées)
             scheduler::start(app.handle().clone());
             // Surveillance continue (ping + métriques), indépendante de la fenêtre
@@ -71,6 +73,8 @@ pub fn run() {
             probes::start(app.handle().clone());
             // Rétention de l'historique (purge horaire)
             db::start_maintenance(app.handle().clone());
+            // Sauvegarde chiffrée automatique (si activée)
+            commands::backup::start(app.handle().clone());
             // Verrouillage automatique (inactivité, session Windows verrouillée)
             lock::start(app.handle().clone());
             // Icône de zone de notification ; la fenêtre, créée masquée, n'est
@@ -267,6 +271,14 @@ pub fn run() {
             lock_cmd::master_password_enable,
             lock_cmd::master_password_change,
             lock_cmd::master_password_remove,
+            // ── Sauvegarde et restauration chiffrées (1.4) ──
+            backup_cmd::backup_export,
+            backup_cmd::backup_inspect,
+            backup_cmd::backup_apply,
+            backup_cmd::backup_cancel,
+            backup_cmd::get_backup_settings,
+            backup_cmd::save_backup_settings,
+            backup_cmd::backup_run_now,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

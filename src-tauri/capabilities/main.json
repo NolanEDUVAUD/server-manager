@@ -138,6 +138,13 @@
     "allow-loki-hosts",
     "allow-loki-units",
     "allow-loki-query",
-    "allow-batch-send-input"
+    "allow-batch-send-input",
+    "allow-backup-export",
+    "allow-backup-inspect",
+    "allow-backup-apply",
+    "allow-backup-cancel",
+    "allow-get-backup-settings",
+    "allow-save-backup-settings",
+    "allow-backup-run-now"
   ]
 }

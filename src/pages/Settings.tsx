@@ -12,6 +12,7 @@ import { ThemeEditor } from '../components/ThemeEditor';
 import { IntegrationsSettings } from '../components/IntegrationsSettings';
 import { HistorySettingsPanel } from '../components/HistorySettingsPanel';
 import { LanguageSelect } from '../components/LanguageSelect';
+import { BackupPanel } from '../components/BackupPanel';
 import { SecuritySettings } from '../components/SecuritySettings';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
@@ -533,9 +534,9 @@ function SectionConfig() {
               >
                 Remplacement
               </button>
-              {/* Ignorer : efface le pendingImport */}
+              {/* Ignorer : abandonne l'import sans rien appliquer */}
               <button
-                onClick={() => handleApplyImport('merge').then(() => {}).catch(() => {})}
+                onClick={() => useStore.setState({ pendingImport: null })}
                 className="px-3 py-1.5 text-xs text-text-muted hover:text-text-primary transition-colors duration-150"
               >
                 Ignorer
@@ -544,6 +545,8 @@ function SectionConfig() {
           </div>
         )}
       </div>
+
+      <BackupPanel />
 
       {/* Chemin du fichier de données */}
       <div className="space-y-1">

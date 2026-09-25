@@ -70,22 +70,13 @@ fn export_without_secrets(data: &AppData) -> AppData {
     // Copie sans aucun secret : mots de passe SSH, jetons Proxmox, secrets des
     // intégrations et des sondes (même chiffrés, ils ne quittent pas cette machine)
     let mut export_data = data.clone();
-    // Verrouillage (hash du PIN, méthode) : propre à cette machine, jamais exporté
+    for field in crate::crypto::secret_fields_mut(&mut export_data) {
+        field.clear();
+    }
+    // Verrouillage (hash du PIN, méthode) et sauvegarde automatique (dossier local) :
+    // propres à cette machine, jamais exportés
     export_data.lock = crate::lock::LockConfig::default();
-    // Verrouillage (hash du PIN, méthode) : propre à cette machine, jamais exporté
-    export_data.lock = crate::lock::LockConfig::default();
-    for server in export_data.servers.iter_mut() {
-        server.ssh_password = String::new();
-    }
-    for c in export_data.proxmox_connections.iter_mut() {
-        c.token_secret = String::new();
-    }
-    for i in export_data.integrations.iter_mut() {
-        i.secret = String::new();
-    }
-    for p in export_data.probes.iter_mut() {
-        p.secret = String::new();
-    }
+    export_data.backup = crate::backup::BackupConfig::default();
     export_data
 }
 
@@ -482,6 +473,23 @@ mod tests {
 
     fn org_of(s: &crate::models::Server) -> (Vec<String>, Option<String>, bool, Vec<CustomField>) {
         (s.tag_ids.clone(), s.folder_id.clone(), s.favorite, s.custom_fields.clone())
+    }
+
+    #[test]
+    fn exports_contain_no_secret_of_any_kind() {
+        let key = crate::crypto::generate_key();
+        let mut data = crate::crypto::test_support::data_with_every_secret(&key);
+        data.backup.enabled = true;
+        data.backup.folder = "/sauvegardes".into();
+        let ciphertexts: Vec<String> = crate::crypto::secret_fields_mut(&mut data).iter().map(|f| f.to_string()).collect();
+        let exported = export_without_secrets(&data);
+        let json = serde_json::to_string(&exported).unwrap() + &full_export(&data, "2026-09-25T00:00:00Z").to_string();
+        for c in &ciphertexts {
+            assert!(!c.is_empty() && !json.contains(c.as_str()), "secret chiffré présent dans l'export");
+        }
+        for plain in ["secret-ssh", "secret-proxmox", "secret-ntfy", "secret-sonde", "secret-sauvegarde", "/sauvegardes"] {
+            assert!(!json.contains(plain), "{} présent dans l'export", plain);
+        }
     }
 
     #[test]

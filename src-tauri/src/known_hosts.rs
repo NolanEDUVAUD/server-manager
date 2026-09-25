@@ -33,6 +33,20 @@ impl KnownHosts {
     pub fn forget(&mut self, host: &str) -> bool {
         self.hosts.remove(host).is_some()
     }
+
+    /// Ajoute les empreintes d'une sauvegarde restaurée sans jamais remplacer une
+    /// empreinte déjà connue ici (elle a été vérifiée sur cette machine). Renvoie le
+    /// nombre d'empreintes ajoutées.
+    pub fn merge_missing(&mut self, restored: HashMap<String, String>) -> usize {
+        let mut added = 0;
+        for (host, fingerprint) in restored {
+            if let std::collections::hash_map::Entry::Vacant(slot) = self.hosts.entry(host) {
+                slot.insert(fingerprint);
+                added += 1;
+            }
+        }
+        added
+    }
 }
 
 // ── Instance globale persistée dans known_hosts.json ──────────────────────
@@ -75,6 +89,25 @@ pub fn verify(host: &str, fingerprint: &str) -> Trust {
     trust
 }
 
+/// Copie des empreintes connues (sauvegarde chiffrée de la configuration)
+pub fn snapshot() -> HashMap<String, String> {
+    STORE
+        .get()
+        .and_then(|store| store.inner.lock().ok().map(|hosts| hosts.hosts.clone()))
+        .unwrap_or_default()
+}
+
+/// Reprend les empreintes d'une sauvegarde restaurée (voir `KnownHosts::merge_missing`)
+pub fn merge_restored(restored: HashMap<String, String>) -> Result<usize, String> {
+    let store = STORE.get().ok_or("Magasin de clés d'hôte non initialisé")?;
+    let mut hosts = store.inner.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+    let added = hosts.merge_missing(restored);
+    if added > 0 {
+        save(store, &hosts);
+    }
+    Ok(added)
+}
+
 /// Oublie l'empreinte d'un hôte (serveur réinstallé volontairement)
 pub fn forget(host: &str) -> Result<bool, String> {
     let store = STORE.get().ok_or("Magasin de clés d'hôte non initialisé")?;
@@ -105,6 +138,17 @@ mod tests {
         assert!(kh.forget("h:22"));
         assert_eq!(kh.check("h:22", "BBB"), Trust::New);
         assert!(!kh.forget("absent:22"));
+    }
+
+    #[test]
+    fn restored_fingerprints_never_override_local_ones() {
+        let mut kh = KnownHosts::default();
+        kh.check("a:22", "LOCAL");
+        let restored: HashMap<String, String> =
+            [("a:22", "ANCIEN"), ("b:22", "B")].iter().map(|(h, f)| (h.to_string(), f.to_string())).collect();
+        assert_eq!(kh.merge_missing(restored), 1);
+        assert_eq!(kh.check("a:22", "LOCAL"), Trust::Match);
+        assert_eq!(kh.check("b:22", "B"), Trust::Match);
     }
 
     #[test]

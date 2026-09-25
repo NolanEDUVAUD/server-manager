@@ -1,4 +1,5 @@
 pub mod alerts;
+pub mod backup;
 pub mod app_update;
 pub mod batch;
 pub mod dashboards;

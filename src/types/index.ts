@@ -654,3 +654,33 @@ export interface LockConfigPayload {
   idle_minutes: number;
   lock_on_session_lock: boolean;
 }
+
+// ─── Sauvegarde chiffrée (.spmbackup, 1.4) ──────────────────────────────────
+
+/** Aperçu d'une sauvegarde déchiffrée, avant restauration */
+export interface BackupSummary {
+  app_version: string;
+  created_at: string;
+  servers: number;
+  groups: number;
+  probes: number;
+  proxmox_connections: number;
+  integrations: number;
+  schedules: number;
+}
+
+export type BackupFrequency = "Daily" | "Weekly";
+
+/** Réglages de la sauvegarde automatique (la phrase de passe n'est jamais renvoyée) */
+export interface BackupConfig {
+  enabled: boolean;
+  folder: string;
+  frequency: BackupFrequency;
+  keep: number;
+  last_run: number | null;
+  last_error: string | null;
+}
+
+export interface BackupConfigView extends BackupConfig {
+  has_passphrase: boolean;
+}
