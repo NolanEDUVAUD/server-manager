@@ -7,17 +7,18 @@ import { useStore } from "../stores/useStore";
 import { AppEvent, EventKind, ServerEventStats, ServerUptime, OS_ICONS } from "../types";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { cn, formatUptime } from "../utils";
+import { currentLocale, TKey, useT } from "../i18n";
 
-const KIND_META: Record<EventKind, { label: string; icon: typeof Wifi; color: string }> = {
-  Offline: { label: "Hors ligne", icon: WifiOff, color: "text-accent-error" },
-  Online: { label: "En ligne", icon: Wifi, color: "text-accent-success" },
-  Wake: { label: "Wake-on-LAN", icon: Zap, color: "text-yellow-400" },
-  Shutdown: { label: "Arrêt", icon: Power, color: "text-red-400" },
-  Reboot: { label: "Redémarrage", icon: RotateCcw, color: "text-accent-info" },
-  VmAction: { label: "Action VM", icon: Boxes, color: "text-accent-primary" },
-  Container: { label: "Docker", icon: Container, color: "text-accent-info" },
-  Alert: { label: "Alerte", icon: BellRing, color: "text-accent-warning" },
-  Failure: { label: "Échec", icon: AlertTriangle, color: "text-accent-warning" },
+const KIND_META: Record<EventKind, { label: TKey; icon: typeof Wifi; color: string }> = {
+  Offline: { label: "events.kinds.offline", icon: WifiOff, color: "text-accent-error" },
+  Online: { label: "events.kinds.online", icon: Wifi, color: "text-accent-success" },
+  Wake: { label: "events.kinds.wake", icon: Zap, color: "text-yellow-400" },
+  Shutdown: { label: "events.kinds.shutdown", icon: Power, color: "text-red-400" },
+  Reboot: { label: "events.kinds.reboot", icon: RotateCcw, color: "text-accent-info" },
+  VmAction: { label: "events.kinds.vmAction", icon: Boxes, color: "text-accent-primary" },
+  Container: { label: "events.kinds.container", icon: Container, color: "text-accent-info" },
+  Alert: { label: "events.kinds.alert", icon: BellRing, color: "text-accent-warning" },
+  Failure: { label: "events.kinds.failure", icon: AlertTriangle, color: "text-accent-warning" },
 };
 
 const STATS_DAYS = 30;
@@ -26,24 +27,32 @@ const STATS_DAYS = 30;
 export function formatPercent(p: number): string {
   if (p >= 100) return "100 %";
   const digits = p >= 99 ? 2 : 1;
-  return `${Math.floor(p * 10 ** digits) / 10 ** digits} %`.replace(".", ",");
+  const value = Math.floor(p * 10 ** digits) / 10 ** digits;
+  return `${value.toLocaleString(currentLocale(), { maximumFractionDigits: digits })} %`;
 }
 
-function dayLabel(ts: number): string {
+type Translate = ReturnType<typeof useT>["t"];
+
+/**
+ * Libellé du jour : « Aujourd'hui », « Hier », sinon la date longue. `inline` = forme
+ * utilisée au milieu d'une phrase (« aujourd'hui »), la date restant telle quelle.
+ */
+function dayLabel(ts: number, t: Translate, locale: string, inline = false): string {
   const d = new Date(ts);
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "Aujourd'hui";
-  if (d.toDateString() === yesterday.toDateString()) return "Hier";
-  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  if (d.toDateString() === today.toDateString()) return t(inline ? "events.todayInline" : "events.today");
+  if (d.toDateString() === yesterday.toDateString()) return t(inline ? "events.yesterdayInline" : "events.yesterday");
+  return d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
 }
 
-function timeLabel(ts: number): string {
-  return new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+function timeLabel(ts: number, locale: string): string {
+  return new Date(ts).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 function EventRow({ event }: { event: AppEvent }) {
+  const { locale } = useT();
   const meta = KIND_META[event.kind];
   const Icon = meta.icon;
   return (
@@ -55,12 +64,13 @@ function EventRow({ event }: { event: AppEvent }) {
           <span className="text-text-secondary"> · {event.message}</span>
         </p>
       </div>
-      <span className="text-xs text-text-muted tabular-nums shrink-0">{timeLabel(event.ts)}</span>
+      <span className="text-xs text-text-muted tabular-nums shrink-0">{timeLabel(event.ts, locale)}</span>
     </div>
   );
 }
 
 export function History() {
+  const { t, locale } = useT();
   const { events, servers, clearEvents } = useStore();
   const [stats, setStats] = useState<ServerEventStats[]>([]);
   const [uptime, setUptime] = useState<ServerUptime[]>([]);
@@ -88,13 +98,14 @@ export function History() {
   const byDay = useMemo(() => {
     const groups: { day: string; items: AppEvent[] }[] = [];
     for (const e of filtered.slice(0, 500)) {
-      const day = dayLabel(e.ts);
+      const day = dayLabel(e.ts, t, locale);
       const last = groups[groups.length - 1];
       if (last?.day === day) last.items.push(e);
       else groups.push({ day, items: [e] });
     }
     return groups;
-  }, [filtered]);
+    // `locale` suit la langue : les libellés de jour sont recalculés quand elle change
+  }, [filtered, locale]);
 
   const selectClass =
     "bg-bg-input border border-border-primary rounded-win px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-primary";
@@ -103,9 +114,9 @@ export function History() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-text-primary font-semibold text-lg">Historique</h1>
+          <h1 className="text-text-primary font-semibold text-lg">{t("events.title")}</h1>
           <p className="text-text-secondary text-xs mt-0.5">
-            Pertes de connexion et actions sur tes serveurs · {events.length} événement(s)
+            {t("events.subtitle")} · {t("events.count", { count: events.length })}
           </p>
         </div>
         {events.length > 0 && (
@@ -114,7 +125,7 @@ export function History() {
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-win border border-border-primary text-text-secondary hover:text-red-400 hover:border-red-400/40 transition-all"
           >
             <Trash2 size={13} />
-            Effacer
+            {t("events.clear")}
           </button>
         )}
       </div>
@@ -132,19 +143,19 @@ export function History() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-text-primary truncate">{s.name}</p>
                 <p className="text-xs text-text-muted truncate">
-                  {last ? `${KIND_META[last.kind].label} · ${dayLabel(last.ts).toLowerCase()} ${timeLabel(last.ts)}` : "Aucun événement"}
+                  {last ? `${t(KIND_META[last.kind].label)} · ${dayLabel(last.ts, t, locale, true)} ${timeLabel(last.ts, locale)}` : t("events.noEvent")}
                 </p>
               </div>
               <div className="text-right shrink-0">
                 <p className={cn("text-sm font-medium tabular-nums", outages > 0 ? "text-accent-warning" : "text-accent-success")}>
-                  {outages} coupure{outages > 1 ? "s" : ""}
+                  {t("events.outages", { count: outages })}
                 </p>
                 <p className="text-[11px] text-text-muted">
-                  {st && st.downtime_ms > 0 ? `${formatUptime(Math.round(st.downtime_ms / 1000))} hors ligne` : `${STATS_DAYS} j`}
+                  {st && st.downtime_ms > 0 ? t("events.offlineFor", { duration: formatUptime(Math.round(st.downtime_ms / 1000)) }) : t("events.statsDays", { days: STATS_DAYS })}
                 </p>
                 {up && up.checks > 0 && (
-                  <p className="text-[11px] text-text-muted tabular-nums" title={`${up.online} ping(s) réussi(s) sur ${up.checks}`}>
-                    dispo {formatPercent(up.uptime_percent)}
+                  <p className="text-[11px] text-text-muted tabular-nums" title={t("events.pingsTitle", { online: up.online, checks: up.checks })}>
+                    {t("events.uptime", { percent: formatPercent(up.uptime_percent) })}
                   </p>
                 )}
               </div>
@@ -156,19 +167,19 @@ export function History() {
       {/* ── Journal ─────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
         <select value={serverFilter} onChange={(e) => setServerFilter(e.target.value)} className={selectClass}>
-          <option value="all">Tous les serveurs</option>
+          <option value="all">{t("events.allServers")}</option>
           {servers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
         <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value as EventKind | "all")} className={selectClass}>
-          <option value="all">Tous les types</option>
-          {(Object.keys(KIND_META) as EventKind[]).map((k) => <option key={k} value={k}>{KIND_META[k].label}</option>)}
+          <option value="all">{t("events.allTypes")}</option>
+          {(Object.keys(KIND_META) as EventKind[]).map((k) => <option key={k} value={k}>{t(KIND_META[k].label)}</option>)}
         </select>
       </div>
 
       {byDay.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-12 text-text-muted text-sm">
           <HistoryIcon size={28} className="opacity-50" />
-          Aucun événement pour l'instant : ils apparaissent dès qu'un serveur change d'état ou qu'une action est lancée.
+          {t("events.empty")}
         </div>
       ) : (
         <div className="space-y-4">
@@ -185,9 +196,9 @@ export function History() {
 
       {confirmClear && (
         <ConfirmDialog
-          title="Effacer l'historique"
-          message="Tous les événements (coupures, retours en ligne, actions, échecs) seront supprimés définitivement. Les mesures de disponibilité (pings) sont conservées selon la rétention choisie dans Paramètres → Historique. Continuer ?"
-          confirmLabel="Effacer"
+          title={t("events.clearTitle")}
+          message={t("events.clearMessage")}
+          confirmLabel={t("events.clear")}
           dangerous
           onConfirm={() => {
             setConfirmClear(false);

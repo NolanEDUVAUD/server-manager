@@ -1,4 +1,5 @@
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 interface SparklineProps {
   /** Valeurs en pourcentage (0-100), de la plus ancienne à la plus récente */
@@ -11,6 +12,7 @@ interface SparklineProps {
  * pour que deux serveurs soient comparables d'un coup d'œil.
  */
 export function Sparkline({ values, className }: SparklineProps) {
+  const { t } = useT();
   if (values.length < 2) {
     return <div className={cn("h-8", className)} />;
   }
@@ -26,7 +28,7 @@ export function Sparkline({ values, className }: SparklineProps) {
       preserveAspectRatio="none"
       className={cn("h-8 w-full overflow-visible", className)}
       role="img"
-      aria-label="Historique"
+      aria-label={t("resources.sparkline")}
     >
       <polygon points={`0,100 ${points} 100,100`} fill="currentColor" fillOpacity={0.12} />
       <polyline

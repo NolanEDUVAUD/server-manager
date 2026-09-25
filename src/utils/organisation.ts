@@ -1,4 +1,5 @@
 import { CustomField } from "../types";
+import { t } from "../i18n";
 import { fold } from "./fuzzy";
 
 // Limites miroir de la validation Rust (src-tauri/src/organisation.rs)
@@ -32,9 +33,9 @@ export function readableTextColor(background: string): "#000000" | "#ffffff" {
  */
 export function nameError(name: string, max: number, existing: { id: string; name: string }[], selfId = ""): string | null {
   const n = name.trim();
-  if (!n) return "Nom requis";
-  if ([...n].length > max) return `${max} caractères au plus`;
-  if (existing.some((e) => e.id !== selfId && e.name.toLowerCase() === n.toLowerCase())) return "Ce nom existe déjà";
+  if (!n) return t("orgFields.errors.nameRequired");
+  if ([...n].length > max) return t("orgFields.errors.nameTooLong", { max });
+  if (existing.some((e) => e.id !== selfId && e.name.toLowerCase() === n.toLowerCase())) return t("orgFields.errors.nameTaken");
   return null;
 }
 
@@ -62,15 +63,15 @@ export function checkCustomFields(fields: CustomField[]): CustomFieldsCheck {
   const rows = fields.map((f) => {
     if (isBlankField(f)) return null;
     const key = f.key.trim();
-    if (!key) return "Clé requise";
-    if ([...key].length > CUSTOM_KEY_MAX) return `Clé : ${CUSTOM_KEY_MAX} caractères au plus`;
-    if ([...f.value.trim()].length > CUSTOM_VALUE_MAX) return `Valeur : ${CUSTOM_VALUE_MAX} caractères au plus`;
+    if (!key) return t("orgFields.errors.keyRequired");
+    if ([...key].length > CUSTOM_KEY_MAX) return t("orgFields.errors.keyTooLong", { max: CUSTOM_KEY_MAX });
+    if ([...f.value.trim()].length > CUSTOM_VALUE_MAX) return t("orgFields.errors.valueTooLong", { max: CUSTOM_VALUE_MAX });
     const lower = key.toLowerCase();
-    if (seen.has(lower)) return "Clé en double";
+    if (seen.has(lower)) return t("orgFields.errors.duplicateKey");
     seen.add(lower);
     return null;
   });
-  const global = filled.length > MAX_CUSTOM_FIELDS ? `${MAX_CUSTOM_FIELDS} champs au plus` : null;
+  const global = filled.length > MAX_CUSTOM_FIELDS ? t("orgFields.errors.tooMany", { max: MAX_CUSTOM_FIELDS }) : null;
   return { rows, global };
 }
 

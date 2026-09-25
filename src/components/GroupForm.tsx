@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, Layers } from "lucide-react";
 import { Group, Server } from "../types";
+import { useT } from "../i18n";
 
 interface GroupFormProps {
   initial?: Group;
@@ -10,6 +11,7 @@ interface GroupFormProps {
 }
 
 export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormProps) {
+  const { t } = useT();
   const [name, setName] = useState(initial?.name ?? "");
   const [icon, setIcon] = useState(initial?.icon ?? "");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
@@ -29,7 +31,7 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Le nom du groupe est requis");
+      setError(t("groups.form.nameRequired"));
       return;
     }
     setSubmitting(true);
@@ -51,7 +53,7 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
               <Layers size={18} className="text-accent-primary" />
             </div>
             <h2 className="text-text-primary font-semibold">
-              {initial ? "Modifier le groupe" : "Créer un groupe"}
+              {initial ? t("groups.form.editTitle") : t("groups.form.createTitle")}
             </h2>
           </div>
           <button onClick={onCancel} className="text-text-secondary hover:text-text-primary transition-colors">
@@ -63,17 +65,17 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
           {/* Nom + Icône */}
           <div className="grid grid-cols-[1fr_auto] gap-3">
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">Nom *</label>
+              <label className="block text-xs font-medium text-text-secondary mb-1">{t("groups.form.name")}</label>
               <input
                 className="w-full bg-bg-secondary border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(""); }}
-                placeholder="Cluster Proxmox"
+                placeholder={t("groups.form.namePlaceholder")}
               />
               {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">Icône</label>
+              <label className="block text-xs font-medium text-text-secondary mb-1">{t("groups.form.icon")}</label>
               <input
                 className="w-16 bg-bg-secondary border border-border-primary rounded-win px-2 py-2 text-sm text-text-primary text-center text-lg focus:outline-none focus:border-accent-primary transition-colors"
                 value={icon}
@@ -87,11 +89,11 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
           {/* Sélection des serveurs */}
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-2">
-              Serveurs ({selectedIds.size} sélectionné{selectedIds.size > 1 ? "s" : ""})
+              {t("groups.form.servers", { count: selectedIds.size })}
             </label>
             {servers.length === 0 ? (
               <p className="text-text-secondary text-xs italic py-3 text-center">
-                Aucun serveur disponible — ajoutez-en d'abord dans l'onglet Serveurs
+                {t("groups.form.noServers")}
               </p>
             ) : (
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
@@ -128,14 +130,14 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
               onClick={onCancel}
               className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all"
             >
-              Annuler
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="px-5 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all disabled:opacity-50"
             >
-              {submitting ? "Enregistrement…" : initial ? "Mettre à jour" : "Créer"}
+              {submitting ? t("common.saving") : initial ? t("groups.form.update") : t("groups.form.create")}
             </button>
           </div>
         </form>

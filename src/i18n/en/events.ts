@@ -1,0 +1,35 @@
+import type { Dict } from "..";
+
+export const events: Dict["events"] = {
+  kinds: {
+    offline: "Offline",
+    online: "Online",
+    wake: "Wake-on-LAN",
+    shutdown: "Shutdown",
+    reboot: "Reboot",
+    vmAction: "VM action",
+    container: "Docker",
+    alert: "Alert",
+    failure: "Failure",
+  },
+  today: "Today",
+  yesterday: "Yesterday",
+  todayInline: "today",
+  yesterdayInline: "yesterday",
+  title: "History",
+  subtitle: "Connection losses and actions on your servers",
+  count: { one: "{count} event", other: "{count} events" },
+  clear: "Clear",
+  noEvent: "No events",
+  outages: { one: "{count} outage", other: "{count} outages" },
+  offlineFor: "{duration} offline",
+  statsDays: "{days} d",
+  pingsTitle: "{online} successful ping(s) out of {checks}",
+  uptime: "uptime {percent}",
+  allServers: "All servers",
+  allTypes: "All types",
+  empty: "No events yet: they appear as soon as a server changes state or an action is run.",
+  clearTitle: "Clear history",
+  clearMessage:
+    "All events (outages, back online, actions, failures) will be permanently deleted. Availability measurements (pings) are kept according to the retention chosen in Settings → History. Continue?",
+};

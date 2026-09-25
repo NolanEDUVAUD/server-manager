@@ -3,6 +3,7 @@
  * sans état ni accès au store (testées dans filters.test.ts).
  */
 import { Folder, Probe, ProbeResult, Server, ServerStatus, Tag } from "../types";
+import { currentLocale } from "../i18n";
 import { fold } from "./fuzzy";
 import { describeProbe } from "./probes";
 
@@ -85,7 +86,7 @@ export interface FolderSection<T> {
 export function groupByFolder<T>(items: T[], folders: Folder[], folderOf: (item: T) => string | null | undefined): FolderSection<T>[] {
   const known = new Set(folders.map((f) => f.id));
   const sections: FolderSection<T>[] = [...folders]
-    .sort((a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base" }))
+    .sort((a, b) => a.name.localeCompare(b.name, currentLocale(), { sensitivity: "base" }))
     .map((folder) => ({ folder, items: items.filter((i) => folderOf(i) === folder.id) }));
   sections.push({ folder: null, items: items.filter((i) => !known.has(folderOf(i) ?? "")) });
   return sections.filter((s) => s.items.length > 0);

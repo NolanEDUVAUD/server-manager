@@ -5,11 +5,14 @@ import { AlertTriangle, CheckCircle2, Circle, Loader2, Play, Power, Sunrise, XCi
 import { useStore } from "../stores/useStore";
 import { LabPlan, LabProgress } from "../types";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
+// Phrases de confirmation vérifiées telles quelles par le backend (lab_power.rs) : jamais traduites
 const PHRASE = { shutdown: "ÉTEINDRE LE LAB", startup: "DÉMARRER LE LAB" } as const;
 type Mode = keyof typeof PHRASE;
 
 export function LabPower() {
+  const { t } = useT();
   const { servers } = useStore();
   const [mode, setMode] = useState<Mode>("shutdown");
   const [plan, setPlan] = useState<LabPlan | null>(null);
@@ -51,22 +54,22 @@ export function LabPower() {
   const serverName = (id: string) => servers.find((s) => s.id === id)?.name ?? id;
   function describe(a: LabPlan["steps"][number]["actions"][number]): string {
     switch (a.type) {
-      case "ShutdownServer": return `Arrêt SSH de ${serverName(a.server_id)}`;
-      case "WakeServer": return `Wake-on-LAN de ${serverName(a.server_id)}, puis attente du ping`;
-      case "ShutdownGuests": return `Arrêt propre de ${a.guests.map((g) => `${g.name} (${g.vmid})`).join(", ")}`;
-      case "StartGuests": return `Démarrage de ${a.guests.map((g) => `${g.name} (${g.vmid})`).join(", ")}`;
+      case "ShutdownServer": return t("labPower.actions.shutdownServer", { server: serverName(a.server_id) });
+      case "WakeServer": return t("labPower.actions.wakeServer", { server: serverName(a.server_id) });
+      case "ShutdownGuests": return t("labPower.actions.shutdownGuests", { guests: a.guests.map((g) => `${g.name} (${g.vmid})`).join(", ") });
+      case "StartGuests": return t("labPower.actions.startGuests", { guests: a.guests.map((g) => `${g.name} (${g.vmid})`).join(", ") });
     }
   }
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-text-primary font-semibold text-lg">Arrêt / démarrage du lab</h1>
-        <p className="text-text-secondary text-xs mt-0.5">Tout éteindre ou tout rallumer dans le bon ordre : le pare-feu en dernier à l'arrêt, en premier au démarrage</p>
+        <h1 className="text-text-primary font-semibold text-lg">{t("labPower.title")}</h1>
+        <p className="text-text-secondary text-xs mt-0.5">{t("labPower.subtitle")}</p>
       </div>
 
       <div className="flex gap-2">
-        {([["shutdown", "Arrêt complet", Power], ["startup", "Démarrage complet", Sunrise]] as const).map(([m, label, Icon]) => (
+        {([["shutdown", t("labPower.shutdownAll"), Power], ["startup", t("labPower.startupAll"), Sunrise]] as const).map(([m, label, Icon]) => (
           <button
             key={m}
             onClick={() => setMode(m)}
@@ -78,11 +81,11 @@ export function LabPower() {
           </button>
         ))}
         <button onClick={simulate} disabled={loading || running} className="ml-auto flex items-center gap-2 px-4 py-2 rounded-win bg-accent-primary hover:bg-accent-secondary text-white text-sm disabled:opacity-50">
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />} Simuler
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />} {t("labPower.simulate")}
         </button>
       </div>
 
-      <p className="text-xs text-text-muted">« Simuler » ne fait que lire l'état (API Proxmox, ping) et affiche ce qui serait fait — rien n'est exécuté.</p>
+      <p className="text-xs text-text-muted">{t("labPower.simulateHint")}</p>
       {error && <p className="text-sm text-accent-error">{error}</p>}
 
       {plan && (
@@ -117,9 +120,9 @@ export function LabPower() {
 
           {plan.steps.length > 0 && (
             <div className="bg-bg-tertiary border border-red-500/30 rounded-win p-4 space-y-3">
-              <p className="text-sm text-text-primary">Exécution réelle</p>
+              <p className="text-sm text-text-primary">{t("labPower.executeTitle")}</p>
               <p className="text-xs text-text-secondary">
-                Pour lancer vraiment la séquence, recopie <code className="text-red-400">{PHRASE[mode]}</code>.
+                {t("labPower.executeHint")} <code className="text-red-400">{PHRASE[mode]}</code>.
               </p>
               <div className="flex gap-2">
                 <input
@@ -128,13 +131,13 @@ export function LabPower() {
                   disabled={running}
                   placeholder={PHRASE[mode]}
                   className="flex-1 bg-bg-input border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-red-400"
-                  aria-label="Phrase de confirmation"
+                  aria-label={t("labPower.confirmAria")}
                 />
                 {running ? (
-                  <button onClick={() => invoke("lab_power_cancel")} className="px-4 py-2 rounded-win border border-border-primary text-sm text-text-secondary hover:bg-bg-hover">Annuler après l'étape en cours</button>
+                  <button onClick={() => invoke("lab_power_cancel")} className="px-4 py-2 rounded-win border border-border-primary text-sm text-text-secondary hover:bg-bg-hover">{t("labPower.cancelAfterStep")}</button>
                 ) : (
                   <button onClick={execute} disabled={confirm.trim() !== PHRASE[mode]} className="flex items-center gap-2 px-4 py-2 rounded-win bg-red-600 hover:bg-red-500 text-white text-sm disabled:opacity-40">
-                    <Play size={14} /> Exécuter
+                    <Play size={14} /> {t("labPower.execute")}
                   </button>
                 )}
               </div>

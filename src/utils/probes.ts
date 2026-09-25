@@ -1,10 +1,11 @@
 import { Probe, ProbeKind, Server } from "../types";
+import { t } from "../i18n";
 
 export function describeProbe(kind: ProbeKind): string {
   switch (kind.type) {
-    case "Http": return `${kind.url}${kind.expect_status ? ` → ${kind.expect_status}` : ""}${kind.keyword ? ` · « ${kind.keyword} »` : ""}`;
+    case "Http": return `${kind.url}${kind.expect_status ? ` → ${kind.expect_status}` : ""}${kind.keyword ? ` · ${t("probes.keyword", { keyword: kind.keyword })}` : ""}`;
     case "Tcp": return `TCP ${kind.host}:${kind.port}`;
-    case "TlsExpiry": return `Certificat ${kind.host}:${kind.port} (alerte < ${kind.warn_days} j)`;
+    case "TlsExpiry": return t("probes.tlsExpiry", { host: kind.host, port: kind.port, days: kind.warn_days });
   }
 }
 
@@ -19,11 +20,11 @@ export function suggestProbes(servers: Server[], existing: Probe[]): Probe[] {
   const out: Probe[] = [];
   for (const s of servers) {
     if (s.os_type === "Proxmox") {
-      out.push({ ...base, name: `${s.name} · interface Proxmox`, server_id: s.id, kind: { type: "Http", url: `https://${s.ip}:8006/`, expect_status: null, keyword: null } });
-      out.push({ ...base, name: `${s.name} · certificat`, server_id: s.id, interval_secs: 3600, kind: { type: "TlsExpiry", host: s.ip, port: 8006, warn_days: 14 } });
+      out.push({ ...base, name: t("probes.suggestion.proxmoxUi", { server: s.name }), server_id: s.id, kind: { type: "Http", url: `https://${s.ip}:8006/`, expect_status: null, keyword: null } });
+      out.push({ ...base, name: t("probes.suggestion.certificate", { server: s.name }), server_id: s.id, interval_secs: 3600, kind: { type: "TlsExpiry", host: s.ip, port: 8006, warn_days: 14 } });
     }
     if (s.os_type === "TrueNAS") {
-      out.push({ ...base, name: `${s.name} · interface TrueNAS`, server_id: s.id, kind: { type: "Http", url: `http://${s.ip}/`, expect_status: null, keyword: null } });
+      out.push({ ...base, name: t("probes.suggestion.truenasUi", { server: s.name }), server_id: s.id, kind: { type: "Http", url: `http://${s.ip}/`, expect_status: null, keyword: null } });
     }
   }
   return out.filter((p) => !taken.has(key(p.kind)));
@@ -33,7 +34,7 @@ export function suggestProbes(servers: Server[], existing: Probe[]): Probe[] {
 export function authWarnings(p: Probe): string[] {
   if (p.auth.type === "None" || p.kind.type !== "Http") return [];
   const url = p.kind.url.trim().toLowerCase();
-  if (url.startsWith("http://")) return ["HTTP sans chiffrement : le secret circule en clair sur le réseau. Préfère https:// si le service le permet."];
-  if (!p.verify_tls) return ["Certificat non vérifié : un intermédiaire sur le réseau pourrait intercepter le secret."];
+  if (url.startsWith("http://")) return [t("probes.warnings.plainHttp")];
+  if (!p.verify_tls) return [t("probes.warnings.unverifiedTls")];
   return [];
 }

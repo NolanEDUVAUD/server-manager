@@ -7,8 +7,10 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { StatusBadge } from "../components/StatusBadge";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
+import { useT } from "../i18n";
 
 export function Groups() {
+  const { t } = useT();
   const { servers, groups, statuses, addGroup, updateGroup, deleteGroup, wakeGroup, shutdownGroup, pingAll } = useStore();
   const toast = useToast();
 
@@ -53,7 +55,7 @@ export function Groups() {
       if (serverIds.length > 0) {
         await updateGroup(group.id, { server_ids: serverIds });
       }
-      toast.success(`Groupe "${name}" créé`);
+      toast.success(t("groups.created", { name }));
       setShowAddForm(false);
     } catch (e) {
       toast.error(String(e));
@@ -65,7 +67,7 @@ export function Groups() {
     if (!editingGroup) return;
     try {
       await updateGroup(editingGroup.id, { name, icon, server_ids: serverIds });
-      toast.success(`Groupe "${name}" mis à jour`);
+      toast.success(t("groups.updated", { name }));
       setEditingGroup(null);
     } catch (e) {
       toast.error(String(e));
@@ -77,7 +79,7 @@ export function Groups() {
     if (!deletingGroup) return;
     try {
       await deleteGroup(deletingGroup.id);
-      toast.success(`Groupe "${deletingGroup.name}" supprimé`);
+      toast.success(t("groups.deleted", { name: deletingGroup.name }));
     } catch (e) {
       toast.error(String(e));
     } finally {
@@ -90,15 +92,15 @@ export function Groups() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Groupes</h1>
-          <p className="text-sm text-text-secondary mt-0.5">{groups.length} groupe{groups.length > 1 ? "s" : ""}</p>
+          <h1 className="text-xl font-bold text-text-primary">{t("groups.title")}</h1>
+          <p className="text-sm text-text-secondary mt-0.5">{t("groups.count", { count: groups.length })}</p>
         </div>
         <button
           onClick={() => setShowAddForm(true)}
           className="flex items-center gap-2 px-4 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
         >
           <Plus size={14} />
-          Créer un groupe
+          {t("groups.create")}
         </button>
       </div>
 
@@ -108,15 +110,15 @@ export function Groups() {
           <div className="p-4 rounded-full bg-bg-tertiary border border-border-primary mb-4">
             <Layers size={32} className="text-text-secondary" />
           </div>
-          <h3 className="text-text-primary font-semibold mb-2">Aucun groupe</h3>
+          <h3 className="text-text-primary font-semibold mb-2">{t("groups.emptyTitle")}</h3>
           <p className="text-text-secondary text-sm mb-4">
-            Regroupez vos serveurs pour les contrôler en 1 clic
+            {t("groups.emptyHint")}
           </p>
           <button
             onClick={() => setShowAddForm(true)}
             className="px-5 py-2.5 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
           >
-            Créer un groupe
+            {t("groups.create")}
           </button>
         </div>
       ) : (
@@ -143,9 +145,9 @@ export function Groups() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-text-primary font-semibold text-sm">{group.name}</h3>
                     <p className="text-xs text-text-secondary">
-                      {groupServers.length} serveur{groupServers.length > 1 ? "s" : ""}
+                      {t("common.servers", { count: groupServers.length })}
                       {groupServers.length > 0 && (
-                        <span className="ml-2 text-green-400">{onlineCount} en ligne</span>
+                        <span className="ml-2 text-green-400">{t("groups.online", { count: onlineCount })}</span>
                       )}
                     </p>
                   </div>
@@ -154,13 +156,13 @@ export function Groups() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() =>
-                        runGroupAction(group.id, "ping", pingAll, `Ping du groupe "${group.name}" lancé`)
+                        runGroupAction(group.id, "ping", pingAll, t("groups.pingStarted", { name: group.name }))
                       }
                       disabled={!!loading || groupServers.length === 0}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50"
                     >
                       {loading === "ping" ? <Loader2 size={11} className="animate-spin" /> : <Wifi size={11} />}
-                      Ping
+                      {t("groups.ping")}
                     </button>
                     <button
                       onClick={() =>
@@ -168,14 +170,14 @@ export function Groups() {
                           group.id,
                           "wol",
                           () => wakeGroup(group.id),
-                          `WoL envoyé au groupe "${group.name}"`
+                          t("groups.wolSent", { name: group.name })
                         )
                       }
                       disabled={!!loading || groupServers.length === 0}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 transition-all disabled:opacity-50"
                     >
                       {loading === "wol" ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
-                      WoL tout
+                      {t("groups.wolAll")}
                     </button>
                     <button
                       onClick={() =>
@@ -183,14 +185,14 @@ export function Groups() {
                           group.id,
                           "shutdown",
                           () => shutdownGroup(group.id),
-                          `Arrêt envoyé au groupe "${group.name}"`
+                          t("groups.shutdownSent", { name: group.name })
                         )
                       }
                       disabled={!!loading || groupServers.length === 0}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
                     >
                       {loading === "shutdown" ? <Loader2 size={11} className="animate-spin" /> : <Power size={11} />}
-                      Tout éteindre
+                      {t("groups.shutdownAll")}
                     </button>
                     <div className="w-px h-5 bg-border-primary mx-1" />
                     <button
@@ -225,7 +227,7 @@ export function Groups() {
                 )}
                 {isExpanded && groupServers.length === 0 && (
                   <div className="border-t border-border-primary px-4 py-3 text-center text-text-secondary text-xs italic">
-                    Aucun serveur dans ce groupe
+                    {t("groups.noServers")}
                   </div>
                 )}
               </div>
@@ -247,9 +249,9 @@ export function Groups() {
       )}
       {deletingGroup && (
         <ConfirmDialog
-          title={`Supprimer "${deletingGroup.name}"`}
-          message="Le groupe sera supprimé. Les serveurs qu'il contient ne seront pas affectés."
-          confirmLabel="Supprimer"
+          title={t("groups.deleteTitle", { name: deletingGroup.name })}
+          message={t("groups.deleteMessage")}
+          confirmLabel={t("common.delete")}
           dangerous
           onConfirm={handleDelete}
           onCancel={() => setDeletingGroup(null)}

@@ -14,9 +14,10 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { authWarnings, describeProbe, suggestProbes } from "../utils/probes";
-import { probeFromPreset, SERVICE_CATALOG, ServicePreset } from "../utils/serviceCatalog";
+import { CATEGORY_LABELS, probeFromPreset, SERVICE_CATALOG, ServicePreset } from "../utils/serviceCatalog";
 import { ProbeAuth } from "../types";
 import { cn } from "../utils";
+import { TKey, useT } from "../i18n";
 
 const inputClass =
   "w-full bg-bg-secondary border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent-primary";
@@ -27,7 +28,8 @@ function defaultKind(type: ProbeKind["type"]): ProbeKind {
   return { type, host: "", port: 443, warn_days: 14 };
 }
 
-function ProbeForm({ initial, help, onSubmit, onCancel }: { initial: Probe; help?: string; onSubmit: (p: Probe, secret: string | null) => Promise<void>; onCancel: () => void }) {
+function ProbeForm({ initial, help, onSubmit, onCancel }: { initial: Probe; help?: TKey; onSubmit: (p: Probe, secret: string | null) => Promise<void>; onCancel: () => void }) {
+  const { t } = useT();
   const { servers } = useStore();
   const [p, setP] = useState<Probe>(initial);
   const [error, setError] = useState("");
@@ -45,7 +47,7 @@ function ProbeForm({ initial, help, onSubmit, onCancel }: { initial: Probe; help
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-slide-in">
         <div className="flex items-center justify-between p-5 border-b border-border-primary">
-          <h2 className="text-text-primary font-semibold">{initial.id ? "Modifier la sonde" : "Nouvelle sonde"}</h2>
+          <h2 className="text-text-primary font-semibold">{initial.id ? t("services.form.editTitle") : t("services.form.newTitle")}</h2>
           <button onClick={onCancel} className="text-text-secondary hover:text-text-primary"><X size={18} /></button>
         </div>
         <form
@@ -58,20 +60,20 @@ function ProbeForm({ initial, help, onSubmit, onCancel }: { initial: Probe; help
             try { await onSubmit(p, s); setSecret(""); } catch (err) { setError(String(err)); } finally { setSaving(false); }
           }}
         >
-          {help && <p className="text-xs text-accent-info bg-accent-info/10 rounded-win p-2">{help}</p>}
-          <label className="block"><span className="block text-xs text-text-secondary mb-1">Nom</span>
-            <input className={inputClass} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} placeholder="Zabbix" aria-label="Nom de la sonde" />
+          {help && <p className="text-xs text-accent-info bg-accent-info/10 rounded-win p-2">{t(help)}</p>}
+          <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.name")}</span>
+            <input className={inputClass} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} placeholder="Zabbix" aria-label={t("services.form.nameAria")} />
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="block text-xs text-text-secondary mb-1">Type</span>
-              <select className={inputClass} value={k.type} onChange={(e) => setP({ ...p, kind: defaultKind(e.target.value as ProbeKind["type"]) })} aria-label="Type de sonde">
+            <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.type")}</span>
+              <select className={inputClass} value={k.type} onChange={(e) => setP({ ...p, kind: defaultKind(e.target.value as ProbeKind["type"]) })} aria-label={t("services.form.typeAria")}>
                 <option value="Http">HTTP(S)</option>
-                <option value="Tcp">Port TCP</option>
-                <option value="TlsExpiry">Certificat TLS</option>
+                <option value="Tcp">{t("services.form.typeTcp")}</option>
+                <option value="TlsExpiry">{t("services.form.typeTls")}</option>
               </select>
             </label>
-            <label className="block"><span className="block text-xs text-text-secondary mb-1">Serveur (optionnel)</span>
-              <select className={inputClass} value={p.server_id ?? ""} onChange={(e) => setP({ ...p, server_id: e.target.value || null })} aria-label="Serveur associé">
+            <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.server")}</span>
+              <select className={inputClass} value={p.server_id ?? ""} onChange={(e) => setP({ ...p, server_id: e.target.value || null })} aria-label={t("services.form.serverAria")}>
                 <option value="">—</option>
                 {servers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
@@ -88,48 +90,48 @@ function ProbeForm({ initial, help, onSubmit, onCancel }: { initial: Probe; help
                 <input className={inputClass} value={k.url} onChange={(e) => setKind({ url: e.target.value })} aria-label="URL" />
               </label>
               <div className="grid grid-cols-2 gap-3">
-                <label className="block"><span className="block text-xs text-text-secondary mb-1">Code attendu (vide = 2xx/3xx)</span>
-                  <input type="number" className={inputClass} value={k.expect_status ?? ""} onChange={(e) => setKind({ expect_status: e.target.value ? Number(e.target.value) : null })} aria-label="Code attendu" />
+                <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.expectStatus")}</span>
+                  <input type="number" className={inputClass} value={k.expect_status ?? ""} onChange={(e) => setKind({ expect_status: e.target.value ? Number(e.target.value) : null })} aria-label={t("services.form.expectStatusAria")} />
                 </label>
-                <label className="block"><span className="block text-xs text-text-secondary mb-1">Mot-clé (optionnel)</span>
-                  <input className={inputClass} value={k.keyword ?? ""} onChange={(e) => setKind({ keyword: e.target.value || null })} aria-label="Mot-clé" />
+                <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.keyword")}</span>
+                  <input className={inputClass} value={k.keyword ?? ""} onChange={(e) => setKind({ keyword: e.target.value || null })} aria-label={t("services.form.keywordAria")} />
                 </label>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <label className="block"><span className="block text-xs text-text-secondary mb-1">Valeur JSON à lire (optionnel)</span>
-                  <input className={inputClass} value={k.json_path ?? ""} onChange={(e) => setKind({ json_path: e.target.value || null })} placeholder="data.version" aria-label="Chemin JSON" />
+                <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.jsonPath")}</span>
+                  <input className={inputClass} value={k.json_path ?? ""} onChange={(e) => setKind({ json_path: e.target.value || null })} placeholder="data.version" aria-label={t("services.form.jsonPathAria")} />
                 </label>
-                <label className="block"><span className="block text-xs text-text-secondary mb-1">Valeur attendue (optionnel)</span>
-                  <input className={inputClass} value={k.json_expect ?? ""} onChange={(e) => setKind({ json_expect: e.target.value || null })} placeholder="vide = afficher seulement" aria-label="Valeur attendue" disabled={!k.json_path} />
+                <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.jsonExpect")}</span>
+                  <input className={inputClass} value={k.json_expect ?? ""} onChange={(e) => setKind({ json_expect: e.target.value || null })} placeholder={t("services.form.jsonExpectPlaceholder")} aria-label={t("services.form.jsonExpectAria")} disabled={!k.json_path} />
                 </label>
               </div>
               <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
-                <input type="checkbox" checked={p.verify_tls} onChange={(e) => setP({ ...p, verify_tls: e.target.checked })} className="accent-accent-primary" /> Vérifier le certificat (décocher si auto-signé)
+                <input type="checkbox" checked={p.verify_tls} onChange={(e) => setP({ ...p, verify_tls: e.target.checked })} className="accent-accent-primary" /> {t("services.form.verifyTls")}
               </label>
 
               <div className="border-t border-border-primary pt-3 space-y-3">
-                <label className="block"><span className="flex items-center gap-1.5 text-xs text-text-secondary mb-1"><KeyRound size={12} /> Authentification</span>
-                  <select className={inputClass} value={p.auth.type} onChange={(e) => setAuth(e.target.value as ProbeAuth["type"])} aria-label="Authentification">
-                    <option value="None">Aucune</option>
-                    <option value="Basic">Identifiant + mot de passe (Basic)</option>
-                    <option value="Bearer">Jeton (Bearer)</option>
-                    <option value="Header">En-tête personnalisé (clé d'API)</option>
+                <label className="block"><span className="flex items-center gap-1.5 text-xs text-text-secondary mb-1"><KeyRound size={12} /> {t("services.form.auth")}</span>
+                  <select className={inputClass} value={p.auth.type} onChange={(e) => setAuth(e.target.value as ProbeAuth["type"])} aria-label={t("services.form.auth")}>
+                    <option value="None">{t("services.form.authNone")}</option>
+                    <option value="Basic">{t("services.form.authBasic")}</option>
+                    <option value="Bearer">{t("services.form.authBearer")}</option>
+                    <option value="Header">{t("services.form.authHeader")}</option>
                   </select>
                 </label>
                 {p.auth.type === "Basic" && (
-                  <input className={inputClass} value={p.auth.username} onChange={(e) => setP({ ...p, auth: { type: "Basic", username: e.target.value } })} placeholder="Identifiant" aria-label="Identifiant" autoComplete="off" />
+                  <input className={inputClass} value={p.auth.username} onChange={(e) => setP({ ...p, auth: { type: "Basic", username: e.target.value } })} placeholder={t("services.form.username")} aria-label={t("services.form.username")} autoComplete="off" />
                 )}
                 {p.auth.type === "Header" && (
-                  <input className={inputClass} value={p.auth.name} onChange={(e) => setP({ ...p, auth: { type: "Header", name: e.target.value } })} placeholder="Nom de l'en-tête (X-Api-Key)" aria-label="Nom de l'en-tête" autoComplete="off" />
+                  <input className={inputClass} value={p.auth.name} onChange={(e) => setP({ ...p, auth: { type: "Header", name: e.target.value } })} placeholder={t("services.form.headerName")} aria-label={t("services.form.headerNameAria")} autoComplete="off" />
                 )}
                 {p.auth.type !== "None" && (
                   <>
                     <input
                       type="password" className={inputClass} value={secret} onChange={(e) => setSecret(e.target.value)}
-                      placeholder={p.has_secret ? "Secret enregistré (chiffré) — laisser vide pour le conserver" : p.auth.type === "Basic" ? "Mot de passe" : p.auth.type === "Bearer" ? "Jeton" : "Valeur de l'en-tête"}
-                      aria-label="Secret" autoComplete="new-password" spellCheck={false}
+                      placeholder={p.has_secret ? t("services.form.secretStored") : p.auth.type === "Basic" ? t("services.form.password") : p.auth.type === "Bearer" ? t("services.form.token") : t("services.form.headerValue")}
+                      aria-label={t("services.form.secretAria")} autoComplete="new-password" spellCheck={false}
                     />
-                    <p className="flex items-center gap-1.5 text-[11px] text-text-muted"><Lock size={11} /> Chiffré avec la clé maître Windows, jamais réaffiché ni exporté.</p>
+                    <p className="flex items-center gap-1.5 text-[11px] text-text-muted"><Lock size={11} /> {t("services.form.secretNote")}</p>
                   </>
                 )}
                 {warnings.map((w) => (
@@ -140,27 +142,27 @@ function ProbeForm({ initial, help, onSubmit, onCancel }: { initial: Probe; help
           )}
           {(k.type === "Tcp" || k.type === "TlsExpiry") && (
             <div className="grid grid-cols-[1fr_6rem] gap-3">
-              <label className="block"><span className="block text-xs text-text-secondary mb-1">Hôte</span>
-                <input className={inputClass} value={k.host} onChange={(e) => setKind({ host: e.target.value })} placeholder="192.168.1.10" aria-label="Hôte" />
+              <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.host")}</span>
+                <input className={inputClass} value={k.host} onChange={(e) => setKind({ host: e.target.value })} placeholder="192.168.1.10" aria-label={t("services.form.host")} />
               </label>
-              <label className="block"><span className="block text-xs text-text-secondary mb-1">Port</span>
-                <input type="number" className={inputClass} value={k.port} onChange={(e) => setKind({ port: Number(e.target.value) })} aria-label="Port" />
+              <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.port")}</span>
+                <input type="number" className={inputClass} value={k.port} onChange={(e) => setKind({ port: Number(e.target.value) })} aria-label={t("services.form.port")} />
               </label>
             </div>
           )}
           {k.type === "TlsExpiry" && (
-            <label className="block"><span className="block text-xs text-text-secondary mb-1">Alerter à moins de (jours)</span>
-              <input type="number" className={inputClass} value={k.warn_days} onChange={(e) => setKind({ warn_days: Number(e.target.value) })} aria-label="Seuil en jours" />
+            <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.warnDays")}</span>
+              <input type="number" className={inputClass} value={k.warn_days} onChange={(e) => setKind({ warn_days: Number(e.target.value) })} aria-label={t("services.form.warnDaysAria")} />
             </label>
           )}
-          <label className="block"><span className="block text-xs text-text-secondary mb-1">Intervalle (secondes)</span>
-            <input type="number" min={10} className={inputClass} value={p.interval_secs} onChange={(e) => setP({ ...p, interval_secs: Number(e.target.value) })} aria-label="Intervalle" />
+          <label className="block"><span className="block text-xs text-text-secondary mb-1">{t("services.form.interval")}</span>
+            <input type="number" min={10} className={inputClass} value={p.interval_secs} onChange={(e) => setP({ ...p, interval_secs: Number(e.target.value) })} aria-label={t("services.form.intervalAria")} />
           </label>
           {error && <p className="text-xs text-red-400">{error}</p>}
           <div className="flex gap-3 justify-end pt-2 border-t border-border-primary">
-            <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:bg-bg-hover">Annuler</button>
+            <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:bg-bg-hover">{t("common.cancel")}</button>
             <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium disabled:opacity-50">
-              {saving && <Loader2 size={13} className="animate-spin" />} Enregistrer et tester
+              {saving && <Loader2 size={13} className="animate-spin" />} {t("services.form.submit")}
             </button>
           </div>
         </form>
@@ -173,12 +175,13 @@ const blank = (): Probe => ({ id: "", name: "", enabled: true, kind: defaultKind
 
 /** Catalogue de services courants : adresse du service, puis choix du modèle */
 function CatalogPicker({ onPick, onCancel }: { onPick: (p: Probe, preset: ServicePreset) => void; onCancel: () => void }) {
+  const { t } = useT();
   const { servers } = useStore();
   const [serverId, setServerId] = useState("");
   const [host, setHost] = useState("");
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
-  const list = SERVICE_CATALOG.filter((s) => !q || s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q));
+  const list = SERVICE_CATALOG.filter((s) => !q || s.name.toLowerCase().includes(q) || t(CATEGORY_LABELS[s.category]).toLowerCase().includes(q));
   const categories = [...new Set(list.map((s) => s.category))];
 
   return (
@@ -186,34 +189,34 @@ function CatalogPicker({ onPick, onCancel }: { onPick: (p: Probe, preset: Servic
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col animate-slide-in">
         <div className="flex items-center justify-between p-5 border-b border-border-primary">
-          <h2 className="text-text-primary font-semibold">Ajouter un service</h2>
+          <h2 className="text-text-primary font-semibold">{t("services.picker.title")}</h2>
           <button onClick={onCancel} className="text-text-secondary hover:text-text-primary"><X size={18} /></button>
         </div>
         <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-3 border-b border-border-primary">
-          <select className={inputClass} value={serverId} onChange={(e) => { setServerId(e.target.value); setHost(servers.find((s) => s.id === e.target.value)?.ip ?? host); }} aria-label="Serveur hôte">
-            <option value="">Serveur (optionnel)</option>
+          <select className={inputClass} value={serverId} onChange={(e) => { setServerId(e.target.value); setHost(servers.find((s) => s.id === e.target.value)?.ip ?? host); }} aria-label={t("services.picker.serverAria")}>
+            <option value="">{t("services.picker.serverOptional")}</option>
             {servers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <input className={inputClass} value={host} onChange={(e) => setHost(e.target.value)} placeholder="Adresse (IP ou nom)" aria-label="Adresse du service" />
+          <input className={inputClass} value={host} onChange={(e) => setHost(e.target.value)} placeholder={t("services.picker.host")} aria-label={t("services.picker.hostAria")} />
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-            <input className={cn(inputClass, "pl-9")} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher…" aria-label="Rechercher un service" />
+            <input className={cn(inputClass, "pl-9")} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("services.picker.search")} aria-label={t("services.picker.searchAria")} />
           </div>
         </div>
         <div className="p-5 overflow-y-auto space-y-4">
-          <button onClick={() => onPick({ ...blank(), server_id: serverId || null, kind: { ...defaultKind("Http"), url: host ? `https://${host}/` : "https://" } as ProbeKind }, { id: "custom", name: "", category: "Applications", https: true, port: 443, path: "/", auth: { type: "None" }, help: "Service personnalisé : n'importe quelle URL, avec authentification et lecture d'une valeur JSON si besoin." })}
+          <button onClick={() => onPick({ ...blank(), server_id: serverId || null, kind: { ...defaultKind("Http"), url: host ? `https://${host}/` : "https://" } as ProbeKind }, { id: "custom", name: "", category: "apps", https: true, port: 443, path: "/", auth: { type: "None" }, help: "catalog.help.custom" })}
             className="w-full text-left p-3 rounded-win border border-dashed border-accent-primary/60 hover:bg-accent-primary/10">
-            <span className="block text-sm text-text-primary font-medium">Service personnalisé</span>
-            <span className="block text-xs text-text-muted">N'importe quelle URL : code HTTP, mot-clé, valeur JSON, authentification</span>
+            <span className="block text-sm text-text-primary font-medium">{t("services.picker.custom")}</span>
+            <span className="block text-xs text-text-muted">{t("services.picker.customHint")}</span>
           </button>
           {categories.map((c) => (
             <div key={c}>
-              <p className="text-xs font-medium text-text-secondary mb-2">{c}</p>
+              <p className="text-xs font-medium text-text-secondary mb-2">{t(CATEGORY_LABELS[c])}</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {list.filter((s) => s.category === c).map((s) => (
                   <button key={s.id} onClick={() => onPick(probeFromPreset(s, host, serverId || null), s)} className="text-left p-3 rounded-win border border-border-primary hover:border-accent-primary hover:bg-bg-hover">
                     <span className="block text-sm text-text-primary">{s.name}</span>
-                    <span className="flex items-center gap-1 text-[11px] text-text-muted">{s.auth.type !== "None" && <KeyRound size={10} />}port {s.port}</span>
+                    <span className="flex items-center gap-1 text-[11px] text-text-muted">{s.auth.type !== "None" && <KeyRound size={10} />}{t("services.picker.port", { port: s.port })}</span>
                   </button>
                 ))}
               </div>
@@ -226,12 +229,13 @@ function CatalogPicker({ onPick, onCancel }: { onPick: (p: Probe, preset: Servic
 }
 
 export function Services() {
+  const { t } = useT();
   const { servers, tags, folders, filters, toggleFavorite } = useStore();
   const { toasts, removeToast, success, error } = useToast();
   const [probes, setProbes] = useState<Probe[]>([]);
   const [results, setResults] = useState<Record<string, ProbeResult>>({});
   const [editing, setEditing] = useState<Probe | null>(null);
-  const [editingHelp, setEditingHelp] = useState<string | undefined>();
+  const [editingHelp, setEditingHelp] = useState<TKey | undefined>();
   const [picking, setPicking] = useState(false);
   const [deleting, setDeleting] = useState<Probe | null>(null);
   const [organising, setOrganising] = useState(false);
@@ -271,7 +275,7 @@ export function Services() {
     for (const p of suggestions) {
       try { await save(p); } catch (e) { error(String(e)); }
     }
-    success(`${suggestions.length} sonde(s) ajoutée(s)`);
+    success(t("services.suggestionsAdded", { count: suggestions.length }));
   }
 
   const serverName = (id: string | null) => servers.find((s) => s.id === id)?.name;
@@ -306,14 +310,14 @@ export function Services() {
                 {p.kind.type === "TlsExpiry" && <Lock size={11} className="inline mr-1" />}{r.detail}
               </p>
               <p className="text-text-muted tabular-nums">
-                {r.latency_ms !== null && `${r.latency_ms} ms · `}dispo 24 h {r.uptime_percent.toFixed(r.uptime_percent === 100 ? 0 : 1)} %
+                {r.latency_ms !== null && `${r.latency_ms} ms · `}{t("services.uptime24h", { percent: r.uptime_percent.toFixed(r.uptime_percent === 100 ? 0 : 1) })}
               </p>
             </>
-          ) : <p className="text-text-muted">en attente…</p>}
+          ) : <p className="text-text-muted">{t("services.pending")}</p>}
         </div>
-        <button onClick={() => invoke<ProbeResult>("run_probe_now", { id: p.id }).catch((e) => error(String(e)))} className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10" title="Tester maintenant"><Play size={13} /></button>
-        <button onClick={() => { setEditingHelp(undefined); setEditing(p); }} className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover" title="Modifier"><Pencil size={13} /></button>
-        <button onClick={() => setDeleting(p)} className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10" title="Supprimer"><Trash2 size={13} /></button>
+        <button onClick={() => invoke<ProbeResult>("run_probe_now", { id: p.id }).catch((e) => error(String(e)))} className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10" title={t("services.testNow")}><Play size={13} /></button>
+        <button onClick={() => { setEditingHelp(undefined); setEditing(p); }} className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover" title={t("common.edit")}><Pencil size={13} /></button>
+        <button onClick={() => setDeleting(p)} className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10" title={t("common.delete")}><Trash2 size={13} /></button>
       </div>
     );
   }
@@ -323,20 +327,20 @@ export function Services() {
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-text-primary font-semibold text-lg">Services</h1>
-          <p className="text-text-secondary text-xs mt-0.5">Le service répond-il vraiment ? Sondes HTTP, ports et certificats — reliées aux alertes « Service injoignable »</p>
+          <h1 className="text-text-primary font-semibold text-lg">{t("services.title")}</h1>
+          <p className="text-text-secondary text-xs mt-0.5">{t("services.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           {suggestions.length > 0 && (
             <button onClick={addSuggestions} className="flex items-center gap-2 px-3 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover">
-              <Sparkles size={14} /> Ajouter {suggestions.length} suggestion(s)
+              <Sparkles size={14} /> {t("services.addSuggestions", { count: suggestions.length })}
             </button>
           )}
           <button onClick={() => { setEditingHelp(undefined); setEditing(blank()); }} className="flex items-center gap-2 px-3 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover">
-            <Plus size={15} /> Sonde manuelle
+            <Plus size={15} /> {t("services.manualProbe")}
           </button>
           <button onClick={() => setPicking(true)} className="flex items-center gap-2 px-4 py-2 text-sm bg-accent-primary hover:bg-accent-secondary text-white rounded-win">
-            <LayoutGrid size={15} /> Ajouter un service
+            <LayoutGrid size={15} /> {t("services.addService")}
           </button>
         </div>
       </div>
@@ -345,7 +349,7 @@ export function Services() {
         <FilterBar
           scope="services"
           searchRef={searchRef}
-          placeholder="Nom, adresse, serveur, tag…"
+          placeholder={t("services.searchPlaceholder")}
           shown={filtered.length}
           total={probes.length}
           onOrganise={() => setOrganising(true)}
@@ -355,7 +359,7 @@ export function Services() {
       {probes.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16 text-text-muted text-sm">
           <Radar size={28} className="opacity-50" />
-          Aucun service surveillé. « Ajouter un service » propose un catalogue (Home Assistant, Jellyfin, Pi-hole, Proxmox…) ou n'importe quelle URL.
+          {t("services.empty")}
         </div>
       ) : filtered.length === 0 ? (
         <NoFilterResults scope="services" />
@@ -376,7 +380,7 @@ export function Services() {
                   >
                     {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
                     {folder ? <FolderIcon size={13} /> : <Inbox size={13} />}
-                    {folder?.name ?? "Sans dossier"}
+                    {folder?.name ?? t("filters.noFolder")}
                     <span className="text-text-muted">({items.length})</span>
                   </button>
                 )}
@@ -400,7 +404,7 @@ export function Services() {
       )}
       {deleting && (
         <ConfirmDialog
-          title="Supprimer la sonde" message={`Supprimer « ${deleting.name} » ?`} confirmLabel="Supprimer" dangerous
+          title={t("services.deleteTitle")} message={t("services.deleteMessage", { name: deleting.name })} confirmLabel={t("common.delete")} dangerous
           onCancel={() => setDeleting(null)}
           onConfirm={() => {
             const p = deleting;

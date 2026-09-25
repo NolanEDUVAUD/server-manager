@@ -9,6 +9,7 @@ import {
   Archive, Landmark, Share2, Settings, Container, Boxes,
   type LucideIcon,
 } from 'lucide-react';
+import { useT } from '../i18n';
 
 // Map des icônes Lucide disponibles pour les serveurs
 const LUCIDE_ICONS: { name: string; Icon: LucideIcon }[] = [
@@ -41,6 +42,7 @@ interface Props {
 }
 
 export function IconPicker({ serverId, value, onChange }: Props) {
+  const { t } = useT();
   const [showPicker, setShowPicker] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -48,7 +50,7 @@ export function IconPicker({ serverId, value, onChange }: Props) {
     try {
       setUploading(true);
       const selected = await open({
-        filters: [{ name: 'Image', extensions: ['png', 'svg'] }],
+        filters: [{ name: t('iconPicker.fileFilter'), extensions: ['png', 'svg'] }],
         multiple: false,
       });
       if (!selected || typeof selected !== 'string') return;
@@ -74,14 +76,14 @@ export function IconPicker({ serverId, value, onChange }: Props) {
                    text-text-secondary rounded-win hover:bg-bg-hover transition-colors duration-150"
       >
         <ServerIconDisplay icon={value} size={14} />
-        {value ? "Changer l'icône" : 'Choisir une icône'}
+        {value ? t('iconPicker.change') : t('iconPicker.choose')}
       </button>
     );
   }
 
   return (
     <div className="bg-bg-secondary rounded-win p-3 space-y-3 border border-border-primary">
-      <p className="text-text-secondary text-xs">Icône Lucide</p>
+      <p className="text-text-secondary text-xs">{t('iconPicker.lucide')}</p>
       <div className="grid grid-cols-10 gap-1.5">
         {LUCIDE_ICONS.map(({ name, Icon }) => (
           <button
@@ -108,14 +110,14 @@ export function IconPicker({ serverId, value, onChange }: Props) {
           className="px-3 py-1.5 text-xs bg-bg-active text-text-secondary rounded-win
                      hover:bg-bg-hover transition-colors duration-150 disabled:opacity-50"
         >
-          {uploading ? 'Upload...' : 'Image personnalisée (PNG/SVG)'}
+          {uploading ? t('iconPicker.uploading') : t('iconPicker.custom')}
         </button>
         <button
           type="button"
           onClick={() => setShowPicker(false)}
           className="text-xs text-text-muted hover:text-text-primary transition-colors duration-150"
         >
-          Annuler
+          {t('common.cancel')}
         </button>
       </div>
     </div>

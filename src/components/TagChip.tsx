@@ -2,6 +2,7 @@ import { Star, X } from "lucide-react";
 import { Tag } from "../types";
 import { readableTextColor } from "../utils/organisation";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 interface TagChipProps {
   tag: Tag;
@@ -13,6 +14,7 @@ interface TagChipProps {
 
 /** Tag coloré ; le texte est noir ou blanc selon la couleur de fond */
 export function TagChip({ tag, onClick, active, onRemove }: TagChipProps) {
+  const { t } = useT();
   const selectable = onClick !== undefined;
   const style = !selectable || active
     ? { backgroundColor: tag.color, color: readableTextColor(tag.color), borderColor: tag.color }
@@ -35,7 +37,7 @@ export function TagChip({ tag, onClick, active, onRemove }: TagChipProps) {
     <span className={base} style={style}>
       {content}
       {onRemove && (
-        <button type="button" onClick={onRemove} aria-label={`Retirer le tag ${tag.name}`} className="opacity-70 hover:opacity-100">
+        <button type="button" onClick={onRemove} aria-label={t("orgFields.removeTag", { name: tag.name })} className="opacity-70 hover:opacity-100">
           <X size={10} />
         </button>
       )}
@@ -60,7 +62,8 @@ export function TagList({ tagIds, tags, max = 4, className }: { tagIds?: string[
 
 /** Étoile de favori d'une carte serveur ou service */
 export function FavoriteButton({ favorite, name, onToggle }: { favorite: boolean; name: string; onToggle: () => void }) {
-  const label = favorite ? `Retirer ${name} des favoris` : `Ajouter ${name} aux favoris`;
+  const { t } = useT();
+  const label = favorite ? t("orgFields.removeFavorite", { name }) : t("orgFields.addFavorite", { name });
   return (
     <button
       type="button"

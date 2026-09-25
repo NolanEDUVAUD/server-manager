@@ -1,15 +1,17 @@
 import { AlertCondition, AlertRule } from "../types";
+import { t, TKey } from "../i18n";
 
 export type ConditionType = AlertCondition["type"];
 
-export const CONDITION_LABELS: Record<ConditionType, string> = {
-  Offline: "Serveur hors ligne",
-  CpuAbove: "CPU élevé",
-  RamAbove: "RAM élevée",
-  DiskAbove: "Disque presque plein",
-  TempAbove: "Température CPU",
-  ActionFailed: "Action échouée",
-  ProbeDown: "Service injoignable (sonde)",
+/** Clé de traduction du libellé de chaque type de condition (résolue à l'affichage avec t()) */
+export const CONDITION_LABELS: Record<ConditionType, TKey> = {
+  Offline: "alerts.conditions.offline",
+  CpuAbove: "alerts.conditions.cpuAbove",
+  RamAbove: "alerts.conditions.ramAbove",
+  DiskAbove: "alerts.conditions.diskAbove",
+  TempAbove: "alerts.conditions.tempAbove",
+  ActionFailed: "alerts.conditions.actionFailed",
+  ProbeDown: "alerts.conditions.probeDown",
 };
 
 /** Condition par défaut quand on change de type dans le formulaire */
@@ -27,15 +29,17 @@ export function defaultCondition(type: ConditionType): AlertCondition {
 
 /** Résumé lisible d'une condition (« CPU > 90 % pendant 5 min ») */
 export function describeCondition(c: AlertCondition): string {
-  const during = (m: number) => (m > 0 ? ` pendant ${m} min` : "");
+  // Avec une durée : variante « … pendant N min »
+  const timed = (instant: TKey, during: TKey, minutes: number, vars: Record<string, number>) =>
+    minutes > 0 ? t(during, { ...vars, minutes }) : t(instant, vars);
   switch (c.type) {
-    case "Offline": return `Hors ligne depuis ${c.minutes} min`;
-    case "CpuAbove": return `CPU > ${c.percent} %${during(c.minutes)}`;
-    case "RamAbove": return `RAM > ${c.percent} %${during(c.minutes)}`;
-    case "DiskAbove": return `Un disque > ${c.percent} %`;
-    case "TempAbove": return `CPU > ${c.celsius} °C${during(c.minutes)}`;
-    case "ActionFailed": return "Dès qu'une action échoue";
-    case "ProbeDown": return `Sonde en échec depuis ${c.minutes} min`;
+    case "Offline": return t("alerts.describe.offline", { minutes: c.minutes });
+    case "CpuAbove": return timed("alerts.describe.cpu", "alerts.describe.cpuDuring", c.minutes, { percent: c.percent });
+    case "RamAbove": return timed("alerts.describe.ram", "alerts.describe.ramDuring", c.minutes, { percent: c.percent });
+    case "DiskAbove": return t("alerts.describe.disk", { percent: c.percent });
+    case "TempAbove": return timed("alerts.describe.temp", "alerts.describe.tempDuring", c.minutes, { celsius: c.celsius });
+    case "ActionFailed": return t("alerts.describe.actionFailed");
+    case "ProbeDown": return t("alerts.describe.probeDown", { minutes: c.minutes });
   }
 }
 

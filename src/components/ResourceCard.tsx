@@ -4,6 +4,7 @@ import { StatusBadge } from "./StatusBadge";
 import { ServerIconDisplay } from "./IconPicker";
 import { Sparkline } from "./Sparkline";
 import { cn, formatBytes, formatUptime } from "../utils";
+import { useT } from "../i18n";
 
 interface ResourceCardProps {
   server: Server;
@@ -33,10 +34,11 @@ function tempColor(celsius: number): string {
  * puce (NVMe, carte mère…) pour rester lisible même avec 16 cœurs.
  */
 function Temperatures({ metrics }: { metrics: ServerMetrics }) {
+  const { t } = useT();
   const others = new Map<string, number>();
-  for (const t of metrics.temperatures) {
-    if (["coretemp", "k10temp", "zenpower", "cpu_thermal"].includes(t.chip)) continue;
-    others.set(t.chip, Math.max(others.get(t.chip) ?? 0, t.celsius));
+  for (const s of metrics.temperatures) {
+    if (["coretemp", "k10temp", "zenpower", "cpu_thermal"].includes(s.chip)) continue;
+    others.set(s.chip, Math.max(others.get(s.chip) ?? 0, s.celsius));
   }
   if (metrics.cpu_temp_celsius === null && others.size === 0) return null;
 
@@ -55,8 +57,8 @@ function Temperatures({ metrics }: { metrics: ServerMetrics }) {
           key={chip}
           className="text-text-muted"
           title={metrics.temperatures
-            .filter((t) => t.chip === chip)
-            .map((t) => `${t.label} : ${t.celsius.toFixed(1)} °C`)
+            .filter((s) => s.chip === chip)
+            .map((s) => t("resources.card.sensor", { label: s.label, celsius: s.celsius.toFixed(1) }))
             .join("\n")}
         >
           {chip} <span className={cn("tabular-nums", tempColor(celsius))}>{celsius.toFixed(0)} °C</span>
@@ -104,6 +106,7 @@ function Placeholder({ icon: Icon, text, tone = "muted" }: {
 }
 
 export function ResourceCard({ server, status, supported, metrics, error, history }: ResourceCardProps) {
+  const { t } = useT();
   const online = status?.online ?? false;
   const memPercent = metrics && metrics.mem_total_bytes > 0
     ? (metrics.mem_used_bytes * 100) / metrics.mem_total_bytes
@@ -111,20 +114,20 @@ export function ResourceCard({ server, status, supported, metrics, error, histor
 
   let body: React.ReactNode;
   if (!supported) {
-    body = <Placeholder icon={Ban} text={`Monitoring non disponible pour ${server.os_type}`} />;
+    body = <Placeholder icon={Ban} text={t("resources.card.unsupported", { os: server.os_type })} />;
   } else if (!online) {
-    body = <Placeholder icon={WifiOff} text="Serveur hors ligne" />;
+    body = <Placeholder icon={WifiOff} text={t("resources.card.offline")} />;
   } else if (error && !metrics) {
     body = <Placeholder icon={AlertTriangle} text={error} tone="error" />;
   } else if (!metrics) {
-    body = <Placeholder icon={Loader2} text="Collecte en cours…" />;
+    body = <Placeholder icon={Loader2} text={t("resources.card.collecting")} />;
   } else {
     body = (
       <div className="space-y-3">
         <UsageBar
           label="CPU"
           percent={metrics.cpu_percent}
-          detail={`charge ${metrics.load_avg.map((l) => l.toFixed(2)).join(" ")}`}
+          detail={t("resources.card.load", { values: metrics.load_avg.map((l) => l.toFixed(2)).join(" ") })}
         />
         <UsageBar
           label="RAM"
@@ -135,7 +138,7 @@ export function ResourceCard({ server, status, supported, metrics, error, histor
           <UsageBar
             key={d.name}
             // Pool ZFS : le nom du pool parle plus que son point de montage
-            label={d.fs_type === "zfs" ? `Pool ${d.name}` : d.mount === "/" ? "Disque système" : d.mount}
+            label={d.fs_type === "zfs" ? t("resources.card.pool", { name: d.name }) : d.mount === "/" ? t("resources.card.systemDisk") : d.mount}
             percent={d.total_bytes > 0 ? (d.used_bytes * 100) / d.total_bytes : 0}
             detail={`${formatBytes(d.used_bytes)} / ${formatBytes(d.total_bytes)}`}
           />
@@ -175,7 +178,7 @@ export function ResourceCard({ server, status, supported, metrics, error, histor
             <h3 className="text-text-primary font-semibold text-sm truncate leading-tight">{server.name}</h3>
             <p className="text-text-muted text-xs">
               {server.ip}
-              {metrics && ` · en marche depuis ${formatUptime(metrics.uptime_secs)}`}
+              {metrics && ` · ${t("resources.card.uptime", { duration: formatUptime(metrics.uptime_secs) })}`}
             </p>
           </div>
         </div>
