@@ -75,6 +75,9 @@
     "allow-upload-server-icon",
     "allow-wake-group",
     "allow-wake-on-lan",
-    "allow-forget-host-key"
+    "allow-forget-host-key",
+    "allow-get-integrations",
+    "allow-save-integration",
+    "allow-test-integration"
   ]
 }

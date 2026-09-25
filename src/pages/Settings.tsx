@@ -9,14 +9,16 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ToastContainer } from '../components/Toast';
 import { ThemeCard } from '../components/ThemeCard';
 import { ThemeEditor } from '../components/ThemeEditor';
+import { IntegrationsSettings } from '../components/IntegrationsSettings';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
-type Section = 'general' | 'appearance' | 'network' | 'config' | 'about';
+type Section = 'general' | 'appearance' | 'network' | 'integrations' | 'config' | 'about';
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'general',    label: 'Général' },
   { id: 'appearance', label: 'Apparence' },
   { id: 'network',    label: 'Réseau' },
+  { id: 'integrations', label: 'Intégrations' },
   { id: 'config',     label: 'Configuration' },
   { id: 'about',      label: 'À propos' },
 ];
@@ -51,6 +53,7 @@ export function Settings() {
         {active === 'general'    && <SectionGeneral />}
         {active === 'appearance' && <SectionAppearance />}
         {active === 'network'    && <SectionNetwork />}
+        {active === 'integrations' && <IntegrationsSettings />}
         {active === 'config'     && <SectionConfig />}
         {active === 'about'      && <SectionAbout />}
       </div>

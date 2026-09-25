@@ -4,16 +4,19 @@ mod crypto;
 mod dashboard_state;
 mod docker;
 mod events;
+mod integration_checks;
+mod integrations;
 mod keystore;
 mod known_hosts;
 mod metrics;
+mod notify;
 mod models;
 mod proxmox;
 mod scheduler;
 mod storage;
 mod terminal;
 
-use commands::{dashboards, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -112,6 +115,10 @@ pub fn run() {
             docker_cmd::docker_list,
             docker_cmd::docker_action,
             docker_cmd::docker_logs,
+            // ── Intégrations ────────────────────────────────────
+            integrations_cmd::get_integrations,
+            integrations_cmd::save_integration,
+            integrations_cmd::test_integration,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,

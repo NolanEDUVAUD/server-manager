@@ -319,3 +319,20 @@ export interface DockerHost {
   available: boolean;
   containers: DockerContainer[];
 }
+
+// ─── Intégrations ───────────────────────────────────────────────────────────
+
+export type IntegrationKind =
+  | "Zabbix" | "Loki" | "Npm" | "TrueNas" | "HomeAssistant"
+  | "OpnSense" | "MikroTik" | "Ntfy" | "Discord" | "Telegram" | "Pbs";
+
+export interface IntegrationView {
+  kind: IntegrationKind;
+  enabled: boolean;
+  url: string;
+  username: string;
+  /** Le secret n'est jamais renvoyé : seulement sa présence */
+  has_secret: boolean;
+  verify_tls: boolean;
+  extra: Record<string, string>;
+}

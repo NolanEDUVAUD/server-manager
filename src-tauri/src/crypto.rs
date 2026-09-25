@@ -55,11 +55,19 @@ pub fn reencrypt_all(data: &mut AppData, from: &[u8; 32], to: &[u8; 32]) -> Resu
         .iter()
         .map(|c| encrypt(&decrypt(&c.token_secret, from)?, to))
         .collect::<Result<Vec<_>, String>>()?;
+    let integrations = data
+        .integrations
+        .iter()
+        .map(|i| encrypt(&decrypt(&i.secret, from)?, to))
+        .collect::<Result<Vec<_>, String>>()?;
     for (s, enc) in data.servers.iter_mut().zip(servers) {
         s.ssh_password = enc;
     }
     for (c, enc) in data.proxmox_connections.iter_mut().zip(tokens) {
         c.token_secret = enc;
+    }
+    for (i, enc) in data.integrations.iter_mut().zip(integrations) {
+        i.secret = enc;
     }
     Ok(())
 }

@@ -2,6 +2,7 @@ pub mod dashboards;
 pub mod docker;
 pub mod events;
 pub mod groups;
+pub mod integrations;
 pub mod metrics;
 pub mod ping;
 pub mod schedules;

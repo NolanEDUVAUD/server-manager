@@ -299,6 +299,8 @@ pub struct AppData {
     pub proxmox_connections: Vec<ProxmoxConnection>,
     #[serde(default)]
     pub schedules: Vec<crate::scheduler::Schedule>,
+    #[serde(default)]
+    pub integrations: Vec<crate::integrations::Integration>,
     /// Schéma de la clé de chiffrement des secrets (voir crypto::KEY_VERSION_MASTER)
     #[serde(default = "legacy_key_version")]
     pub key_version: u8,
@@ -318,6 +320,7 @@ impl Default for AppData {
             proxmox_connections: Vec::new(),
             schedules: Vec::new(),
             key_version: 1,
+            integrations: Vec::new(),
         }
     }
 }

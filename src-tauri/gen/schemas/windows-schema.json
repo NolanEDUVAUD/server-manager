@@ -309,6 +309,12 @@
           "markdownDescription": "Enables the get_groups command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_integrations command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-integrations",
+          "markdownDescription": "Enables the get_integrations command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_schedules command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-schedules",
@@ -453,6 +459,12 @@
           "markdownDescription": "Enables the save_custom_theme command without any pre-configured scope."
         },
         {
+          "description": "Enables the save_integration command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-integration",
+          "markdownDescription": "Enables the save_integration command without any pre-configured scope."
+        },
+        {
           "description": "Enables the save_schedule command without any pre-configured scope.",
           "type": "string",
           "const": "allow-save-schedule",
@@ -517,6 +529,12 @@
           "type": "string",
           "const": "allow-terminal-write",
           "markdownDescription": "Enables the terminal_write command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the test_integration command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-test-integration",
+          "markdownDescription": "Enables the test_integration command without any pre-configured scope."
         },
         {
           "description": "Enables the toggle_server_in_group command without any pre-configured scope.",
@@ -693,6 +711,12 @@
           "markdownDescription": "Denies the get_groups command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_integrations command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-integrations",
+          "markdownDescription": "Denies the get_integrations command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_schedules command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-schedules",
@@ -837,6 +861,12 @@
           "markdownDescription": "Denies the save_custom_theme command without any pre-configured scope."
         },
         {
+          "description": "Denies the save_integration command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-integration",
+          "markdownDescription": "Denies the save_integration command without any pre-configured scope."
+        },
+        {
           "description": "Denies the save_schedule command without any pre-configured scope.",
           "type": "string",
           "const": "deny-save-schedule",
@@ -901,6 +931,12 @@
           "type": "string",
           "const": "deny-terminal-write",
           "markdownDescription": "Denies the terminal_write command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the test_integration command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-test-integration",
+          "markdownDescription": "Denies the test_integration command without any pre-configured scope."
         },
         {
           "description": "Denies the toggle_server_in_group command without any pre-configured scope.",
