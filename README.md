@@ -15,7 +15,18 @@ Construit avec **Tauri v2** (backend Rust) et **React + TypeScript + Tailwind** 
 - **Planificateur** : tâches programmées, avec création des cronjobs directement sur les serveurs Linux
 - **Mises à jour** (apt), **réseau**, **logs** (Loki), zone de notification Windows
 
-## Installation
+## Téléchargement
+
+Pour simplement utiliser l'application, télécharge l'installateur de la [dernière version](https://github.com/NolanEDUVAUD/server-manager/releases/latest) :
+
+- **`ServerPowerManager_x.y.z_x64-setup.exe`** — installateur recommandé, sans droits administrateur
+- `ServerPowerManager_x.y.z_x64.msi` — pour un déploiement MSI
+
+> L'installateur n'est pas signé : si Windows SmartScreen s'affiche, clique sur *Informations complémentaires* → *Exécuter quand même*.
+
+Les sections suivantes ne concernent que la compilation depuis les sources.
+
+## Installation depuis les sources
 
 ### 1. Prérequis
 
@@ -54,6 +65,7 @@ La première compilation Rust prend quelques minutes ; les suivantes sont rapide
 ### 4. Construire un installateur `.exe`
 
 ```powershell
+$env:RUSTFLAGS = "--remap-path-prefix=$env:USERPROFILE=~"   # retire ton chemin utilisateur du binaire
 npm run tauri build
 ```
 
