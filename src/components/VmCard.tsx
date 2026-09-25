@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Play, Square, RotateCcw, PauseCircle, Camera, Loader2 } from "lucide-react";
+import { Play, Square, RotateCcw, PauseCircle, Camera, Loader2, ArrowRightLeft } from "lucide-react";
 import { ProxmoxVm } from "../types";
 import { useStore } from "../stores/useStore";
 import { cn, formatBytes } from "../utils";
 import { VmSnapshotModal } from "./VmSnapshotModal";
+import { MigrateModal } from "./MigrateModal";
 
 interface VmCardProps {
   vm: ProxmoxVm;
@@ -15,6 +16,7 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
   const { proxmoxVmAction } = useStore();
   const [loading, setLoading] = useState<string | null>(null);
   const [showSnapshots, setShowSnapshots] = useState(false);
+  const [showMigrate, setShowMigrate] = useState(false);
 
   const isRunning = vm.status === "running";
 
@@ -134,7 +136,26 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
         >
           <Camera size={12} />
         </button>
+        <button
+          onClick={() => setShowMigrate(true)}
+          disabled={!!loading}
+          title="Migrer vers un autre nœud"
+          className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
+                     border border-border-primary bg-bg-secondary text-text-secondary
+                     hover:bg-bg-hover text-xs font-medium transition-all disabled:opacity-50"
+        >
+          <ArrowRightLeft size={12} />
+        </button>
       </div>
+
+      {showMigrate && (
+        <MigrateModal
+          vm={vm}
+          connectionId={connectionId}
+          onClose={() => setShowMigrate(false)}
+          onDone={() => useStore.getState().loadProxmoxVms(connectionId).catch(() => {})}
+        />
+      )}
 
       {showSnapshots && (
         <VmSnapshotModal

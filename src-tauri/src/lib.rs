@@ -175,6 +175,10 @@ pub fn run() {
             // ── Proxmox avancé ──────────────────────────────────
             proxmox_cmd::proxmox_backup_report,
             proxmox_cmd::proxmox_backup_now,
+            // ── Proxmox avancé ──────────────────────────────────
+            proxmox_cmd::proxmox_migration_plan,
+            proxmox_cmd::proxmox_migrate,
+            proxmox_cmd::proxmox_task_status,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,

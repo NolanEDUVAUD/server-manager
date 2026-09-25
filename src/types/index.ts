@@ -419,3 +419,12 @@ export interface BackupReport {
   unreadable_storages: string[];
   warnings: string[];
 }
+
+// ─── Migration Proxmox ──────────────────────────────────────────────────────
+
+export interface MigrationPlan {
+  running: boolean;
+  targets: { node: string; allowed: boolean; reasons: string[] }[];
+  local_disks: string[];
+  notes: string[];
+}

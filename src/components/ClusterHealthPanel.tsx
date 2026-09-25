@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { AlertTriangle, CheckCircle2, HardDrive, Database, Server, RefreshCw, ChevronDown } from "lucide-react";
 import { ClusterHealth } from "../types";
 import { cn, formatBytes, formatUptime } from "../utils";
+import { DrainNodeModal } from "./DrainNodeModal";
 
 function Bar({ percent }: { percent: number }) {
   const color = percent >= 90 ? "bg-accent-error" : percent >= 75 ? "bg-accent-warning" : "bg-accent-success";
@@ -19,6 +20,7 @@ export function ClusterHealthPanel({ connectionId }: { connectionId: string }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(true);
+  const [draining, setDraining] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
@@ -44,6 +46,7 @@ export function ClusterHealthPanel({ connectionId }: { connectionId: string }) {
 
   return (
     <div className="bg-bg-tertiary border border-border-primary rounded-win">
+      {draining && <DrainNodeModal connectionId={connectionId} node={draining} onClose={() => setDraining(null)} />}
       <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
         {ok ? <CheckCircle2 size={16} className="text-accent-success shrink-0" /> : <AlertTriangle size={16} className="text-accent-warning shrink-0" />}
         <div className="flex-1 min-w-0">
@@ -78,6 +81,11 @@ export function ClusterHealthPanel({ connectionId }: { connectionId: string }) {
                   <Server size={13} className={n.online ? "text-accent-success" : "text-accent-error"} />
                   {n.name}
                   <span className="ml-auto text-[11px] text-text-muted">{n.online ? formatUptime(n.uptime_secs) : "hors ligne"}</span>
+                  {n.online && (
+                    <button onClick={() => setDraining(n.name)} className="text-[11px] text-accent-primary hover:underline" title="Migrer ses invités ailleurs (avant maintenance)">
+                      Vider
+                    </button>
+                  )}
                 </p>
                 {n.online && (
                   <div className="space-y-1.5 text-[11px] text-text-secondary">

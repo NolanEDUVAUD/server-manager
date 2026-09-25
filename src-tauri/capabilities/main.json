@@ -91,6 +91,9 @@
     "allow-run-probe-now",
     "allow-proxmox-cluster-health",
     "allow-proxmox-backup-report",
-    "allow-proxmox-backup-now"
+    "allow-proxmox-backup-now",
+    "allow-proxmox-migration-plan",
+    "allow-proxmox-migrate",
+    "allow-proxmox-task-status"
   ]
 }

@@ -61,6 +61,13 @@ async fn check_status(resp: reqwest::Response) -> Result<reqwest::Response, Stri
     Err(format!("Proxmox a renvoyé une erreur {} : {}", status.as_u16(), detail.trim()))
 }
 
+/// Encodage d'un segment d'URL (les UPID contiennent des « : »)
+fn urlencode(s: &str) -> String {
+    s.chars()
+        .map(|c| if c.is_ascii_alphanumeric() || "-_.~".contains(c) { c.to_string() } else { format!("%{:02X}", c as u32) })
+        .collect()
+}
+
 impl ProxmoxClient {
     pub fn new(
         api_url: &str,
@@ -196,6 +203,57 @@ impl ProxmoxClient {
             &[("vmid", vmid.as_str()), ("storage", storage), ("mode", "snapshot"), ("compress", "zstd")],
         )
         .await
+    }
+
+    /// Faisabilité d'une migration vers chaque nœud en ligne
+    pub async fn migration_plan(&self, node: &str, vmid: u32, vm_type: VmType) -> Result<super::migration::MigrationPlan, String> {
+        use std::collections::BTreeMap;
+        let resources = self.get_value("/cluster/resources").await?;
+        let res = resources.as_array().cloned().unwrap_or_default();
+        let online: Vec<String> = res
+            .iter()
+            .filter(|r| r["type"] == "node" && r["status"] == "online")
+            .filter_map(|r| r["node"].as_str().map(str::to_string))
+            .collect();
+        match vm_type {
+            VmType::Qemu => {
+                let pre = self.get_value(&format!("/nodes/{}/qemu/{}/migrate", node, vmid)).await?;
+                Ok(super::migration::qemu_plan(&pre, node, &online))
+            }
+            VmType::Lxc => {
+                let config = self.get_value(&format!("/nodes/{}/lxc/{}/config", node, vmid)).await?;
+                let status = self.get_value(&format!("/nodes/{}/lxc/{}/status/current", node, vmid)).await?;
+                let mut storages: BTreeMap<String, Vec<String>> = online.iter().map(|n| (n.clone(), vec![])).collect();
+                for r in res.iter().filter(|r| r["type"] == "storage" && r["status"] == "available") {
+                    if let (Some(n), Some(s)) = (r["node"].as_str(), r["storage"].as_str()) {
+                        if let Some(list) = storages.get_mut(n) {
+                            list.push(s.to_string());
+                        }
+                    }
+                }
+                Ok(super::migration::lxc_plan(&config, status["status"] == "running", node, &storages))
+            }
+        }
+    }
+
+    /// Lance la migration ; renvoie l'UPID de la tâche
+    pub async fn migrate(&self, node: &str, vmid: u32, vm_type: VmType, target: &str, running: bool) -> Result<String, String> {
+        let path = format!("/nodes/{}/{}/{}/migrate", node, vm_type.api_segment(), vmid);
+        match (vm_type, running) {
+            // VM allumée : migration à chaud, disques locaux copiés
+            (VmType::Qemu, true) => self.post_form(&path, &[("target", target), ("online", "1"), ("with-local-disks", "1")]).await,
+            (VmType::Qemu, false) => self.post_form(&path, &[("target", target)]).await,
+            // Conteneur démarré : arrêt, migration puis redémarrage
+            (VmType::Lxc, true) => self.post_form(&path, &[("target", target), ("restart", "1")]).await,
+            (VmType::Lxc, false) => self.post_form(&path, &[("target", target)]).await,
+        }
+    }
+
+    /// État d'une tâche Proxmox (UPID) : (terminée ?, statut de sortie)
+    pub async fn task_status(&self, node: &str, upid: &str) -> Result<(bool, String), String> {
+        let st = self.get_value(&format!("/nodes/{}/tasks/{}/status", node, urlencode(upid))).await?;
+        let done = st["status"] == "stopped";
+        Ok((done, st["exitstatus"].as_str().unwrap_or("").to_string()))
     }
 
     pub async fn list_nodes(&self) -> Result<Vec<ProxmoxNode>, String> {

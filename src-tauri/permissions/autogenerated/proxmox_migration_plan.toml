@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-migration-plan"
+description = "Enables the proxmox_migration_plan command without any pre-configured scope."
+commands.allow = ["proxmox_migration_plan"]
+
+[[permission]]
+identifier = "deny-proxmox-migration-plan"
+description = "Denies the proxmox_migration_plan command without any pre-configured scope."
+commands.deny = ["proxmox_migration_plan"]

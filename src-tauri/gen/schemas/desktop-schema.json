@@ -447,6 +447,24 @@
           "markdownDescription": "Enables the proxmox_list_vms command without any pre-configured scope."
         },
         {
+          "description": "Enables the proxmox_migrate command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-migrate",
+          "markdownDescription": "Enables the proxmox_migrate command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_migration_plan command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-migration-plan",
+          "markdownDescription": "Enables the proxmox_migration_plan command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_task_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-task-status",
+          "markdownDescription": "Enables the proxmox_task_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the proxmox_test_connection command without any pre-configured scope.",
           "type": "string",
           "const": "allow-proxmox-test-connection",
@@ -925,6 +943,24 @@
           "type": "string",
           "const": "deny-proxmox-list-vms",
           "markdownDescription": "Denies the proxmox_list_vms command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_migrate command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-migrate",
+          "markdownDescription": "Denies the proxmox_migrate command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_migration_plan command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-migration-plan",
+          "markdownDescription": "Denies the proxmox_migration_plan command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_task_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-task-status",
+          "markdownDescription": "Denies the proxmox_task_status command without any pre-configured scope."
         },
         {
           "description": "Denies the proxmox_test_connection command without any pre-configured scope.",

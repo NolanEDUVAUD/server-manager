@@ -299,3 +299,58 @@ pub async fn proxmox_backup_now(
     }
     result
 }
+
+#[tauri::command]
+pub async fn proxmox_migration_plan(
+    state: State<'_, AppState>,
+    connection_id: String,
+    node: String,
+    vmid: u32,
+    vm_type: VmType,
+) -> Result<crate::proxmox::migration::MigrationPlan, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.migration_plan(&node, vmid, vm_type).await
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn proxmox_migrate(
+    state: State<'_, AppState>,
+    events: State<'_, EventLog>,
+    connection_id: String,
+    node: String,
+    vmid: u32,
+    vm_type: VmType,
+    name: String,
+    target: String,
+    running: bool,
+) -> Result<String, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    let label = format!("{} ({})", name, vmid);
+    let result = client.migrate(&node, vmid, vm_type, &target, running).await;
+    match &result {
+        Ok(_) => events.record(EventKind::VmAction, None, &label, format!("Migration {} → {} lancée", node, target)),
+        Err(e) => events.record(EventKind::Failure, None, &label, format!("Migration vers {} échouée : {}", target, e)),
+    }
+    result
+}
+
+#[tauri::command]
+pub async fn proxmox_task_status(
+    state: State<'_, AppState>,
+    connection_id: String,
+    node: String,
+    upid: String,
+) -> Result<(bool, String), String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.task_status(&node, &upid).await
+}

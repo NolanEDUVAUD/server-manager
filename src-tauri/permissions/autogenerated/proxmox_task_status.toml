@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-task-status"
+description = "Enables the proxmox_task_status command without any pre-configured scope."
+commands.allow = ["proxmox_task_status"]
+
+[[permission]]
+identifier = "deny-proxmox-task-status"
+description = "Denies the proxmox_task_status command without any pre-configured scope."
+commands.deny = ["proxmox_task_status"]
