@@ -375,6 +375,12 @@
           "markdownDescription": "Enables the get_groups command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_history_info command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-history-info",
+          "markdownDescription": "Enables the get_history_info command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_integrations command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-integrations",
@@ -393,6 +399,12 @@
           "markdownDescription": "Enables the get_probes command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_recent_metrics command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-recent-metrics",
+          "markdownDescription": "Enables the get_recent_metrics command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_schedules command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-schedules",
@@ -403,6 +415,12 @@
           "type": "string",
           "const": "allow-get-server-metrics",
           "markdownDescription": "Enables the get_server_metrics command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_server_uptime command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-server-uptime",
+          "markdownDescription": "Enables the get_server_uptime command without any pre-configured scope."
         },
         {
           "description": "Enables the get_servers command without any pre-configured scope.",
@@ -601,6 +619,12 @@
           "type": "string",
           "const": "allow-proxmox-vm-snapshot-rollback",
           "markdownDescription": "Enables the proxmox_vm_snapshot_rollback command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the prune_history command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-prune-history",
+          "markdownDescription": "Enables the prune_history command without any pre-configured scope."
         },
         {
           "description": "Enables the resize_dashboard_tab command without any pre-configured scope.",
@@ -999,6 +1023,12 @@
           "markdownDescription": "Denies the get_groups command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_history_info command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-history-info",
+          "markdownDescription": "Denies the get_history_info command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_integrations command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-integrations",
@@ -1017,6 +1047,12 @@
           "markdownDescription": "Denies the get_probes command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_recent_metrics command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-recent-metrics",
+          "markdownDescription": "Denies the get_recent_metrics command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_schedules command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-schedules",
@@ -1027,6 +1063,12 @@
           "type": "string",
           "const": "deny-get-server-metrics",
           "markdownDescription": "Denies the get_server_metrics command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_server_uptime command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-server-uptime",
+          "markdownDescription": "Denies the get_server_uptime command without any pre-configured scope."
         },
         {
           "description": "Denies the get_servers command without any pre-configured scope.",
@@ -1225,6 +1267,12 @@
           "type": "string",
           "const": "deny-proxmox-vm-snapshot-rollback",
           "markdownDescription": "Denies the proxmox_vm_snapshot_rollback command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the prune_history command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-prune-history",
+          "markdownDescription": "Denies the prune_history command without any pre-configured scope."
         },
         {
           "description": "Denies the resize_dashboard_tab command without any pre-configured scope.",

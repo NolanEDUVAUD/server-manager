@@ -4,6 +4,8 @@ use tauri::{AppHandle, Manager};
 use crate::{
     alerts::AlertEngine,
     commands::{servers::get_decrypted_password, ssh::execute_ssh},
+    db::Db,
+    events::now_ms,
     metrics::{parse_metrics, ServerMetrics, METRICS_COMMAND},
     models::OsType,
     storage::AppState,
@@ -47,6 +49,9 @@ pub async fn collect_metrics(app: &AppHandle, server_id: &str) -> Result<ServerM
                 ip, m.cpu_percent, m.disks.len(), m.temperatures.len(), m.cpu_temp_celsius
             );
             app.state::<AlertEngine>().on_metrics(server_id, m);
+            if let Err(e) = app.state::<Db>().record_metrics(server_id, now_ms(), m) {
+                log::warn!("{}", e);
+            }
         }
         Err(e) => log::warn!("Collecte des métriques échouée pour {} : {}", ip, e),
     }

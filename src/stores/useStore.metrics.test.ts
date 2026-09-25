@@ -63,4 +63,26 @@ describe("metrics store", () => {
     }
     expect(useStore.getState().metricsHistory.srv).toHaveLength(METRICS_HISTORY_MAX);
   });
+
+  it("loadRecentMetrics recharge les courbes enregistrées en base", async () => {
+    useStore.setState({ metricsHistory: { live: [{ t: 100_000, cpu: 9, mem: 9 }] } });
+    vi.mocked(invoke).mockResolvedValue({
+      srv: [{ t: 1000, cpu: 10, mem: 20 }, { t: 2000, cpu: 30, mem: 40 }],
+      live: [{ t: 50_000, cpu: 1, mem: 1 }, { t: 99_500, cpu: 2, mem: 2 }],
+    });
+
+    await useStore.getState().loadRecentMetrics();
+
+    expect(invoke).toHaveBeenCalledWith("get_recent_metrics", { limit: METRICS_HISTORY_MAX });
+    const h = useStore.getState().metricsHistory;
+    expect(h.srv.map((s) => s.cpu)).toEqual([10, 30]);
+    // Le point 99 500 de la base est la collecte déjà reçue en direct (100 000)
+    expect(h.live.map((s) => s.t)).toEqual([50_000, 100_000]);
+  });
+
+  it("loadRecentMetrics sans réponse ne change rien", async () => {
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    await useStore.getState().loadRecentMetrics();
+    expect(useStore.getState().metricsHistory).toEqual({});
+  });
 });

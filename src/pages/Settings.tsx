@@ -10,15 +10,17 @@ import { ToastContainer } from '../components/Toast';
 import { ThemeCard } from '../components/ThemeCard';
 import { ThemeEditor } from '../components/ThemeEditor';
 import { IntegrationsSettings } from '../components/IntegrationsSettings';
+import { HistorySettingsPanel } from '../components/HistorySettingsPanel';
 import { MODULES } from '../utils/modules';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
-type Section = 'general' | 'appearance' | 'network' | 'integrations' | 'config' | 'about';
+type Section = 'general' | 'appearance' | 'network' | 'history' | 'integrations' | 'config' | 'about';
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'general',    label: 'Général' },
   { id: 'appearance', label: 'Apparence' },
   { id: 'network',    label: 'Réseau' },
+  { id: 'history',    label: 'Historique' },
   { id: 'integrations', label: 'Intégrations' },
   { id: 'config',     label: 'Configuration' },
   { id: 'about',      label: 'À propos' },
@@ -54,6 +56,7 @@ export function Settings() {
         {active === 'general'    && <SectionGeneral />}
         {active === 'appearance' && <SectionAppearance />}
         {active === 'network'    && <SectionNetwork />}
+        {active === 'history'    && <HistorySettingsPanel />}
         {active === 'integrations' && <IntegrationsSettings />}
         {active === 'config'     && <SectionConfig />}
         {active === 'about'      && <SectionAbout />}

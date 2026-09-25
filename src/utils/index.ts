@@ -64,6 +64,20 @@ export function appendSample<T>(history: T[] | undefined, sample: T, max: number
   return next.length > max ? next.slice(next.length - max) : next;
 }
 
+/**
+ * Fusionne les points rechargés depuis la base avec ceux déjà reçus en direct : on ne
+ * garde des premiers que ceux antérieurs au plus ancien point en direct (à 2 s près,
+ * les horloges du backend et de la page pouvant différer), pour ne pas dupliquer la
+ * collecte en cours, puis on conserve les `max` plus récents.
+ */
+export function mergeSamples<T extends { t: number }>(loaded: T[] | undefined, live: T[] | undefined, max: number): T[] {
+  const current = live ?? [];
+  const cutoff = current.length > 0 ? current[0].t - 2000 : Infinity;
+  const older = (loaded ?? []).filter((p) => p.t < cutoff).sort((a, b) => a.t - b.t);
+  const merged = [...older, ...current];
+  return merged.length > max ? merged.slice(merged.length - max) : merged;
+}
+
 // ── Génération d'IDs ──────────────────────────────────────────────────────
 
 export function generateId(): string {

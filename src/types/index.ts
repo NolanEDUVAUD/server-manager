@@ -83,10 +83,18 @@ export interface NetworkSettings {
   metrics_interval_secs: number;
 }
 
+/** Rétention de la base d'historique (history.db), en jours */
+export interface HistorySettings {
+  raw_days: number;
+  hourly_days: number;
+  event_days: number;
+}
+
 export interface AppSettings {
   general: GeneralSettings;
   appearance: AppearanceSettings;
   network: NetworkSettings;
+  history: HistorySettings;
 }
 
 // ─── Import/Export ───────────────────────────────────────────────────────────
@@ -269,6 +277,36 @@ export interface ServerEventStats {
   server_id: string;
   outages: number;
   downtime_ms: number;
+}
+
+/** Disponibilité d'un serveur d'après l'historique des pings */
+export interface ServerUptime {
+  server_id: string;
+  checks: number;
+  online: number;
+  uptime_percent: number;
+  avg_latency_ms: number | null;
+}
+
+/** État de la base d'historique locale */
+export interface HistoryInfo {
+  path: string | null;
+  persistent: boolean;
+  size_bytes: number;
+  schema_version: number;
+  events: number;
+  ping_samples: number;
+  probe_samples: number;
+  metric_samples: number;
+  hourly_rows: number;
+  oldest_ts: number | null;
+  warning: string | null;
+}
+
+export interface PruneReport {
+  raw_rows: number;
+  hourly_rows: number;
+  events: number;
 }
 
 // ─── Planificateur ──────────────────────────────────────────────────────────

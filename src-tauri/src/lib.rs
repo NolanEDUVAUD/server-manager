@@ -4,6 +4,7 @@ mod commands;
 mod cron;
 mod crypto;
 mod dashboard_state;
+mod db;
 mod discovery;
 mod docker;
 mod events;
@@ -25,7 +26,7 @@ mod terminal;
 mod tray;
 mod updates;
 
-use commands::{loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -41,19 +42,27 @@ pub fn run() {
             if let Some(dir) = state.data_path.parent() {
                 known_hosts::init(dir.join("known_hosts.json"));
             }
+            // Base d'historique (événements, mesures, agrégats) à côté de data.json
+            let db = db::Db::open(&state.data_path.with_file_name("history.db"));
+            let probe_ids: Vec<String> = state.data.lock().map(|d| d.probes.iter().map(|p| p.id.clone()).collect()).unwrap_or_default();
             app.manage(state);
+            app.manage(db);
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
             app.manage(batch::BatchInputs::default());
             app.manage(events::EventLog::load(app.handle()));
             app.manage(alerts::AlertEngine::new(app.handle()));
-            app.manage(probes::ProbeState::default());
+            let probe_state = probes::ProbeState::default();
+            probe_state.restore(&app.state::<db::Db>(), &probe_ids, events::now_ms());
+            app.manage(probe_state);
             app.manage(commands::lab_power::LabPowerState::default());
             // Boucle du planificateur (tâches WoL / arrêt programmées)
             scheduler::start(app.handle().clone());
             // Surveillance continue (ping + métriques), indépendante de la fenêtre
             monitor::start(app.handle().clone());
             probes::start(app.handle().clone());
+            // Rétention de l'historique (purge horaire)
+            db::start_maintenance(app.handle().clone());
             // Icône de zone de notification ; la fenêtre, créée masquée, n'est
             // affichée que si l'utilisateur n'a pas demandé un démarrage minimisé
             tray::create(app.handle())?;
@@ -149,6 +158,11 @@ pub fn run() {
             events_cmd::get_events,
             events_cmd::get_event_stats,
             events_cmd::clear_events,
+            // ── Base d'historique (SQLite) ──────────────────────
+            history_cmd::get_history_info,
+            history_cmd::get_recent_metrics,
+            history_cmd::get_server_uptime,
+            history_cmd::prune_history,
             // ── Planificateur ─────────────────────────────────
             schedules::get_schedules,
             schedules::save_schedule,

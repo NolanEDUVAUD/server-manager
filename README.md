@@ -9,6 +9,7 @@ Construit avec **Tauri v2** (backend Rust) et **React + TypeScript + Tailwind** 
 - **Serveurs & groupes** : ajout/édition avec validation, actions groupées en 1 clic (WoL, arrêt, ping), import/export JSON
 - **Alimentation** : Wake-on-LAN, arrêt et redémarrage par SSH avec commande personnalisable par OS
 - **Supervision** : statut et latence en temps réel, ressources (CPU, RAM, disque), historique des événements, alertes (ntfy, Discord, Telegram…)
+- **Historique persistant** : événements, disponibilité et latence des serveurs et des services, courbes de ressources conservés dans une base locale SQLite ; mesures détaillées 7 jours et agrégats horaires 90 jours par défaut (réglable dans Paramètres → Historique)
 - **Services** : catalogue d'une trentaine de services auto-hébergés (Home Assistant, Jellyfin, Plex, Pi-hole, AdGuard, Nextcloud, Grafana, Portainer, Proxmox, TrueNAS, Synology…) et service personnalisé pour n'importe quelle URL : code HTTP, mot-clé, valeur JSON, authentification Basic / jeton / clé d'API
 - **Modules** : n'affiche que ce que tu utilises (choix au premier lancement, modifiable dans Paramètres → Général)
 - **Proxmox** : état du cluster, VM/CT, sauvegardes, migration
@@ -88,6 +89,7 @@ Les installateurs sont générés dans :
 ## Données et sécurité
 
 - La configuration est stockée dans `%APPDATA%\com.homelab.server-manager\`.
+- L'historique (événements, pings, contrôles de services, métriques) est dans `history.db` (SQLite) au même endroit. Il ne contient aucun secret : seulement des mesures, des noms affichés et des messages d'événements.
 - Tous les secrets (mots de passe SSH, jetons Proxmox, identifiants des intégrations et des services) sont chiffrés en AES-256-GCM avec une clé maître conservée dans le **Gestionnaire d'identification Windows**. Rien n'est écrit en clair sur le disque.
 - Les secrets ne sont jamais renvoyés à l'interface (seulement « enregistré ») et ne sont déchiffrés qu'au moment de la connexion, puis effacés de la mémoire.
 - Les en-têtes d'authentification sont marqués sensibles et les redirections sont refusées pour les requêtes authentifiées. L'interface prévient si un secret passerait en HTTP ou sans vérification du certificat.

@@ -5,6 +5,7 @@ pub mod discovery;
 pub mod docker;
 pub mod events;
 pub mod groups;
+pub mod history;
 pub mod integrations;
 pub mod lab_power;
 pub mod loki;

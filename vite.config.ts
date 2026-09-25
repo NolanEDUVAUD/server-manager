@@ -23,6 +23,6 @@ export default defineConfig(async () => ({
     setupFiles: ["./src/test/setup.ts"],
     // Empêche Vitest de scanner les copies de src/ dans les worktrees imbriqués
     // (sinon deux instances de React sont chargées et les tests y échouent)
-    exclude: ["**/node_modules/**", "**/.worktrees/**"],
+    exclude: ["**/node_modules/**", "**/.worktrees/**", "**/.claude/worktrees/**"],
   },
 }));

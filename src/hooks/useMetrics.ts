@@ -17,9 +17,12 @@ export interface MetricsUpdate {
 /**
  * Reçoit les métriques collectées par la boucle Rust (monitor.rs), qui tourne
  * indépendamment de la fenêtre, et les range dans le store (valeurs + historique).
+ * Au montage, les derniers points enregistrés en base sont rechargés : les courbes
+ * survivent à un redémarrage de l'app.
  */
 export function useMetrics() {
   useEffect(() => {
+    useStore.getState().loadRecentMetrics().catch(console.error);
     const unlisten = listen<MetricsUpdate>("metrics-update", (e) => {
       useStore.getState().applyMetrics(e.payload.server_id, e.payload.metrics, e.payload.error);
     });

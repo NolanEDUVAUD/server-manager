@@ -235,11 +235,49 @@ impl Default for NetworkSettings {
     }
 }
 
+/// Rétention de la base d'historique (history.db)
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct HistorySettings {
+    /// Mesures brutes (pings, sondes, métriques), en jours
+    pub raw_days: u32,
+    /// Agrégats horaires, en jours
+    pub hourly_days: u32,
+    /// Événements (coupures, actions, échecs), en jours
+    pub event_days: u32,
+}
+
+impl Default for HistorySettings {
+    fn default() -> Self {
+        Self { raw_days: 7, hourly_days: 90, event_days: 90 }
+    }
+}
+
+impl HistorySettings {
+    pub fn validate(&self) -> Result<(), String> {
+        if !(1..=31).contains(&self.raw_days) {
+            return Err("Mesures détaillées : entre 1 et 31 jours".into());
+        }
+        if !(7..=730).contains(&self.hourly_days) {
+            return Err("Agrégats horaires : entre 7 et 730 jours".into());
+        }
+        if self.hourly_days < self.raw_days {
+            return Err("Les agrégats horaires doivent être conservés au moins aussi longtemps que les mesures détaillées".into());
+        }
+        if !(7..=3650).contains(&self.event_days) {
+            return Err("Événements : entre 7 et 3 650 jours".into());
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct AppSettings {
     pub general: GeneralSettings,
     pub appearance: AppearanceSettings,
     pub network: NetworkSettings,
+    /// Absent d'un ancien data.json : rétention par défaut
+    #[serde(default)]
+    pub history: HistorySettings,
 }
 
 impl AppSettings {
@@ -257,6 +295,7 @@ impl AppSettings {
             metrics_enabled: default_metrics_enabled(),
             metrics_interval_secs: default_metrics_interval(),
             },
+            history: HistorySettings::default(),
         }
     }
 }
@@ -416,6 +455,20 @@ mod tests {
         assert!(data.proxmox_connections.is_empty());
         assert_eq!(data.settings.network.proxmox_poll_interval_secs, 15);
         assert_eq!(data.settings.network.proxmox_timeout_secs, 10);
+        assert_eq!(data.settings.history, HistorySettings::default());
+    }
+
+    #[test]
+    fn history_retention_bounds() {
+        assert!(HistorySettings::default().validate().is_ok());
+        let with = |raw, hourly, events| HistorySettings { raw_days: raw, hourly_days: hourly, event_days: events };
+        assert!(with(0, 90, 90).validate().is_err());
+        assert!(with(32, 90, 90).validate().is_err());
+        assert!(with(7, 6, 90).validate().is_err());
+        assert!(with(20, 10, 90).validate().is_err(), "agrégats plus courts que le brut");
+        assert!(with(7, 731, 90).validate().is_err());
+        assert!(with(7, 90, 3651).validate().is_err());
+        assert!(with(31, 730, 3650).validate().is_ok());
     }
 }
 

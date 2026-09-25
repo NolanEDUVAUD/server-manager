@@ -5,6 +5,7 @@ import {
   GeneralSettings,
   AppearanceSettings,
   NetworkSettings,
+  HistorySettings,
   Theme,
   ImportSummary,
   Group,
@@ -36,7 +37,7 @@ import {
   BUILTIN_THEMES,
   ONE_HALF_DARK,
 } from "../utils/theme";
-import { appendSample } from "../utils";
+import { appendSample, mergeSamples } from "../utils";
 
 /** 120 points × 15 s = 30 min d'historique par serveur */
 export const METRICS_HISTORY_MAX = 120;
@@ -88,6 +89,7 @@ interface AppStore {
   updateAppearance: (partial: Partial<AppearanceSettings>) => Promise<void>;
   updateGeneral: (partial: Partial<GeneralSettings>) => Promise<void>;
   updateNetwork: (partial: Partial<NetworkSettings>) => Promise<void>;
+  updateHistory: (partial: Partial<HistorySettings>) => Promise<void>;
 
   // ── Proxmox ────────────────────────────────────────────────────────────
   proxmoxConnections: ProxmoxConnection[];
@@ -114,6 +116,8 @@ interface AppStore {
   metrics: Record<string, ServerMetrics>;
   metricsErrors: Record<string, string>;
   metricsHistory: Record<string, MetricsSample[]>;
+  /** Recharge depuis la base les derniers points de chaque serveur (courbes après redémarrage) */
+  loadRecentMetrics: () => Promise<void>;
   fetchMetrics: (serverId: string) => Promise<void>;
   /** Résultat de collecte (reçu du backend ou d'une collecte manuelle) */
   applyMetrics: (serverId: string, metrics: ServerMetrics | null, error: string | null) => void;
@@ -178,6 +182,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     metrics_enabled: true,
     metrics_interval_secs: 15,
   },
+  history: { raw_days: 7, hourly_days: 90, event_days: 90 },
 };
 
 export const useStore = create<AppStore>((set, get) => ({
@@ -394,6 +399,14 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ settings: newSettings });
   },
 
+  // ── Rétention de l'historique ──────────────────────────────────────────
+  updateHistory: async (partial) => {
+    const state = get();
+    const newSettings = { ...state.settings, history: { ...state.settings.history, ...partial } };
+    await invoke("update_settings", { settings: newSettings });
+    set({ settings: newSettings });
+  },
+
   // ── Thèmes personnalisés ───────────────────────────────────────────────
   saveCustomTheme: async (theme) => {
     await invoke("save_custom_theme", { theme });
@@ -568,6 +581,18 @@ export const useStore = create<AppStore>((set, get) => ({
     });
   },
 
+  loadRecentMetrics: async () => {
+    const recent = await invoke<Record<string, MetricsSample[]>>("get_recent_metrics", { limit: METRICS_HISTORY_MAX });
+    if (!recent) return;
+    set((s) => {
+      const metricsHistory = { ...s.metricsHistory };
+      for (const [serverId, points] of Object.entries(recent)) {
+        metricsHistory[serverId] = mergeSamples(points, s.metricsHistory[serverId], METRICS_HISTORY_MAX);
+      }
+      return { metricsHistory };
+    });
+  },
+
   // ── Historique des événements ──────────────────────────────────────────
   loadEvents: async () => {
     const events = await invoke<AppEvent[]>("get_events");
@@ -733,6 +758,7 @@ export const useStore = create<AppStore>((set, get) => ({
         metrics_enabled: true,
         metrics_interval_secs: 15,
       },
+      history: { raw_days: 7, hourly_days: 90, event_days: 90 },
     };
     await invoke("update_settings", { settings: defaults });
     applyTheme(ONE_HALF_DARK);

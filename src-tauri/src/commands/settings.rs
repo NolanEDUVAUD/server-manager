@@ -31,6 +31,7 @@ pub fn update_settings(state: State<AppState>, settings: AppSettings) -> Result<
     if settings.network.ssh_timeout_secs < 5 || settings.network.ssh_timeout_secs > 120 {
         return Err("Le timeout SSH doit être entre 5 et 120 secondes".to_string());
     }
+    settings.history.validate()?;
 
     let mut data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
     data.settings = settings;

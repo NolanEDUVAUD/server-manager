@@ -2,7 +2,7 @@
 /// expiration de certificat TLS. Sert aussi d'intégration générique : n'importe quel
 /// service web peut être surveillé, avec un secret chiffré par la clé maître.
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
@@ -10,7 +10,14 @@ use tokio::net::TcpStream;
 
 use zeroize::Zeroizing;
 
-use crate::{alerts::AlertEngine, crypto, events::now_ms, integrations::http_client, storage::AppState};
+use crate::{
+    alerts::AlertEngine,
+    crypto,
+    db::{Db, ProbeSample, DAY_MS},
+    events::now_ms,
+    integrations::http_client,
+    storage::AppState,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type")]
@@ -105,12 +112,23 @@ pub struct ProbeResult {
     pub checked_at: i64,
     /// Jours avant expiration du certificat (sondes TLS)
     pub cert_days_left: Option<i64>,
-    /// Disponibilité sur les derniers contrôles (%)
+    /// Disponibilité sur les dernières 24 h (%), d'après l'historique en base
     pub uptime_percent: f64,
 }
 
-/// Nombre de contrôles gardés en mémoire pour le calcul de disponibilité
-const HISTORY: usize = 120;
+impl ProbeResult {
+    fn from_sample(s: ProbeSample, uptime_percent: f64) -> Self {
+        ProbeResult {
+            probe_id: s.probe_id,
+            ok: s.ok,
+            latency_ms: s.latency_ms,
+            detail: s.detail,
+            checked_at: s.ts,
+            cert_days_left: s.cert_days_left,
+            uptime_percent,
+        }
+    }
+}
 
 pub fn validate(probe: &Probe) -> Result<(), String> {
     if probe.name.trim().is_empty() {
@@ -210,13 +228,6 @@ pub fn judge_http(status: u16, body: &str, expect_status: Option<u16>, keyword: 
 /// Jours restants avant expiration (arrondi vers le bas)
 pub fn days_left(not_after_unix: i64, now_unix: i64) -> i64 {
     (not_after_unix - now_unix).div_euclid(86_400)
-}
-
-pub fn uptime(history: &VecDeque<bool>) -> f64 {
-    if history.is_empty() {
-        return 100.0;
-    }
-    history.iter().filter(|ok| **ok).count() as f64 * 100.0 / history.len() as f64
 }
 
 // ── Exécution ─────────────────────────────────────────────────────────────
@@ -335,11 +346,11 @@ async fn run(probe: &Probe, secret: Option<&str>) -> Outcome {
     }
 }
 
-/// État en mémoire : dernier passage et historique de chaque sonde
+/// État en mémoire : dernier passage et dernier résultat de chaque sonde
+/// (l'historique complet est en base, voir db.rs)
 #[derive(Default)]
 pub struct ProbeState {
     last_run: Mutex<HashMap<String, Instant>>,
-    history: Mutex<HashMap<String, VecDeque<bool>>>,
     latest: Mutex<HashMap<String, ProbeResult>>,
 }
 
@@ -349,8 +360,21 @@ impl ProbeState {
     }
     pub fn forget(&self, id: &str) {
         if let Ok(mut m) = self.latest.lock() { m.remove(id); }
-        if let Ok(mut m) = self.history.lock() { m.remove(id); }
         if let Ok(mut m) = self.last_run.lock() { m.remove(id); }
+    }
+
+    /// Au démarrage : derniers résultats connus des sondes existantes, relus en base,
+    /// pour que la page Services les affiche avant le prochain contrôle.
+    pub fn restore(&self, db: &Db, probe_ids: &[String], now: i64) {
+        let samples = match db.latest_probe_samples() {
+            Ok(s) => s,
+            Err(e) => return log::warn!("{}", e),
+        };
+        let Ok(mut latest) = self.latest.lock() else { return };
+        for s in samples.into_iter().filter(|s| probe_ids.contains(&s.probe_id)) {
+            let uptime = db.probe_uptime(&s.probe_id, now - DAY_MS).unwrap_or(100.0);
+            latest.insert(s.probe_id.clone(), ProbeResult::from_sample(s, uptime));
+        }
     }
 }
 
@@ -372,25 +396,22 @@ pub async fn execute(app: &AppHandle, probe: &Probe) -> ProbeResult {
         Ok(s) => run(probe, s.as_deref().map(String::as_str)).await,
         Err(_) => Outcome { ok: false, latency_ms: None, detail: "Secret illisible : ressaisis-le dans la sonde".into(), cert_days_left: None },
     };
-    let st = app.state::<ProbeState>();
-    let uptime_percent = {
-        let mut h = st.history.lock().unwrap_or_else(|e| e.into_inner());
-        let entry = h.entry(probe.id.clone()).or_default();
-        entry.push_back(outcome.ok);
-        while entry.len() > HISTORY {
-            entry.pop_front();
-        }
-        uptime(entry)
-    };
-    let result = ProbeResult {
+    let sample = ProbeSample {
         probe_id: probe.id.clone(),
+        ts: now_ms(),
         ok: outcome.ok,
         latency_ms: outcome.latency_ms,
         detail: outcome.detail.clone(),
-        checked_at: now_ms(),
         cert_days_left: outcome.cert_days_left,
-        uptime_percent,
     };
+    // Historique persistant ; la disponibilité affichée porte sur les dernières 24 h
+    let db = app.state::<Db>();
+    if let Err(e) = db.record_probe(&sample) {
+        log::warn!("{}", e);
+    }
+    let uptime_percent = db.probe_uptime(&probe.id, sample.ts - DAY_MS).unwrap_or(if outcome.ok { 100.0 } else { 0.0 });
+    let result = ProbeResult::from_sample(sample, uptime_percent);
+    let st = app.state::<ProbeState>();
     if let Ok(mut l) = st.latest.lock() {
         l.insert(probe.id.clone(), result.clone());
     }
@@ -519,12 +540,24 @@ mod tests {
     }
 
     #[test]
-    fn cert_days_and_uptime() {
+    fn cert_days() {
         assert_eq!(days_left(10 * 86_400 + 5, 0), 10);
         assert_eq!(days_left(-1, 0), -1);
-        let h: VecDeque<bool> = [true, true, false, true].into_iter().collect();
-        assert_eq!(uptime(&h), 75.0);
-        assert_eq!(uptime(&VecDeque::new()), 100.0);
+    }
+
+    #[test]
+    fn latest_results_are_restored_from_the_database() {
+        let db = Db::in_memory();
+        let now = 10 * DAY_MS;
+        for (probe_id, ts, ok) in [("p", now - 2000, true), ("p", now - 1000, false), ("deleted", now - 500, true)] {
+            db.record_probe(&ProbeSample { probe_id: probe_id.into(), ts, ok, latency_ms: Some(7), detail: format!("contrôle {}", ts), cert_days_left: None }).unwrap();
+        }
+        let st = ProbeState::default();
+        st.restore(&db, &["p".to_string()], now);
+        let latest = st.latest();
+        // La sonde supprimée depuis n'est pas restaurée
+        assert_eq!(latest.len(), 1);
+        assert_eq!((latest[0].ok, latest[0].checked_at, latest[0].uptime_percent), (false, now - 1000, 50.0));
     }
 
     #[test]

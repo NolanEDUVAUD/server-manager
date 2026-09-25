@@ -297,7 +297,7 @@ export function Services() {
                         {p.kind.type === "TlsExpiry" && <Lock size={11} className="inline mr-1" />}{r.detail}
                       </p>
                       <p className="text-text-muted tabular-nums">
-                        {r.latency_ms !== null && `${r.latency_ms} ms · `}dispo {r.uptime_percent.toFixed(r.uptime_percent === 100 ? 0 : 1)} %
+                        {r.latency_ms !== null && `${r.latency_ms} ms · `}dispo 24 h {r.uptime_percent.toFixed(r.uptime_percent === 100 ? 0 : 1)} %
                       </p>
                     </>
                   ) : <p className="text-text-muted">en attente…</p>}

@@ -5,6 +5,7 @@ use zeroize::Zeroizing;
 
 use crate::{
     crypto,
+    db::Db,
     probes::{apply_secret, execute, validate, Probe, ProbeResult, ProbeState, ProbeView},
     storage::AppState,
 };
@@ -50,12 +51,16 @@ pub async fn save_probe(app: AppHandle, state: State<'_, AppState>, mut probe: P
 }
 
 #[tauri::command]
-pub fn delete_probe(state: State<AppState>, probes: State<ProbeState>, id: String) -> Result<(), String> {
+pub fn delete_probe(state: State<AppState>, probes: State<ProbeState>, db: State<Db>, id: String) -> Result<(), String> {
     {
         let mut data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         data.probes.retain(|p| p.id != id);
     }
     probes.forget(&id);
+    // L'historique d'une sonde supprimée n'a plus de sens : il part avec elle
+    if let Err(e) = db.forget_probe(&id) {
+        log::warn!("{}", e);
+    }
     state.save()
 }
 

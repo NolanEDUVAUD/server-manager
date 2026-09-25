@@ -4,6 +4,7 @@ dist/
 
 # Isolated worktrees for subagent-driven development
 .worktrees/
+.claude/worktrees/
 
 # Rust / Tauri
 src-tauri/target/

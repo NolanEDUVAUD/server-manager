@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-recent-metrics"
+description = "Enables the get_recent_metrics command without any pre-configured scope."
+commands.allow = ["get_recent_metrics"]
+
+[[permission]]
+identifier = "deny-get-recent-metrics"
+description = "Denies the get_recent_metrics command without any pre-configured scope."
+commands.deny = ["get_recent_metrics"]

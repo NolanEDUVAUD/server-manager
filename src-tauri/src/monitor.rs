@@ -11,7 +11,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::{
     commands::ping::ping_host,
     commands::metrics::collect_metrics,
-    events::EventLog,
+    db::Db,
+    events::{now_ms, EventLog},
     metrics::ServerMetrics,
     models::{OsType, PingResult},
     storage::AppState,
@@ -78,6 +79,14 @@ pub fn start(app: AppHandle) {
             }
             for (r, name) in &results {
                 events.observe_ping(&r.server_id, name, r.online);
+            }
+            // Historique des pings (disponibilité, latence) : survit au redémarrage
+            let samples: Vec<(String, bool, Option<u64>)> =
+                results.iter().map(|(r, _)| (r.server_id.clone(), r.online, r.latency_ms)).collect();
+            if !samples.is_empty() {
+                if let Err(e) = app_p.state::<Db>().record_pings(now_ms(), &samples) {
+                    log::warn!("{}", e);
+                }
             }
             let _ = app_p.emit("ping-results", results.into_iter().map(|(r, _)| r).collect::<Vec<_>>());
             tokio::time::sleep(Duration::from_secs(interval)).await;

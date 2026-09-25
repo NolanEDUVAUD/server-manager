@@ -1,13 +1,12 @@
-/// Historique des événements — journal persistant + statistiques de disponibilité
+/// Historique des événements — journal persistant (base SQLite, voir db.rs)
+/// + statistiques de disponibilité
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
 use uuid::Uuid;
 
-/// Nombre maximal d'événements conservés (les plus anciens sont supprimés)
-pub const MAX_EVENTS: usize = 5000;
+use crate::db::Db;
 
 /// Pings manqués consécutifs avant de déclarer un serveur hors ligne
 pub const OFFLINE_CONFIRMATIONS: u32 = 2;
@@ -23,6 +22,39 @@ pub enum EventKind {
     Container,
     Failure,
     Alert,
+}
+
+impl EventKind {
+    const ALL: [EventKind; 9] = [
+        EventKind::Offline,
+        EventKind::Online,
+        EventKind::Wake,
+        EventKind::Shutdown,
+        EventKind::Reboot,
+        EventKind::VmAction,
+        EventKind::Container,
+        EventKind::Failure,
+        EventKind::Alert,
+    ];
+
+    /// Nom stocké en base (identique à la sérialisation JSON)
+    pub fn as_str(self) -> &'static str {
+        match self {
+            EventKind::Offline => "Offline",
+            EventKind::Online => "Online",
+            EventKind::Wake => "Wake",
+            EventKind::Shutdown => "Shutdown",
+            EventKind::Reboot => "Reboot",
+            EventKind::VmAction => "VmAction",
+            EventKind::Container => "Container",
+            EventKind::Failure => "Failure",
+            EventKind::Alert => "Alert",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<EventKind> {
+        Self::ALL.into_iter().find(|k| k.as_str() == s)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -52,35 +84,21 @@ pub fn now_ms() -> i64 {
 }
 
 // ── Cœur pur (sans IO) ────────────────────────────────────────────────────
+/// État courant des serveurs, pour détecter les transitions de ping. Les événements
+/// eux-mêmes sont en base (db.rs), soumis à la rétention configurée.
 #[derive(Default)]
 pub struct EventStore {
-    /// Du plus ancien au plus récent
-    pub events: Vec<Event>,
-    /// Dernier statut connu par serveur, pour détecter les transitions de ping
+    /// Dernier statut connu par serveur
     last_status: HashMap<String, bool>,
     /// Pings manqués consécutifs par serveur
     failures: HashMap<String, u32>,
 }
 
 impl EventStore {
-    /// Reconstruit le magasin depuis l'historique persisté, en reprenant le dernier
-    /// statut connu de chaque serveur (dernier événement Online / Offline).
-    pub fn from_events(events: Vec<Event>) -> Self {
-        let mut last_status = HashMap::new();
-        for e in &events {
-            if let (Some(id), EventKind::Online | EventKind::Offline) = (&e.server_id, e.kind) {
-                last_status.insert(id.clone(), e.kind == EventKind::Online);
-            }
-        }
-        EventStore { events, last_status, failures: HashMap::new() }
-    }
-
-    pub fn push(&mut self, event: Event) {
-        self.events.push(event);
-        if self.events.len() > MAX_EVENTS {
-            let excess = self.events.len() - MAX_EVENTS;
-            self.events.drain(..excess);
-        }
+    /// Reprend le dernier statut connu de chaque serveur (dernier événement Online /
+    /// Offline en base), pour qu'une coupure ouverte avant un redémarrage se referme.
+    pub fn with_last_status(last_status: HashMap<String, bool>) -> Self {
+        EventStore { last_status, failures: HashMap::new() }
     }
 
     /// Renvoie le type d'événement si le statut a changé. La première observation
@@ -151,25 +169,27 @@ pub fn downtime_stats(events: &[Event], now: i64, window_ms: i64) -> Vec<ServerS
 // ── Journal persistant ────────────────────────────────────────────────────
 pub struct EventLog {
     store: Mutex<EventStore>,
-    path: PathBuf,
     app: AppHandle,
 }
 
 impl EventLog {
+    /// À créer après la base (`Db`) : reprend l'ancien events.json puis le dernier
+    /// statut connu de chaque serveur.
     pub fn load(app: &AppHandle) -> Self {
-        let path = app
-            .path()
-            .app_data_dir()
-            .map(|d| d.join("events.json"))
-            .unwrap_or_else(|_| PathBuf::from("events.json"));
-        let events: Vec<Event> = std::fs::read_to_string(&path)
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_default();
-        log::info!("Historique chargé : {} événement(s)", events.len());
+        let db = app.state::<Db>();
+        if let Ok(dir) = app.path().app_data_dir() {
+            match db.import_legacy_events(&dir.join("events.json")) {
+                Ok(0) => {}
+                Ok(n) => log::info!("Ancien historique repris dans la base : {} événement(s)", n),
+                Err(e) => log::warn!("{}", e),
+            }
+        }
+        let last_status = db.last_status().unwrap_or_else(|e| {
+            log::warn!("{}", e);
+            HashMap::new()
+        });
         EventLog {
-            store: Mutex::new(EventStore::from_events(events)),
-            path,
+            store: Mutex::new(EventStore::with_last_status(last_status)),
             app: app.clone(),
         }
     }
@@ -185,14 +205,9 @@ impl EventLog {
             target: target.to_string(),
             message: message.into(),
         };
-        let Ok(mut store) = self.store.lock() else { return };
-        store.push(event.clone());
-        if let Ok(json) = serde_json::to_string(&store.events) {
-            if let Err(e) = std::fs::write(&self.path, json) {
-                log::warn!("Écriture de l'historique impossible : {}", e);
-            }
+        if let Err(e) = self.app.state::<Db>().insert_event(&event) {
+            log::warn!("Écriture de l'historique impossible : {}", e);
         }
-        drop(store);
         let _ = self.app.emit("event-recorded", &event);
         if event.kind == EventKind::Failure {
             if let Some(alerts) = self.app.try_state::<crate::alerts::AlertEngine>() {
@@ -216,25 +231,20 @@ impl EventLog {
         }
     }
 
-    pub fn list(&self) -> Vec<Event> {
-        self.store
-            .lock()
-            .map(|s| s.events.iter().rev().cloned().collect())
-            .unwrap_or_default()
+    /// Événements du plus récent au plus ancien (pagination par horodatage)
+    pub fn list(&self, limit: u32, before: Option<i64>) -> Result<Vec<Event>, String> {
+        self.app.state::<Db>().events(limit, before)
     }
 
-    pub fn stats(&self, days: u32) -> Vec<ServerStats> {
+    pub fn stats(&self, days: u32) -> Result<Vec<ServerStats>, String> {
         let window = i64::from(days) * 24 * 3600 * 1000;
-        self.store
-            .lock()
-            .map(|s| downtime_stats(&s.events, now_ms(), window))
-            .unwrap_or_default()
+        let now = now_ms();
+        let events = self.app.state::<Db>().state_events_since(now - window)?;
+        Ok(downtime_stats(&events, now, window))
     }
 
     pub fn clear(&self) -> Result<(), String> {
-        let mut store = self.store.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
-        store.events.clear();
-        std::fs::write(&self.path, "[]").map_err(|e| format!("Écriture de l'historique impossible : {}", e))
+        self.app.state::<Db>().clear_events()
     }
 }
 
@@ -269,12 +279,11 @@ mod tests {
     fn reloaded_store_resumes_from_last_known_status() {
         // Après un redémarrage de l'app, un serveur noté hors ligne qui répond de
         // nouveau doit produire un retour « en ligne », sinon sa coupure ne se referme jamais
-        let mut store = EventStore::from_events(vec![
-            ev(1, EventKind::Offline, "a"),
-            ev(2, EventKind::Wake, "a"),
-            ev(3, EventKind::Online, "b"),
-            ev(4, EventKind::Offline, "b"),
-        ]);
+        let db = Db::in_memory();
+        for e in [ev(1, EventKind::Offline, "a"), ev(2, EventKind::Wake, "a"), ev(3, EventKind::Online, "b"), ev(4, EventKind::Offline, "b")] {
+            db.insert_event(&e).unwrap();
+        }
+        let mut store = EventStore::with_last_status(db.last_status().unwrap());
         assert_eq!(store.observe("a", true), Some(EventKind::Online));
         store.observe("b", false);
         assert_eq!(store.observe("b", false), None);
@@ -293,13 +302,12 @@ mod tests {
     }
 
     #[test]
-    fn push_keeps_only_the_most_recent_events() {
-        let mut store = EventStore::default();
-        for i in 0..(MAX_EVENTS as i64 + 3) {
-            store.push(ev(i, EventKind::Wake, "a"));
+    fn event_kind_names_round_trip_and_match_json() {
+        for k in EventKind::ALL {
+            assert_eq!(EventKind::parse(k.as_str()), Some(k));
+            assert_eq!(serde_json::to_string(&k).unwrap(), format!("\"{}\"", k.as_str()));
         }
-        assert_eq!(store.events.len(), MAX_EVENTS);
-        assert_eq!(store.events[0].ts, 3);
+        assert_eq!(EventKind::parse("Inconnu"), None);
     }
 
     #[test]

@@ -4,7 +4,7 @@ import {
   WifiOff, Wifi, Zap, Power, RotateCcw, Boxes, AlertTriangle, History as HistoryIcon, Trash2, Container, BellRing,
 } from "lucide-react";
 import { useStore } from "../stores/useStore";
-import { AppEvent, EventKind, ServerEventStats, OS_ICONS } from "../types";
+import { AppEvent, EventKind, ServerEventStats, ServerUptime, OS_ICONS } from "../types";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { cn, formatUptime } from "../utils";
 
@@ -21,6 +21,13 @@ const KIND_META: Record<EventKind, { label: string; icon: typeof Wifi; color: st
 };
 
 const STATS_DAYS = 30;
+
+/** 99,95 % plutôt que 100 % arrondi : une coupure courte reste visible */
+export function formatPercent(p: number): string {
+  if (p >= 100) return "100 %";
+  const digits = p >= 99 ? 2 : 1;
+  return `${Math.floor(p * 10 ** digits) / 10 ** digits} %`.replace(".", ",");
+}
 
 function dayLabel(ts: number): string {
   const d = new Date(ts);
@@ -56,6 +63,7 @@ function EventRow({ event }: { event: AppEvent }) {
 export function History() {
   const { events, servers, clearEvents } = useStore();
   const [stats, setStats] = useState<ServerEventStats[]>([]);
+  const [uptime, setUptime] = useState<ServerUptime[]>([]);
   const [serverFilter, setServerFilter] = useState<string>("all");
   const [kindFilter, setKindFilter] = useState<EventKind | "all">("all");
   const [confirmClear, setConfirmClear] = useState(false);
@@ -63,6 +71,7 @@ export function History() {
   // Recalcul des statistiques à chaque nouvel événement
   useEffect(() => {
     invoke<ServerEventStats[]>("get_event_stats", { days: STATS_DAYS }).then(setStats).catch(() => setStats([]));
+    invoke<ServerUptime[]>("get_server_uptime", { days: STATS_DAYS }).then(setUptime).catch(() => setUptime([]));
   }, [events.length]);
 
   const filtered = useMemo(
@@ -115,6 +124,7 @@ export function History() {
         {servers.map((s) => {
           const st = stats.find((x) => x.server_id === s.id);
           const outages = st?.outages ?? 0;
+          const up = uptime.find((x) => x.server_id === s.id);
           const last = events.find((e) => e.server_id === s.id);
           return (
             <div key={s.id} className="bg-bg-tertiary border border-border-primary rounded-win p-3 flex items-center gap-3">
@@ -132,6 +142,11 @@ export function History() {
                 <p className="text-[11px] text-text-muted">
                   {st && st.downtime_ms > 0 ? `${formatUptime(Math.round(st.downtime_ms / 1000))} hors ligne` : `${STATS_DAYS} j`}
                 </p>
+                {up && up.checks > 0 && (
+                  <p className="text-[11px] text-text-muted tabular-nums" title={`${up.online} ping(s) réussi(s) sur ${up.checks}`}>
+                    dispo {formatPercent(up.uptime_percent)}
+                  </p>
+                )}
               </div>
             </div>
           );
@@ -171,7 +186,7 @@ export function History() {
       {confirmClear && (
         <ConfirmDialog
           title="Effacer l'historique"
-          message="Tous les événements et les statistiques de disponibilité seront supprimés. Continuer ?"
+          message="Tous les événements (coupures, retours en ligne, actions, échecs) seront supprimés définitivement. Les mesures de disponibilité (pings) sont conservées selon la rétention choisie dans Paramètres → Historique. Continuer ?"
           confirmLabel="Effacer"
           dangerous
           onConfirm={() => {

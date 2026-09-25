@@ -62,6 +62,9 @@ keyring = { version = "3", features = ["windows-native"] }
 tokio-native-tls = "0.3"
 x509-parser = "0.16"
 
+# Base locale de l'historique (SQLite compilé dans le binaire, sans DLL)
+rusqlite = { version = "0.40", default-features = false, features = ["bundled", "cache"] }
+
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
 
