@@ -2,28 +2,30 @@ import { NavLink, useLocation } from "react-router-dom";
 import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare, History, CalendarClock, Container, BellRing, Radar, Archive, PowerOff, Network, ListChecks, PackageSearch, ScrollText } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
+import { isVisible } from "../utils/modules";
+import { Onboarding } from "./Onboarding";
 import { Console } from "../pages/Console";
 import { CommandPalette } from "./CommandPalette";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { to: string; icon: typeof Server; label: string; module?: string }[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/servers", icon: Server, label: "Serveurs" },
   { to: "/groups", icon: Layers, label: "Groupes" },
-  { to: "/lab-power", icon: PowerOff, label: "Arrêt / démarrage" },
-  { to: "/resources", icon: Activity, label: "Ressources" },
-  { to: "/services", icon: Radar, label: "Services" },
-  { to: "/network", icon: Network, label: "Réseau" },
-  { to: "/docker", icon: Container, label: "Docker" },
-  { to: "/console", icon: TerminalSquare, label: "Console" },
-  { to: "/batch", icon: ListChecks, label: "Tâches en lot" },
-  { to: "/updates", icon: PackageSearch, label: "Mises à jour" },
-  { to: "/history", icon: History, label: "Historique" },
-  { to: "/logs", icon: ScrollText, label: "Logs" },
-  { to: "/alerts", icon: BellRing, label: "Alertes" },
-  { to: "/scheduler", icon: CalendarClock, label: "Planificateur" },
-  { to: "/proxmox", icon: Boxes, label: "Proxmox" },
-  { to: "/backups", icon: Archive, label: "Sauvegardes" },
-  { to: "/dashboards", icon: LayoutPanelTop, label: "Onglets web" },
+  { to: "/lab-power", icon: PowerOff, label: "Arrêt / démarrage", module: "power" },
+  { to: "/resources", icon: Activity, label: "Ressources", module: "resources" },
+  { to: "/services", icon: Radar, label: "Services", module: "services" },
+  { to: "/network", icon: Network, label: "Réseau", module: "network" },
+  { to: "/docker", icon: Container, label: "Docker", module: "docker" },
+  { to: "/console", icon: TerminalSquare, label: "Console", module: "console" },
+  { to: "/batch", icon: ListChecks, label: "Tâches en lot", module: "batch" },
+  { to: "/updates", icon: PackageSearch, label: "Mises à jour", module: "updates" },
+  { to: "/history", icon: History, label: "Historique", module: "history" },
+  { to: "/logs", icon: ScrollText, label: "Logs", module: "logs" },
+  { to: "/alerts", icon: BellRing, label: "Alertes", module: "alerts" },
+  { to: "/scheduler", icon: CalendarClock, label: "Planificateur", module: "scheduler" },
+  { to: "/proxmox", icon: Boxes, label: "Proxmox", module: "proxmox" },
+  { to: "/backups", icon: Archive, label: "Sauvegardes", module: "proxmox" },
+  { to: "/dashboards", icon: LayoutPanelTop, label: "Onglets web", module: "web" },
   { to: "/settings", icon: Settings, label: "Paramètres" },
 ];
 
@@ -32,8 +34,9 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { servers, statuses } = useStore();
+  const { servers, statuses, settings } = useStore();
   const onConsole = useLocation().pathname === "/console";
+  const nav = NAV_ITEMS.filter((i) => isVisible(i.module, settings.general.hidden_modules ?? []));
 
   const onlineCount = servers.filter((s) => statuses[s.id]?.online).length;
   const totalCount = servers.length;
@@ -59,7 +62,7 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Navigation : défile quand la fenêtre est trop basse pour tous les onglets */}
         <nav className="flex-1 min-h-0 overflow-y-auto p-2 md:p-3 space-y-0.5">
-          {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+          {nav.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
               to={to}
@@ -104,7 +107,8 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
-      <CommandPalette pages={NAV_ITEMS} />
+      <CommandPalette pages={nav} />
+      <Onboarding />
       <main className="flex-1 min-w-0 relative overflow-hidden">
         <div className={cn("h-full overflow-y-auto", onConsole && "hidden")}>{children}</div>
         {/* Console montée en permanence : les terminaux et leurs sessions SSH

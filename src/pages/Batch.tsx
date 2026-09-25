@@ -102,7 +102,7 @@ export function Batch() {
   const runId = useRef<string | null>(null);
 
   // Ansible
-  const [ansible, setAnsible] = useState<AnsibleConfig>({ server_id: "", dir: "/root/ansible" });
+  const [ansible, setAnsible] = useState<AnsibleConfig>({ server_id: "", dir: "/etc/ansible" });
   const [playbooks, setPlaybooks] = useState<string[] | null>(null);
   const [playbook, setPlaybook] = useState("");
   const [check, setCheck] = useState(true);
@@ -251,7 +251,7 @@ export function Batch() {
           <div className="grid grid-cols-2 gap-3">
             <label className="block"><span className="block text-xs text-text-secondary mb-1">Hôte Ansible</span>
               <select value={ansible.server_id} onChange={(e) => setAnsible({ ...ansible, server_id: e.target.value })} className={inputClass} aria-label="Hôte Ansible">
-                <option value="">— choisir (ajoute ton CT Ansible dans Serveurs) —</option>
+                <option value="">— choisir (ajoute d'abord l'hôte Ansible dans Serveurs) —</option>
                 {servers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </label>

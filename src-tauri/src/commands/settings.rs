@@ -46,10 +46,20 @@ pub fn update_settings(state: State<AppState>, settings: AppSettings) -> Result<
 pub fn export_config(state: State<AppState>) -> Result<String, String> {
     let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
 
-    // Créer une copie sans les mots de passe pour l'export
+    // Copie sans aucun secret : mots de passe SSH, jetons Proxmox, secrets des
+    // intégrations et des sondes (même chiffrés, ils ne quittent pas cette machine)
     let mut export_data = data.clone();
     for server in export_data.servers.iter_mut() {
-        server.ssh_password = String::new(); // Ne pas exporter les mots de passe
+        server.ssh_password = String::new();
+    }
+    for c in export_data.proxmox_connections.iter_mut() {
+        c.token_secret = String::new();
+    }
+    for i in export_data.integrations.iter_mut() {
+        i.secret = String::new();
+    }
+    for p in export_data.probes.iter_mut() {
+        p.secret = String::new();
     }
 
     serde_json::to_string_pretty(&export_data).map_err(|e| format!("Erreur de sérialisation: {}", e))

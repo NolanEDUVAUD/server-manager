@@ -10,6 +10,7 @@ import { ToastContainer } from '../components/Toast';
 import { ThemeCard } from '../components/ThemeCard';
 import { ThemeEditor } from '../components/ThemeEditor';
 import { IntegrationsSettings } from '../components/IntegrationsSettings';
+import { MODULES } from '../utils/modules';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
 type Section = 'general' | 'appearance' | 'network' | 'integrations' | 'config' | 'about';
@@ -211,6 +212,27 @@ function SectionGeneral() {
           checked={settings.general.close_to_tray}
           onChange={v => handleToggle('close_to_tray', v)}
         />
+      </div>
+
+      <h2 className="text-text-primary font-medium text-base">Modules</h2>
+      <p className="text-xs text-text-secondary -mt-4">Masque les onglets que tu n'utilises pas. Rien n'est supprimé.</p>
+      <div className="bg-bg-tertiary rounded-win p-4 card">
+        {MODULES.map(m => (
+          <ToggleRow
+            key={m.key}
+            label={m.label}
+            description={m.description}
+            checked={!settings.general.hidden_modules.includes(m.key)}
+            onChange={async v => {
+              const hidden = settings.general.hidden_modules.filter(k => k !== m.key);
+              try {
+                await updateGeneral({ hidden_modules: v ? hidden : [...hidden, m.key] });
+              } catch (e) {
+                error(String(e));
+              }
+            }}
+          />
+        ))}
       </div>
     </div>
   );

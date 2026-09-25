@@ -1,16 +1,19 @@
 /// Commandes Tauri — Sondes de services
 use tauri::{AppHandle, State};
 use uuid::Uuid;
+use zeroize::Zeroizing;
 
 use crate::{
-    probes::{execute, validate, Probe, ProbeResult, ProbeState},
+    crypto,
+    probes::{apply_secret, execute, validate, Probe, ProbeResult, ProbeState, ProbeView},
     storage::AppState,
 };
 
+/// Sondes sans leurs secrets (seul un indicateur « secret enregistré » est renvoyé)
 #[tauri::command]
-pub fn get_probes(state: State<AppState>) -> Result<Vec<Probe>, String> {
+pub fn get_probes(state: State<AppState>) -> Result<Vec<ProbeView>, String> {
     let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
-    Ok(data.probes.clone())
+    Ok(data.probes.iter().map(ProbeView::from).collect())
 }
 
 /// Derniers résultats connus (pour l'affichage à l'ouverture de la page)
@@ -19,13 +22,18 @@ pub fn get_probe_results(probes: State<ProbeState>) -> Vec<ProbeResult> {
     probes.latest()
 }
 
-/// Ajoute (id vide) ou met à jour une sonde, puis l'exécute immédiatement
+/// Ajoute (id vide) ou met à jour une sonde, puis l'exécute immédiatement.
+/// `secret` : None = garder celui enregistré, "" = l'effacer, sinon le nouveau secret (chiffré).
 #[tauri::command]
-pub async fn save_probe(app: AppHandle, state: State<'_, AppState>, mut probe: Probe) -> Result<Probe, String> {
+pub async fn save_probe(app: AppHandle, state: State<'_, AppState>, mut probe: Probe, secret: Option<String>) -> Result<ProbeView, String> {
+    let secret = secret.map(Zeroizing::new);
     validate(&probe)?;
     probe.name = probe.name.trim().to_string();
     {
         let mut data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        let key = crypto::data_key(&data)?;
+        let previous = data.probes.iter().find(|p| p.id == probe.id && !probe.id.is_empty()).cloned();
+        apply_secret(&mut probe, previous.as_ref(), secret, &key)?;
         match data.probes.iter_mut().find(|p| p.id == probe.id && !probe.id.is_empty()) {
             Some(existing) => *existing = probe.clone(),
             None => {
@@ -38,7 +46,7 @@ pub async fn save_probe(app: AppHandle, state: State<'_, AppState>, mut probe: P
     if probe.enabled {
         execute(&app, &probe).await;
     }
-    Ok(probe)
+    Ok(ProbeView::from(&probe))
 }
 
 #[tauri::command]

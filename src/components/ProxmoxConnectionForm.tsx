@@ -103,7 +103,7 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
               <input
                 value={form.api_url}
                 onChange={(e) => setForm((f) => ({ ...f, api_url: e.target.value }))}
-                placeholder="https://192.168.50.10:8006"
+                placeholder="https://192.168.1.10:8006"
                 required
                 className={`${inputClass} font-mono`}
               />

@@ -4613,6 +4613,7 @@ dependencies = [
  "winreg 0.52.0",
  "wiremock",
  "x509-parser",
+ "zeroize",
 ]
 
 [[package]]

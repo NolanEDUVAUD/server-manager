@@ -14,7 +14,12 @@ pub fn get_servers(state: State<AppState>) -> Result<Vec<Server>, String> {
         .data
         .lock()
         .map_err(|e| format!("Erreur mutex: {}", e))?;
-    Ok(data.servers.clone())
+    Ok(data.servers.iter().map(without_secret).collect())
+}
+
+/// Copie envoyée au frontend : le mot de passe (même chiffré) reste côté Rust
+fn without_secret(s: &Server) -> Server {
+    Server { ssh_password: String::new(), ..s.clone() }
 }
 
 // ── Ajouter un serveur ────────────────────────────────────────────────────
@@ -60,7 +65,7 @@ pub fn add_server(state: State<AppState>, payload: ServerPayload) -> Result<Serv
 
     state.save()?;
     log::info!("Serveur ajouté : {} ({})", server.name, server.ip);
-    Ok(server)
+    Ok(without_secret(&server))
 }
 
 // ── Modifier un serveur ───────────────────────────────────────────────────
@@ -121,7 +126,7 @@ pub fn update_server(
 
     state.save()?;
     log::info!("Serveur mis à jour : {} ({})", updated.name, updated.ip);
-    Ok(updated)
+    Ok(without_secret(&updated))
 }
 
 // ── Supprimer un serveur ──────────────────────────────────────────────────

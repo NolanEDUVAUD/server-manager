@@ -23,7 +23,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "Zabbix", name: "Zabbix", category: "Supervision",
     fields: {
-      url: { label: "URL de Zabbix", placeholder: "http://192.168.50.x/zabbix" },
+      url: { label: "URL de Zabbix", placeholder: "http://192.168.1.x/zabbix" },
       secret: { label: "Jeton API", placeholder: "Administration → Jetons API → Créer" },
       help: "Zabbix ≥ 5.4. Utilisateur avec droits d'écriture sur les groupes d'hôtes pour créer les maintenances.",
     },
@@ -31,7 +31,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "Loki", name: "Loki", category: "Supervision",
     fields: {
-      url: { label: "URL de Loki", placeholder: "http://192.168.50.x:3100" },
+      url: { label: "URL de Loki", placeholder: "http://192.168.1.x:3100" },
       username: { label: "Utilisateur (optionnel)", placeholder: "si Loki est derrière une authentification" },
       secret: { label: "Mot de passe (optionnel)", placeholder: "" },
       help: "Les logs doivent être envoyés à Loki (Promtail / Alloy) avec un label host ou hostname.",
@@ -40,7 +40,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "Npm", name: "Nginx Proxy Manager", category: "Infrastructure",
     fields: {
-      url: { label: "URL de l'interface", placeholder: "http://192.168.50.x:81" },
+      url: { label: "URL de l'interface", placeholder: "http://192.168.1.x:81" },
       username: { label: "E-mail du compte", placeholder: "admin@example.com" },
       secret: { label: "Mot de passe", placeholder: "" },
       help: "Un compte dédié en lecture suffit. NPM n'a pas de jeton API : le mot de passe est chiffré avec la clé maître.",
@@ -49,7 +49,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "TrueNas", name: "TrueNAS", category: "Infrastructure",
     fields: {
-      url: { label: "URL de TrueNAS", placeholder: "https://192.168.50.50" },
+      url: { label: "URL de TrueNAS", placeholder: "https://192.168.1.x" },
       secret: { label: "Clé API", placeholder: "Menu utilisateur → API Keys → Add" },
       tls: true,
       help: "Pools ZFS, datasets et SMART via l'API REST — ne nécessite pas le SSH.",
@@ -58,7 +58,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "Pbs", name: "Proxmox Backup Server", category: "Infrastructure",
     fields: {
-      url: { label: "URL de PBS", placeholder: "https://192.168.50.x:8007" },
+      url: { label: "URL de PBS", placeholder: "https://192.168.1.x:8007" },
       username: { label: "Jeton (user@realm!nom)", placeholder: "root@pam!servermanager" },
       secret: { label: "Secret du jeton", placeholder: "" },
       tls: true,
@@ -68,7 +68,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "HomeAssistant", name: "Home Assistant", category: "Infrastructure",
     fields: {
-      url: { label: "URL de Home Assistant", placeholder: "http://192.168.50.54:8015" },
+      url: { label: "URL de Home Assistant", placeholder: "http://192.168.1.x:8123" },
       secret: { label: "Jeton d'accès longue durée", placeholder: "Profil → Sécurité → Jetons d'accès longue durée" },
       help: "Chaque événement du homelab est publié dans Home Assistant (type server_manager_event) pour tes automatisations.",
     },
@@ -76,7 +76,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "OpnSense", name: "OPNsense", category: "Infrastructure",
     fields: {
-      url: { label: "URL d'OPNsense", placeholder: "https://192.168.50.1" },
+      url: { label: "URL d'OPNsense", placeholder: "https://192.168.1.1" },
       username: { label: "Clé API", placeholder: "Système → Accès → Utilisateurs → Clés API" },
       secret: { label: "Secret API", placeholder: "" },
       tls: true,
@@ -86,7 +86,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
   {
     kind: "MikroTik", name: "MikroTik", category: "Infrastructure",
     fields: {
-      url: { label: "URL du routeur", placeholder: "https://192.168.50.1" },
+      url: { label: "URL du routeur", placeholder: "https://192.168.1.1" },
       username: { label: "Utilisateur", placeholder: "api-read" },
       secret: { label: "Mot de passe", placeholder: "" },
       tls: true,

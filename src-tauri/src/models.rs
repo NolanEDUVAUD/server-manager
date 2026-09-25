@@ -154,11 +154,18 @@ pub struct GeneralSettings {
     /// Fermer la fenêtre la réduit dans la zone de notification au lieu de quitter
     #[serde(default = "default_true")]
     pub close_to_tray: bool,
+    /// Modules masqués de la barre latérale (clés : « proxmox », « docker »…)
+    #[serde(default)]
+    pub hidden_modules: Vec<String>,
+    /// Écran d'accueil déjà passé. Absent d'un fichier existant = installation déjà
+    /// en service : on ne le montre qu'aux nouvelles installations (Default = false).
+    #[serde(default = "default_true")]
+    pub onboarding_done: bool,
 }
 
 impl Default for GeneralSettings {
     fn default() -> Self {
-        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true }
+        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false }
     }
 }
 

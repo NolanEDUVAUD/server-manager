@@ -59,6 +59,10 @@ export interface GeneralSettings {
   notifications: boolean;
   /** Fermer la fenêtre la réduit dans la zone de notification */
   close_to_tray: boolean;
+  /** Modules masqués de la barre latérale */
+  hidden_modules: string[];
+  /** Écran d'accueil déjà passé */
+  onboarding_done: boolean;
 }
 
 export interface AppearanceSettings {
@@ -366,7 +370,7 @@ export interface AlertRule {
 // ─── Sondes de services ─────────────────────────────────────────────────────
 
 export type ProbeKind =
-  | { type: "Http"; url: string; expect_status: number | null; keyword: string | null }
+  | { type: "Http"; url: string; expect_status: number | null; keyword: string | null; json_path?: string | null; json_expect?: string | null }
   | { type: "Tcp"; host: string; port: number }
   | { type: "TlsExpiry"; host: string; port: number; warn_days: number };
 
@@ -378,7 +382,17 @@ export interface Probe {
   server_id: string | null;
   interval_secs: number;
   verify_tls: boolean;
+  auth: ProbeAuth;
+  /** Un secret chiffré est enregistré (sa valeur n'est jamais renvoyée) */
+  has_secret?: boolean;
 }
+
+/** Authentification HTTP d'une sonde ; le secret est saisi à part et chiffré côté Rust */
+export type ProbeAuth =
+  | { type: "None" }
+  | { type: "Basic"; username: string }
+  | { type: "Bearer" }
+  | { type: "Header"; name: string };
 
 export interface ProbeResult {
   probe_id: string;

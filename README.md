@@ -8,12 +8,15 @@ Construit avec **Tauri v2** (backend Rust) et **React + TypeScript + Tailwind** 
 
 - **Serveurs & groupes** : ajout/édition avec validation, actions groupées en 1 clic (WoL, arrêt, ping), import/export JSON
 - **Alimentation** : Wake-on-LAN, arrêt et redémarrage par SSH avec commande personnalisable par OS
-- **Supervision** : statut et latence en temps réel, ressources (CPU, RAM, disque), historique des événements, sondes de services, alertes (ntfy, webhook…)
+- **Supervision** : statut et latence en temps réel, ressources (CPU, RAM, disque), historique des événements, alertes (ntfy, Discord, Telegram…)
+- **Services** : catalogue d'une trentaine de services auto-hébergés (Home Assistant, Jellyfin, Plex, Pi-hole, AdGuard, Nextcloud, Grafana, Portainer, Proxmox, TrueNAS, Synology…) et service personnalisé pour n'importe quelle URL : code HTTP, mot-clé, valeur JSON, authentification Basic / jeton / clé d'API
+- **Modules** : n'affiche que ce que tu utilises (choix au premier lancement, modifiable dans Paramètres → Général)
 - **Proxmox** : état du cluster, VM/CT, sauvegardes, migration
 - **Docker** : conteneurs et images à mettre à jour
-- **Console SSH** intégrée, snippets, tâches en lot sur plusieurs serveurs
+- **Console SSH** intégrée, snippets, tâches en lot sur plusieurs serveurs avec réponse aux questions interactives (dpkg, apt)
 - **Planificateur** : tâches programmées, avec création des cronjobs directement sur les serveurs Linux
 - **Mises à jour** (apt), **réseau**, **logs** (Loki), zone de notification Windows
+- **Thèmes** : One Half Dark, Fluent, Gruvbox Dark, Nord, Dracula, Catppuccin Mocha, Tokyo Night, ou thème personnalisé
 
 ## Téléchargement
 
@@ -85,8 +88,11 @@ Les installateurs sont générés dans :
 ## Données et sécurité
 
 - La configuration est stockée dans `%APPDATA%\com.homelab.server-manager\`.
-- Les mots de passe et jetons sont chiffrés (AES-256-GCM) avec une clé maître conservée dans le **Gestionnaire d'identification Windows**, jamais en clair sur le disque.
-- L'export JSON de la configuration n'inclut pas les mots de passe SSH (à ressaisir après un import).
+- Tous les secrets (mots de passe SSH, jetons Proxmox, identifiants des intégrations et des services) sont chiffrés en AES-256-GCM avec une clé maître conservée dans le **Gestionnaire d'identification Windows**. Rien n'est écrit en clair sur le disque.
+- Les secrets ne sont jamais renvoyés à l'interface (seulement « enregistré ») et ne sont déchiffrés qu'au moment de la connexion, puis effacés de la mémoire.
+- Les en-têtes d'authentification sont marqués sensibles et les redirections sont refusées pour les requêtes authentifiées. L'interface prévient si un secret passerait en HTTP ou sans vérification du certificat.
+- L'export JSON de la configuration ne contient aucun secret (à ressaisir après un import).
+- Clés d'hôte SSH vérifiées (mémorisées à la première connexion), commandes Tauri limitées à la fenêtre principale, CSP stricte.
 
 ## Développement
 

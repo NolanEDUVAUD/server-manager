@@ -95,7 +95,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
   function validate(): boolean {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = "Le nom est requis";
-    if (!isValidIP(form.ip)) errs.ip = "Adresse IP invalide (ex: 192.168.50.10)";
+    if (!isValidIP(form.ip)) errs.ip = "Adresse IP invalide (ex: 192.168.1.10)";
     if (form.mac_address && !isValidMAC(form.mac_address)) {
       errs.mac_address = "Format MAC invalide (ex: AA:BB:CC:DD:EE:FF)";
     }
@@ -174,7 +174,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
                 className={inputClass}
                 value={form.ip}
                 onChange={(e) => set("ip", e.target.value)}
-                placeholder="192.168.50.10"
+                placeholder="192.168.1.10"
               />
               {errors.ip && <p className={errorClass}>{errors.ip}</p>}
             </div>

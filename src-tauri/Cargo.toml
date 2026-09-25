@@ -1,6 +1,6 @@
 [package]
 name = "server-manager"
-version = "0.1.0"
+version = "0.2.0"
 description = "Server Power Manager - Gestionnaire d'alimentation de serveurs homelab"
 authors = []
 edition = "2021"
@@ -34,6 +34,7 @@ async-trait = "0.1"
 
 # Chiffrement AES-256-GCM pour les mots de passe
 aes-gcm = "0.10"
+zeroize = "1"
 sha2 = "0.10"
 rand = "0.8"
 base64 = "0.22"

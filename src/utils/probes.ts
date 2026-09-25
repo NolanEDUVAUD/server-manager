@@ -15,7 +15,7 @@ export function describeProbe(kind: ProbeKind): string {
 export function suggestProbes(servers: Server[], existing: Probe[]): Probe[] {
   const key = (k: ProbeKind) => JSON.stringify(k);
   const taken = new Set(existing.map((p) => key(p.kind)));
-  const base = { id: "", enabled: true, interval_secs: 60, verify_tls: false };
+  const base = { id: "", enabled: true, interval_secs: 60, verify_tls: false, auth: { type: "None" } as const };
   const out: Probe[] = [];
   for (const s of servers) {
     if (s.os_type === "Proxmox") {
@@ -27,4 +27,13 @@ export function suggestProbes(servers: Server[], existing: Probe[]): Probe[] {
     }
   }
   return out.filter((p) => !taken.has(key(p.kind)));
+}
+
+/** Risques d'exposition du secret d'une sonde authentifiée, à afficher dans le formulaire */
+export function authWarnings(p: Probe): string[] {
+  if (p.auth.type === "None" || p.kind.type !== "Http") return [];
+  const url = p.kind.url.trim().toLowerCase();
+  if (url.startsWith("http://")) return ["HTTP sans chiffrement : le secret circule en clair sur le réseau. Préfère https:// si le service le permet."];
+  if (!p.verify_tls) return ["Certificat non vérifié : un intermédiaire sur le réseau pourrait intercepter le secret."];
+  return [];
 }

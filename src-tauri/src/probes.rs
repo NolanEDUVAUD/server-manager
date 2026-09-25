@@ -1,4 +1,6 @@
-/// Sondes de services : HTTP(S), port TCP, expiration de certificat TLS
+/// Sondes de services : HTTP(S) avec authentification et lecture JSON, port TCP,
+/// expiration de certificat TLS. Sert aussi d'intégration générique : n'importe quel
+/// service web peut être surveillé, avec un secret chiffré par la clé maître.
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Mutex;
@@ -6,7 +8,9 @@ use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::net::TcpStream;
 
-use crate::{alerts::AlertEngine, events::now_ms, integrations::http_client, storage::AppState};
+use zeroize::Zeroizing;
+
+use crate::{alerts::AlertEngine, crypto, events::now_ms, integrations::http_client, storage::AppState};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type")]
@@ -19,9 +23,28 @@ pub enum ProbeKind {
         /// Texte qui doit apparaître dans la réponse
         #[serde(default)]
         keyword: Option<String>,
+        /// Chemin dans la réponse JSON (ex. « data.version », « items.0.state »)
+        #[serde(default)]
+        json_path: Option<String>,
+        /// Valeur attendue à ce chemin ; absente = la valeur est seulement affichée
+        #[serde(default)]
+        json_expect: Option<String>,
     },
     Tcp { host: String, port: u16 },
     TlsExpiry { host: String, port: u16, warn_days: i64 },
+}
+
+/// Authentification d'une sonde HTTP. Le secret correspondant (mot de passe,
+/// jeton, valeur d'en-tête) est stocké chiffré dans `Probe::secret`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(tag = "type")]
+pub enum ProbeAuth {
+    #[default]
+    None,
+    Basic { username: String },
+    Bearer,
+    /// En-tête personnalisé (ex. X-Api-Key, Authorization: PVEAPIToken=…)
+    Header { name: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -36,6 +59,41 @@ pub struct Probe {
     pub interval_secs: u64,
     #[serde(default)]
     pub verify_tls: bool,
+    #[serde(default)]
+    pub auth: ProbeAuth,
+    /// Secret chiffré (clé maître) ; jamais envoyé au frontend
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub secret: String,
+}
+
+/// Sonde telle que vue par le frontend : le secret est remplacé par un indicateur
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct ProbeView {
+    #[serde(flatten)]
+    pub probe: Probe,
+    pub has_secret: bool,
+}
+
+impl From<&Probe> for ProbeView {
+    fn from(p: &Probe) -> Self {
+        let has_secret = !p.secret.is_empty();
+        ProbeView { probe: Probe { secret: String::new(), ..p.clone() }, has_secret }
+    }
+}
+
+/// Fixe le secret chiffré d'une sonde enregistrée :
+/// `new_secret` None = garder l'ancien, Some("") = effacer, Some(x) = chiffrer x.
+pub fn apply_secret(probe: &mut Probe, previous: Option<&Probe>, new_secret: Option<Zeroizing<String>>, key: &[u8; 32]) -> Result<(), String> {
+    probe.secret = match (&probe.auth, new_secret) {
+        (ProbeAuth::None, _) => String::new(),
+        (_, Some(s)) if s.is_empty() => String::new(),
+        (_, Some(s)) => crypto::encrypt(&s, key)?,
+        (_, None) => previous.map(|p| p.secret.clone()).unwrap_or_default(),
+    };
+    if probe.auth != ProbeAuth::None && probe.secret.is_empty() {
+        return Err("Secret requis pour cette authentification (mot de passe, jeton ou valeur d'en-tête)".into());
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -61,10 +119,27 @@ pub fn validate(probe: &Probe) -> Result<(), String> {
     if probe.interval_secs < 10 {
         return Err("Intervalle minimum : 10 secondes".into());
     }
+    match &probe.auth {
+        ProbeAuth::Basic { username } if username.trim().is_empty() => return Err("Nom d'utilisateur requis".into()),
+        ProbeAuth::Header { name } => validate_header_name(name)?,
+        _ => {}
+    }
+    if probe.auth != ProbeAuth::None && !matches!(probe.kind, ProbeKind::Http { .. }) {
+        return Err("L'authentification ne concerne que les sondes HTTP".into());
+    }
     match &probe.kind {
-        ProbeKind::Http { url, .. } => crate::integrations::validate_url(url).and_then(|_| {
-            if url.trim().is_empty() { Err("URL requise".into()) } else { Ok(()) }
-        }),
+        ProbeKind::Http { url, json_path, .. } => {
+            crate::integrations::validate_url(url)?;
+            if url.trim().is_empty() {
+                return Err("URL requise".into());
+            }
+            if let Some(p) = json_path.as_deref().filter(|p| !p.trim().is_empty()) {
+                if p.len() > 200 || !p.chars().all(|c| c.is_alphanumeric() || "._-".contains(c)) {
+                    return Err("Chemin JSON invalide (ex. data.version ou items.0.state)".into());
+                }
+            }
+            Ok(())
+        }
         ProbeKind::Tcp { host, port } | ProbeKind::TlsExpiry { host, port, .. } => {
             if host.trim().is_empty() || host.contains(char::is_whitespace) {
                 Err("Hôte invalide".into())
@@ -74,6 +149,43 @@ pub fn validate(probe: &Probe) -> Result<(), String> {
                 Ok(())
             }
         }
+    }
+}
+
+/// Nom d'en-tête HTTP valide, hors en-têtes gérés par le client lui-même
+fn validate_header_name(name: &str) -> Result<(), String> {
+    let n = name.trim();
+    reqwest::header::HeaderName::from_bytes(n.as_bytes()).map_err(|_| format!("Nom d'en-tête invalide : {}", n))?;
+    if ["host", "content-length", "transfer-encoding", "connection"].contains(&n.to_ascii_lowercase().as_str()) {
+        return Err(format!("En-tête réservé : {}", n));
+    }
+    Ok(())
+}
+
+/// Valeur d'un chemin « a.b.0.c » dans un document JSON, sous forme de texte
+pub fn json_lookup(doc: &serde_json::Value, path: &str) -> Option<String> {
+    let mut cur = doc;
+    for part in path.split('.').filter(|p| !p.is_empty()) {
+        cur = match cur {
+            serde_json::Value::Array(a) => a.get(part.parse::<usize>().ok()?)?,
+            serde_json::Value::Object(o) => o.get(part)?,
+            _ => return None,
+        };
+    }
+    Some(match cur {
+        serde_json::Value::String(s) => s.clone(),
+        other => other.to_string(),
+    })
+}
+
+/// Compare la valeur lue dans le JSON à l'attente (insensible à la casse)
+pub fn judge_json(body: &str, path: &str, expect: Option<&str>) -> Result<String, String> {
+    let doc: serde_json::Value = serde_json::from_str(body).map_err(|_| "Réponse non JSON".to_string())?;
+    let value = json_lookup(&doc, path).ok_or_else(|| format!("« {} » absent de la réponse", path))?;
+    let shown: String = value.chars().take(60).collect();
+    match expect.map(str::trim).filter(|e| !e.is_empty()) {
+        Some(e) if !value.eq_ignore_ascii_case(e) => Err(format!("{} = {} (attendu {})", path, shown, e)),
+        _ => Ok(format!("{} = {}", path, shown)),
     }
 }
 
@@ -146,25 +258,53 @@ fn native_tls_connector() -> Result<tokio_native_tls::TlsConnector, String> {
         .map_err(|e| e.to_string())
 }
 
-async fn run(probe: &Probe) -> Outcome {
+/// Requête HTTP authentifiée. Les en-têtes d'authentification sont marqués sensibles
+/// (jamais journalisés) et les redirections sont refusées : un en-tête personnalisé
+/// ne doit pas pouvoir être relayé vers un autre hôte.
+fn http_request(probe: &Probe, url: &str, secret: Option<&str>) -> Result<reqwest::RequestBuilder, String> {
+    let client = match (&probe.auth, secret) {
+        (ProbeAuth::None, _) | (_, None) => http_client(probe.verify_tls, 10)?,
+        _ => reqwest::Client::builder()
+            .danger_accept_invalid_certs(!probe.verify_tls)
+            .timeout(Duration::from_secs(10))
+            .redirect(reqwest::redirect::Policy::none())
+            .build()
+            .map_err(|e| format!("Client HTTP : {}", e))?,
+    };
+    let req = client.get(url);
+    Ok(match (&probe.auth, secret) {
+        (ProbeAuth::Basic { username }, Some(s)) => req.basic_auth(username.trim(), Some(s)),
+        (ProbeAuth::Bearer, Some(s)) => req.bearer_auth(s),
+        (ProbeAuth::Header { name }, Some(s)) => {
+            let mut value = reqwest::header::HeaderValue::from_str(s).map_err(|_| "Valeur d'en-tête invalide".to_string())?;
+            value.set_sensitive(true);
+            req.header(name.trim(), value)
+        }
+        _ => req,
+    })
+}
+
+async fn run(probe: &Probe, secret: Option<&str>) -> Outcome {
     let start = Instant::now();
     let elapsed = |s: Instant| Some(s.elapsed().as_millis() as u64);
     match &probe.kind {
-        ProbeKind::Http { url, expect_status, keyword } => {
-            let client = match http_client(probe.verify_tls, 10) {
-                Ok(c) => c,
+        ProbeKind::Http { url, expect_status, keyword, json_path, json_expect } => {
+            let req = match http_request(probe, url, secret) {
+                Ok(r) => r,
                 Err(e) => return Outcome { ok: false, latency_ms: None, detail: e, cert_days_left: None },
             };
-            match client.get(url).send().await {
+            let json_path = json_path.as_deref().map(str::trim).filter(|p| !p.is_empty());
+            match req.send().await {
                 Ok(resp) => {
                     let status = resp.status().as_u16();
                     let latency = elapsed(start);
-                    let body = if keyword.as_deref().map_or(false, |k| !k.trim().is_empty()) {
-                        resp.text().await.unwrap_or_default()
-                    } else {
-                        String::new()
-                    };
-                    match judge_http(status, &body, *expect_status, keyword.as_deref()) {
+                    let needs_body = json_path.is_some() || keyword.as_deref().is_some_and(|k| !k.trim().is_empty());
+                    let body = if needs_body { resp.text().await.unwrap_or_default() } else { String::new() };
+                    let verdict = judge_http(status, &body, *expect_status, keyword.as_deref()).and_then(|d| match json_path {
+                        Some(p) => judge_json(&body, p, json_expect.as_deref()).map(|j| format!("{} · {}", d, j)),
+                        None => Ok(d),
+                    });
+                    match verdict {
                         Ok(d) => Outcome { ok: true, latency_ms: latency, detail: d, cert_days_left: None },
                         Err(d) => Outcome { ok: false, latency_ms: latency, detail: d, cert_days_left: None },
                     }
@@ -216,7 +356,22 @@ impl ProbeState {
 
 /// Exécute une sonde, met à jour l'état, prévient le moteur d'alertes et le frontend
 pub async fn execute(app: &AppHandle, probe: &Probe) -> ProbeResult {
-    let outcome = run(probe).await;
+    // Secret déchiffré juste pour la requête, effacé de la mémoire ensuite (Zeroizing)
+    let secret: Result<Option<Zeroizing<String>>, String> = if probe.secret.is_empty() {
+        Ok(None)
+    } else {
+        app.state::<AppState>()
+            .data
+            .lock()
+            .map_err(|e| e.to_string())
+            .and_then(|d| crypto::data_key(&d))
+            .and_then(|key| crypto::decrypt(&probe.secret, &key))
+            .map(|s| Some(Zeroizing::new(s)))
+    };
+    let outcome = match &secret {
+        Ok(s) => run(probe, s.as_deref().map(String::as_str)).await,
+        Err(_) => Outcome { ok: false, latency_ms: None, detail: "Secret illisible : ressaisis-le dans la sonde".into(), cert_days_left: None },
+    };
     let st = app.state::<ProbeState>();
     let uptime_percent = {
         let mut h = st.history.lock().unwrap_or_else(|e| e.into_inner());
@@ -291,6 +446,79 @@ mod tests {
     }
 
     #[test]
+    fn json_lookup_and_judgement() {
+        let body = r#"{"data":{"version":"8.2.4","nodes":[{"state":"online"}]},"installed":true}"#;
+        let doc: serde_json::Value = serde_json::from_str(body).unwrap();
+        assert_eq!(json_lookup(&doc, "data.version").as_deref(), Some("8.2.4"));
+        assert_eq!(json_lookup(&doc, "data.nodes.0.state").as_deref(), Some("online"));
+        assert_eq!(json_lookup(&doc, "installed").as_deref(), Some("true"));
+        assert_eq!(json_lookup(&doc, "data.nodes.3"), None);
+        assert_eq!(judge_json(body, "data.version", None).unwrap(), "data.version = 8.2.4");
+        assert!(judge_json(body, "installed", Some("TRUE")).is_ok());
+        assert!(judge_json(body, "data.nodes.0.state", Some("offline")).unwrap_err().contains("attendu offline"));
+        assert!(judge_json("<html>", "a", None).unwrap_err().contains("non JSON"));
+    }
+
+    fn http_probe(auth: ProbeAuth) -> Probe {
+        Probe {
+            id: "p".into(),
+            name: "API".into(),
+            enabled: true,
+            kind: ProbeKind::Http { url: "https://svc.local/api".into(), expect_status: None, keyword: None, json_path: None, json_expect: None },
+            server_id: None,
+            interval_secs: 60,
+            verify_tls: true,
+            auth,
+            secret: String::new(),
+        }
+    }
+
+    #[test]
+    fn secret_is_encrypted_kept_cleared_and_never_exposed() {
+        let key = crypto::generate_key();
+        let mut p = http_probe(ProbeAuth::Bearer);
+        // Nouveau secret : chiffré, jamais en clair
+        apply_secret(&mut p, None, Some(Zeroizing::new("tok-123".into())), &key).unwrap();
+        assert!(!p.secret.contains("tok-123"));
+        assert_eq!(crypto::decrypt(&p.secret, &key).unwrap(), "tok-123");
+        // Vue frontend : aucun secret, seulement l'indicateur
+        let view = serde_json::to_string(&ProbeView::from(&p)).unwrap();
+        assert!(!view.contains(&p.secret) && view.contains("\"has_secret\":true"), "{}", view);
+        // Modification sans ressaisie : le secret est conservé
+        let previous = p.clone();
+        let mut edited = http_probe(ProbeAuth::Bearer);
+        apply_secret(&mut edited, Some(&previous), None, &key).unwrap();
+        assert_eq!(edited.secret, previous.secret);
+        // Passage à « aucune authentification » : secret effacé
+        let mut none = http_probe(ProbeAuth::None);
+        apply_secret(&mut none, Some(&previous), None, &key).unwrap();
+        assert!(none.secret.is_empty());
+        // Authentification sans secret : refusée
+        let mut missing = http_probe(ProbeAuth::Bearer);
+        assert!(apply_secret(&mut missing, None, None, &key).is_err());
+    }
+
+    #[test]
+    fn auth_validation() {
+        assert!(validate(&http_probe(ProbeAuth::Header { name: "X-Api-Key".into() })).is_ok());
+        assert!(validate(&http_probe(ProbeAuth::Header { name: "Bad Header".into() })).is_err());
+        assert!(validate(&http_probe(ProbeAuth::Header { name: "Host".into() })).is_err());
+        assert!(validate(&http_probe(ProbeAuth::Basic { username: " ".into() })).is_err());
+        let mut p = http_probe(ProbeAuth::None);
+        p.kind = ProbeKind::Http { url: "https://x".into(), expect_status: None, keyword: None, json_path: Some("data.$eval".into()), json_expect: None };
+        assert!(validate(&p).is_err());
+    }
+
+    #[test]
+    fn custom_header_is_sensitive_and_redirects_are_refused() {
+        let p = http_probe(ProbeAuth::Header { name: "X-Api-Key".into() });
+        let req = http_request(&p, "https://svc.local/api", Some("k3y")).unwrap().build().unwrap();
+        let h = req.headers().get("x-api-key").unwrap();
+        assert!(h.is_sensitive());
+        assert!(!format!("{:?}", req.headers()).contains("k3y"));
+    }
+
+    #[test]
     fn cert_days_and_uptime() {
         assert_eq!(days_left(10 * 86_400 + 5, 0), 10);
         assert_eq!(days_left(-1, 0), -1);
@@ -309,12 +537,14 @@ mod tests {
             server_id: None,
             interval_secs: 60,
             verify_tls: false,
+            auth: ProbeAuth::None,
+            secret: String::new(),
         };
         assert!(validate(&p).is_ok());
         p.interval_secs = 5;
         assert!(validate(&p).is_err());
         p.interval_secs = 60;
-        p.kind = ProbeKind::Http { url: "ftp://x".into(), expect_status: None, keyword: None };
+        p.kind = ProbeKind::Http { url: "ftp://x".into(), expect_status: None, keyword: None, json_path: None, json_expect: None };
         assert!(validate(&p).is_err());
         p.kind = ProbeKind::TlsExpiry { host: "a b".into(), port: 443, warn_days: 14 };
         assert!(validate(&p).is_err());
