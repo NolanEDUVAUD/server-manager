@@ -58,20 +58,20 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-xs">
+      <div className="grid grid-cols-[3rem_1fr_auto] gap-3 text-xs">
         <div>
           <p className="text-text-secondary">CPU</p>
           <p className="text-text-primary font-mono">{Math.round(vm.cpu * 100)}%</p>
         </div>
         <div>
           <p className="text-text-secondary">RAM</p>
-          <p className="text-text-primary font-mono">
+          <p className="text-text-primary font-mono whitespace-nowrap">
             {formatBytes(vm.mem)} / {formatBytes(vm.maxmem)}
           </p>
         </div>
         <div>
           <p className="text-text-secondary">Disque</p>
-          <p className="text-text-primary font-mono">{formatBytes(vm.maxdisk)}</p>
+          <p className="text-text-primary font-mono whitespace-nowrap">{formatBytes(vm.maxdisk)}</p>
         </div>
       </div>
 

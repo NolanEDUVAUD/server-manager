@@ -94,6 +94,7 @@ fn app_manifest() -> tauri_build::AppManifest {
         "ping_group",
         "ping_server",
         "proxmox_add_connection",
+        "proxmox_cluster_health",
         "proxmox_delete_connection",
         "proxmox_list_connections",
         "proxmox_list_vms",

@@ -72,6 +72,11 @@ impl ProxmoxClient {
         format!("{}/api2/json{}", self.api_url, path)
     }
 
+    /// Réponse brute (champ data) d'un GET, pour les endpoints analysés en JSON libre
+    pub async fn get_value(&self, path: &str) -> Result<serde_json::Value, String> {
+        self.get_json(path).await
+    }
+
     async fn get_json<T: DeserializeOwned>(&self, path: &str) -> Result<T, String> {
         let resp = self
             .http
@@ -109,6 +114,28 @@ impl ProxmoxClient {
 
     pub async fn test_connection(&self) -> Result<(), String> {
         self.get_json::<serde_json::Value>("/version").await.map(|_| ())
+    }
+
+    /// Santé du cluster : les endpoints facultatifs (HA, disques) en échec sont ignorés
+    pub async fn cluster_health(&self) -> Result<super::health::ClusterHealth, String> {
+        let status = self.get_value("/cluster/status").await?;
+        let resources = self.get_value("/cluster/resources").await?;
+        let ha = self.get_value("/cluster/ha/status/current").await.unwrap_or(serde_json::Value::Null);
+        let nodes: Vec<String> = resources
+            .as_array()
+            .map(|r| {
+                r.iter()
+                    .filter(|x| x["type"] == "node" && x["status"] == "online")
+                    .filter_map(|x| x["node"].as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let disks = futures::future::join_all(nodes.into_iter().map(|n| async move {
+            let list = self.get_value(&format!("/nodes/{}/disks/list", n)).await.unwrap_or(serde_json::Value::Null);
+            (n, list)
+        }))
+        .await;
+        Ok(super::health::build(&status, &resources, &ha, &disks))
     }
 
     pub async fn list_nodes(&self) -> Result<Vec<ProxmoxNode>, String> {

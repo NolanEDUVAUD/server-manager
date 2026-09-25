@@ -252,3 +252,15 @@ pub async fn proxmox_vm_clone(
     };
     client.clone_vm(&node, vmid, vm_type, &new_name).await
 }
+
+#[tauri::command]
+pub async fn proxmox_cluster_health(
+    state: State<'_, AppState>,
+    connection_id: String,
+) -> Result<crate::proxmox::health::ClusterHealth, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.cluster_health().await
+}

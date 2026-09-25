@@ -170,6 +170,8 @@ pub fn run() {
             probes_cmd::save_probe,
             probes_cmd::delete_probe,
             probes_cmd::run_probe_now,
+            // ── Proxmox avancé ──────────────────────────────────
+            proxmox_cmd::proxmox_cluster_health,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,
@@ -221,5 +223,27 @@ mod acl_tests {
         let cap: serde_json::Value = serde_json::from_str(include_str!("../capabilities/main.json")).unwrap();
         assert!(cap.get("remote").is_none());
         assert_eq!(cap["webviews"], serde_json::json!(["main"]));
+    }
+}
+
+/// Outil de développement (ignoré par défaut) : exécute une commande sur un serveur
+/// du homelab avec les identifiants réels de l'app (clé maître Windows).
+/// Usage : DEV_SERVER=minipc DEV_CMD="pvesh get /cluster/status --output-format json" \
+///         cargo test dev_exec -- --ignored --nocapture
+#[cfg(test)]
+mod dev_tools {
+    #[tokio::test]
+    #[ignore]
+    async fn dev_exec() {
+        let server = std::env::var("DEV_SERVER").expect("DEV_SERVER");
+        let cmd = std::env::var("DEV_CMD").expect("DEV_CMD");
+        let dir = std::path::PathBuf::from(std::env::var("APPDATA").unwrap()).join("com.homelab.server-manager");
+        let data = crate::storage::load_app_data(&dir.join("data.json"));
+        crate::crypto::set_master_key(crate::keystore::load_or_create_master_key().unwrap());
+        crate::known_hosts::init(dir.join("known_hosts.json"));
+        let s = data.servers.iter().find(|s| s.name == server || s.ip == server).expect("serveur inconnu");
+        let pass = crate::commands::servers::get_decrypted_password(&data, &s.id).unwrap();
+        let r = crate::commands::ssh::execute_ssh(&s.ip, s.ssh_port, &s.ssh_user, &pass, &cmd, 20).await.unwrap();
+        println!("===SORTIE===\n{}\n===FIN=== (succès : {})", r.output, r.success);
     }
 }

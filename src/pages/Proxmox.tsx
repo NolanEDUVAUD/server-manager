@@ -4,6 +4,7 @@ import { Plus, Server as ServerIcon, AlertCircle, Pencil, Trash2, Globe } from "
 import { useStore } from "../stores/useStore";
 import { useProxmoxStatus } from "../hooks/useProxmoxStatus";
 import { useToast } from "../hooks/useToast";
+import { ClusterHealthPanel } from "../components/ClusterHealthPanel";
 import { VmCard } from "../components/VmCard";
 import { ProxmoxConnectionForm } from "../components/ProxmoxConnectionForm";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -117,6 +118,7 @@ export function Proxmox() {
               </button>
             </div>
           </div>
+          <ClusterHealthPanel connectionId={conn.id} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {(proxmoxVms[conn.id] ?? []).map((vm) => (
               <VmCard key={`${conn.id}-${vm.node}-${vm.vm_type}-${vm.vmid}`} vm={vm} connectionId={conn.id} onMessage={onMessage} />

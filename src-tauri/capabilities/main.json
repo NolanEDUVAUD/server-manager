@@ -88,6 +88,7 @@
     "allow-get-probe-results",
     "allow-save-probe",
     "allow-delete-probe",
-    "allow-run-probe-now"
+    "allow-run-probe-now",
+    "allow-proxmox-cluster-health"
   ]
 }

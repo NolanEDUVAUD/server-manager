@@ -389,3 +389,19 @@ export interface ProbeResult {
   cert_days_left: number | null;
   uptime_percent: number;
 }
+
+// ─── Santé du cluster Proxmox ───────────────────────────────────────────────
+
+export interface ClusterHealth {
+  name: string;
+  quorate: boolean;
+  nodes: { name: string; online: boolean; cpu_percent: number; mem_percent: number; disk_percent: number; uptime_secs: number }[];
+  storages: {
+    name: string; plugin: string; shared: boolean; content: string;
+    available_on: string[]; unavailable_on: string[];
+    used_percent: number | null; total_bytes: number | null;
+  }[];
+  disks: { node: string; devpath: string; model: string; health: string; life_left_percent: number | null; size_bytes: number; kind: string }[];
+  ha: string[];
+  warnings: string[];
+}

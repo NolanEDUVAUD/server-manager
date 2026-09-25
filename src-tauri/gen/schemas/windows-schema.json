@@ -411,6 +411,12 @@
           "markdownDescription": "Enables the proxmox_add_connection command without any pre-configured scope."
         },
         {
+          "description": "Enables the proxmox_cluster_health command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-cluster-health",
+          "markdownDescription": "Enables the proxmox_cluster_health command without any pre-configured scope."
+        },
+        {
           "description": "Enables the proxmox_delete_connection command without any pre-configured scope.",
           "type": "string",
           "const": "allow-proxmox-delete-connection",
@@ -871,6 +877,12 @@
           "type": "string",
           "const": "deny-proxmox-add-connection",
           "markdownDescription": "Denies the proxmox_add_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_cluster_health command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-cluster-health",
+          "markdownDescription": "Denies the proxmox_cluster_health command without any pre-configured scope."
         },
         {
           "description": "Denies the proxmox_delete_connection command without any pre-configured scope.",

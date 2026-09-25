@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-cluster-health"
+description = "Enables the proxmox_cluster_health command without any pre-configured scope."
+commands.allow = ["proxmox_cluster_health"]
+
+[[permission]]
+identifier = "deny-proxmox-cluster-health"
+description = "Denies the proxmox_cluster_health command without any pre-configured scope."
+commands.deny = ["proxmox_cluster_health"]
