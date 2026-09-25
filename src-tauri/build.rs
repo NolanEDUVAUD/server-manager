@@ -71,6 +71,7 @@ fn app_manifest() -> tauri_build::AppManifest {
         "docker_logs",
         "export_config",
         "export_full_config",
+        "forget_host_key",
         "get_autostart",
         "get_data_path",
         "get_event_stats",

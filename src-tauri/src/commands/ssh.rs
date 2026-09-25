@@ -7,24 +7,36 @@ use tauri::State;
 use crate::{
     commands::servers::get_decrypted_password,
     events::{EventKind, EventLog},
+    known_hosts::{self, Trust},
     models::SshResult,
     storage::AppState,
 };
 
-// ── Handler SSH minimal (accepte tous les hosts pour usage homelab) ───────
-pub(crate) struct SshHandler;
+// ── Handler SSH : vérification de la clé d'hôte (TOFU) ────────────────────
+pub(crate) struct SshHandler {
+    host: String,
+    /// Renseigné quand la clé est refusée, pour un message d'erreur explicite
+    rejected: Arc<std::sync::Mutex<Option<String>>>,
+}
 
 #[async_trait]
 impl client::Handler for SshHandler {
     type Error = russh::Error;
 
-    async fn check_server_key(
-        &mut self,
-        _server_public_key: &PublicKey,
-    ) -> Result<bool, Self::Error> {
-        // Pour un homelab isolé, on accepte n'importe quel host key
-        // En production : vérifier le fingerprint
-        Ok(true)
+    /// Appelé AVANT l'authentification : refuser ici garantit que le mot de passe
+    /// n'est jamais envoyé à un serveur dont la clé a changé (usurpation possible).
+    async fn check_server_key(&mut self, server_public_key: &PublicKey) -> Result<bool, Self::Error> {
+        let fingerprint = server_public_key.fingerprint();
+        match known_hosts::verify(&self.host, &fingerprint) {
+            Trust::New | Trust::Match => Ok(true),
+            Trust::Mismatch { expected } => {
+                log::warn!("Clé d'hôte SSH modifiée pour {} : attendue {}, reçue {}", self.host, expected, fingerprint);
+                if let Ok(mut slot) = self.rejected.lock() {
+                    *slot = Some(fingerprint);
+                }
+                Ok(false)
+            }
+        }
     }
 }
 
@@ -39,13 +51,26 @@ pub(crate) async fn connect_ssh(
     // Le timeout est géré par tokio::time::timeout ci-dessous
     let config = Arc::new(client::Config::default());
 
+    let rejected = Arc::new(std::sync::Mutex::new(None));
+    let handler = SshHandler { host: format!("{}:{}", ip, port), rejected: rejected.clone() };
+
     let mut session = tokio::time::timeout(
         std::time::Duration::from_secs(timeout_secs),
-        client::connect(config, (ip, port), SshHandler),
+        client::connect(config, (ip, port), handler),
     )
     .await
     .map_err(|_| format!("Timeout de connexion à {}:{}", ip, port))?
-    .map_err(|e| format!("Connexion SSH échouée à {}:{} — {}", ip, port, e))?;
+    .map_err(|e| {
+        match rejected.lock().ok().and_then(|s| s.clone()) {
+            Some(fp) => format!(
+                "Clé d'hôte SSH de {}:{} MODIFIÉE (SHA256:{}) : connexion refusée, mot de passe non envoyé. \
+                 Si le serveur a été réinstallé, réinitialise son empreinte dans « Serveurs » ; \
+                 sinon, quelqu'un se fait peut-être passer pour lui.",
+                ip, port, fp
+            ),
+            None => format!("Connexion SSH échouée à {}:{} — {}", ip, port, e),
+        }
+    })?;
 
     let authenticated = session
         .authenticate_password(user, password)
@@ -270,4 +295,20 @@ pub async fn ssh_shutdown_group(
     }
 
     Ok(results)
+}
+
+// ── Oublier l'empreinte SSH d'un serveur (réinstallation volontaire) ──────
+#[tauri::command]
+pub fn forget_host_key(state: State<AppState>, server_id: String) -> Result<bool, String> {
+    let host = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        let server = data
+            .servers
+            .iter()
+            .find(|s| s.id == server_id)
+            .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
+        format!("{}:{}", server.ip, server.ssh_port)
+    };
+    log::info!("Empreinte SSH oubliée pour {}", host);
+    known_hosts::forget(&host)
 }

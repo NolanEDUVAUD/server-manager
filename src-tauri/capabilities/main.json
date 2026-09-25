@@ -74,6 +74,7 @@
     "allow-update-settings",
     "allow-upload-server-icon",
     "allow-wake-group",
-    "allow-wake-on-lan"
+    "allow-wake-on-lan",
+    "allow-forget-host-key"
   ]
 }

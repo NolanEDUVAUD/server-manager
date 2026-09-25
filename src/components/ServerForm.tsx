@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { X, Server, Eye, EyeOff } from "lucide-react";
 import {
   Server as ServerType,
@@ -237,6 +238,8 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
             </div>
           </div>
 
+          {initial && <HostKeyReset serverId={initial.id} />}
+
           {/* Commandes */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -289,6 +292,41 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Oubli de l'empreinte SSH mémorisée : à utiliser uniquement si le serveur a été
+ * réinstallé (nouvelle clé d'hôte). La prochaine connexion mémorisera la nouvelle.
+ */
+function HostKeyReset({ serverId }: { serverId: string }) {
+  const [state, setState] = useState<"idle" | "done" | "none" | "error">("idle");
+  const [error, setError] = useState("");
+
+  async function reset() {
+    try {
+      const removed = await invoke<boolean>("forget_host_key", { serverId });
+      setState(removed ? "done" : "none");
+    } catch (e) {
+      setError(String(e));
+      setState("error");
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 text-xs rounded-win border border-border-primary px-3 py-2">
+      <span className="text-text-muted">
+        {state === "done" && "Empreinte oubliée : la prochaine connexion mémorisera la nouvelle clé."}
+        {state === "none" && "Aucune empreinte mémorisée pour ce serveur."}
+        {state === "error" && <span className="text-red-400">{error}</span>}
+        {state === "idle" && "Empreinte SSH mémorisée à la première connexion (protection contre l'usurpation)."}
+      </span>
+      {state === "idle" && (
+        <button type="button" onClick={reset} className="shrink-0 text-accent-primary hover:underline">
+          Réinitialiser
+        </button>
+      )}
     </div>
   );
 }

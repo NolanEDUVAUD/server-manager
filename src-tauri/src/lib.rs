@@ -5,6 +5,7 @@ mod dashboard_state;
 mod docker;
 mod events;
 mod keystore;
+mod known_hosts;
 mod metrics;
 mod models;
 mod proxmox;
@@ -24,6 +25,10 @@ pub fn run() {
         .setup(|app| {
             // Charger les données persistées au démarrage
             let state = AppState::load(&app.handle());
+            // Empreintes SSH connues, à côté de data.json
+            if let Some(dir) = state.data_path.parent() {
+                known_hosts::init(dir.join("known_hosts.json"));
+            }
             app.manage(state);
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
@@ -54,6 +59,7 @@ pub fn run() {
             ssh::ssh_reboot,
             ssh::ssh_execute,
             ssh::ssh_shutdown_group,
+            ssh::forget_host_key,
             // ── Ping ──────────────────────────────────────────
             ping::ping_server,
             ping::ping_all,
