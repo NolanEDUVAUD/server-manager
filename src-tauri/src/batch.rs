@@ -38,14 +38,12 @@ pub struct AnsibleConfig {
     pub dir: String,
 }
 
+/// Serveur visé par une exécution en lot
 #[derive(Clone)]
-pub struct SshTarget {
+pub struct BatchTarget {
     pub server_id: String,
     pub name: String,
-    pub ip: String,
-    pub port: u16,
-    pub user: String,
-    pub password: String,
+    pub ssh: crate::ssh_auth::SshTarget,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -120,7 +118,7 @@ impl BatchInputs {
     }
 }
 
-async fn run_one(run_id: &str, t: &SshTarget, command: &str, emit: &Emit, inputs: &BatchInputs) -> bool {
+async fn run_one(run_id: &str, t: &BatchTarget, command: &str, emit: &Emit, inputs: &BatchInputs) -> bool {
     emit(Update::Started { run_id: run_id.into(), server_id: t.server_id.clone() });
     let start = Instant::now();
     let chunk_emit = emit.clone();
@@ -128,7 +126,7 @@ async fn run_one(run_id: &str, t: &SshTarget, command: &str, emit: &Emit, inputs
     let on_chunk = move |c: &str| chunk_emit(Update::Output { run_id: rid.clone(), server_id: sid.clone(), chunk: c.to_string() });
     let (tx, rx) = unbounded_channel();
     inputs.insert(run_id, &t.server_id, tx);
-    let result = execute_ssh_interactive(&t.ip, t.port, &t.user, &t.password, command, 15, &on_chunk, rx).await;
+    let result = execute_ssh_interactive(&t.ssh, command, 15, &on_chunk, rx).await;
     inputs.remove(run_id, &t.server_id);
     let (ok, detail) = match result {
         Ok(r) if r.success => (true, "OK".to_string()),
@@ -141,7 +139,7 @@ async fn run_one(run_id: &str, t: &SshTarget, command: &str, emit: &Emit, inputs
 
 /// Exécute `command` sur les cibles. En séquentiel avec `stop_on_error`, les serveurs
 /// restants après un échec sont marqués « non exécutés ».
-pub async fn run(run_id: String, targets: Vec<SshTarget>, command: String, mode: BatchMode, stop_on_error: bool, emit: Emit, inputs: BatchInputs) {
+pub async fn run(run_id: String, targets: Vec<BatchTarget>, command: String, mode: BatchMode, stop_on_error: bool, emit: Emit, inputs: BatchInputs) {
     let mut results = Vec::new();
     match mode {
         BatchMode::Parallel => {
@@ -195,7 +193,17 @@ mod tests {
     #[tokio::test]
     async fn sequential_stop_on_error_skips_remaining() {
         // Cibles injoignables (port fermé sur localhost) : échec immédiat, sans réseau réel
-        let t = |id: &str| SshTarget { server_id: id.into(), name: id.into(), ip: "127.0.0.1".into(), port: 1, user: "x".into(), password: "x".into() };
+        let t = |id: &str| BatchTarget {
+            server_id: id.into(),
+            name: id.into(),
+            ssh: crate::ssh_auth::SshTarget {
+                host: "127.0.0.1".into(),
+                port: 1,
+                user: "x".into(),
+                auth: crate::ssh_auth::SshAuth::Password(zeroize::Zeroizing::new("x".into())),
+                jump: None,
+            },
+        };
         let log = Arc::new(std::sync::Mutex::new(Vec::new()));
         let l = log.clone();
         let emit: Emit = Arc::new(move |u| l.lock().unwrap().push(u));

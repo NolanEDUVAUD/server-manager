@@ -7,6 +7,10 @@ interface ConfirmDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   dangerous?: boolean;
+  /** Contenu additionnel sous le message (choix, case à cocher…) */
+  children?: React.ReactNode;
+  /** Bouton de confirmation désactivé (choix incomplet, action en cours) */
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -17,6 +21,8 @@ export function ConfirmDialog({
   confirmLabel = "Confirmer",
   cancelLabel = "Annuler",
   dangerous = false,
+  children,
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -40,6 +46,7 @@ export function ConfirmDialog({
           <div className="flex-1">
             <h3 className="text-text-primary font-semibold text-base mb-2">{title}</h3>
             <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-line break-words max-h-64 overflow-y-auto">{message}</p>
+            {children && <div className="mt-3">{children}</div>}
           </div>
           <button
             onClick={onCancel}
@@ -60,7 +67,8 @@ export function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 text-sm rounded-win font-medium transition-all duration-150
+            disabled={confirmDisabled}
+            className={`px-4 py-2 text-sm rounded-win font-medium transition-all duration-150 disabled:opacity-50
               ${dangerous
                 ? "bg-red-600 hover:bg-red-500 text-white"
                 : "bg-accent-primary hover:bg-accent-secondary text-white"

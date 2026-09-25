@@ -843,10 +843,70 @@
           "markdownDescription": "Enables the set_dashboard_tab_visible command without any pre-configured scope."
         },
         {
+          "description": "Enables the ssh_agent_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-agent-status",
+          "markdownDescription": "Enables the ssh_agent_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the ssh_execute command without any pre-configured scope.",
           "type": "string",
           "const": "allow-ssh-execute",
           "markdownDescription": "Enables the ssh_execute command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_key_delete command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-key-delete",
+          "markdownDescription": "Enables the ssh_key_delete command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_key_deploy command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-key-deploy",
+          "markdownDescription": "Enables the ssh_key_deploy command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_key_generate command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-key-generate",
+          "markdownDescription": "Enables the ssh_key_generate command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_key_import command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-key-import",
+          "markdownDescription": "Enables the ssh_key_import command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_key_import_cancel command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-key-import-cancel",
+          "markdownDescription": "Enables the ssh_key_import_cancel command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_key_import_pick command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-key-import-pick",
+          "markdownDescription": "Enables the ssh_key_import_pick command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_key_rename command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-key-rename",
+          "markdownDescription": "Enables the ssh_key_rename command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_key_use_for_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-key-use-for-server",
+          "markdownDescription": "Enables the ssh_key_use_for_server command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_keys_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-keys-list",
+          "markdownDescription": "Enables the ssh_keys_list command without any pre-configured scope."
         },
         {
           "description": "Enables the ssh_reboot command without any pre-configured scope.",
@@ -1647,10 +1707,70 @@
           "markdownDescription": "Denies the set_dashboard_tab_visible command without any pre-configured scope."
         },
         {
+          "description": "Denies the ssh_agent_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-agent-status",
+          "markdownDescription": "Denies the ssh_agent_status command without any pre-configured scope."
+        },
+        {
           "description": "Denies the ssh_execute command without any pre-configured scope.",
           "type": "string",
           "const": "deny-ssh-execute",
           "markdownDescription": "Denies the ssh_execute command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_key_delete command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-key-delete",
+          "markdownDescription": "Denies the ssh_key_delete command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_key_deploy command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-key-deploy",
+          "markdownDescription": "Denies the ssh_key_deploy command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_key_generate command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-key-generate",
+          "markdownDescription": "Denies the ssh_key_generate command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_key_import command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-key-import",
+          "markdownDescription": "Denies the ssh_key_import command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_key_import_cancel command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-key-import-cancel",
+          "markdownDescription": "Denies the ssh_key_import_cancel command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_key_import_pick command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-key-import-pick",
+          "markdownDescription": "Denies the ssh_key_import_pick command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_key_rename command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-key-rename",
+          "markdownDescription": "Denies the ssh_key_rename command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_key_use_for_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-key-use-for-server",
+          "markdownDescription": "Denies the ssh_key_use_for_server command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_keys_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-keys-list",
+          "markdownDescription": "Denies the ssh_keys_list command without any pre-configured scope."
         },
         {
           "description": "Denies the ssh_reboot command without any pre-configured scope.",

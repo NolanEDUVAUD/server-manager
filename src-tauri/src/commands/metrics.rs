@@ -3,11 +3,12 @@ use tauri::{AppHandle, Manager};
 
 use crate::{
     alerts::AlertEngine,
-    commands::{servers::get_decrypted_password, ssh::execute_ssh},
+    commands::ssh::execute_ssh,
     db::Db,
     events::now_ms,
     metrics::{parse_metrics, ServerMetrics, METRICS_COMMAND},
     models::OsType,
+    ssh_auth::resolve_ssh,
     storage::AppState,
 };
 
@@ -18,7 +19,7 @@ const MAX_METRICS_TIMEOUT_SECS: u64 = 10;
 /// Collecte les métriques d'un serveur et les transmet au moteur d'alertes.
 /// Utilisée par la boucle de surveillance (monitor.rs) et par la commande manuelle.
 pub async fn collect_metrics(app: &AppHandle, server_id: &str) -> Result<ServerMetrics, String> {
-    let (ip, port, user, password, timeout) = {
+    let (target, timeout) = {
         let state = app.state::<AppState>();
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         let server = data
@@ -29,17 +30,11 @@ pub async fn collect_metrics(app: &AppHandle, server_id: &str) -> Result<ServerM
         if matches!(server.os_type, OsType::Windows | OsType::ESXi) {
             return Err(format!("Monitoring non supporté pour {:?}", server.os_type));
         }
-        let pass = get_decrypted_password(&data, server_id)?;
-        (
-            server.ip.clone(),
-            server.ssh_port,
-            server.ssh_user.clone(),
-            pass,
-            data.settings.network.ssh_timeout_secs.min(MAX_METRICS_TIMEOUT_SECS),
-        )
+        (resolve_ssh(&data, server_id)?, data.settings.network.ssh_timeout_secs.min(MAX_METRICS_TIMEOUT_SECS))
     };
+    let ip = target.host.clone();
 
-    let metrics = execute_ssh(&ip, port, &user, &password, METRICS_COMMAND, timeout)
+    let metrics = execute_ssh(&target, METRICS_COMMAND, timeout)
         .await
         .and_then(|result| parse_metrics(&result.output));
     match &metrics {

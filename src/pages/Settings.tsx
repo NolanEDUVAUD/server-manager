@@ -14,12 +14,13 @@ import { HistorySettingsPanel } from '../components/HistorySettingsPanel';
 import { LanguageSelect } from '../components/LanguageSelect';
 import { BackupPanel } from '../components/BackupPanel';
 import { SecuritySettings } from '../components/SecuritySettings';
+import { SshKeysSettings } from '../components/SshKeysSettings';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
 import { useAppUpdate } from '../stores/useAppUpdate';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
-type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'config' | 'about';
+type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'config' | 'about';
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'general',    label: 'Général' },
@@ -28,6 +29,7 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: 'history',    label: 'Historique' },
   { id: 'security',   label: 'Sécurité' },
   { id: 'integrations', label: 'Intégrations' },
+  { id: 'sshkeys',    label: 'Clés SSH' },
   { id: 'config',     label: 'Configuration' },
   { id: 'about',      label: 'À propos' },
 ];
@@ -65,6 +67,7 @@ export function Settings() {
         {active === 'history'    && <HistorySettingsPanel />}
         {active === 'security'   && <SecuritySettings />}
         {active === 'integrations' && <IntegrationsSettings />}
+        {active === 'sshkeys'    && <SshKeysSettings />}
         {active === 'config'     && <SectionConfig />}
         {active === 'about'      && <SectionAbout />}
       </div>

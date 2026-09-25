@@ -3,9 +3,10 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::{
-    commands::{servers::get_decrypted_password, ssh::execute_ssh},
+    commands::ssh::execute_ssh,
     cron::shell_quote,
     models::{AppData, OsType},
+    ssh_auth::{resolve_ssh, SshTarget},
     storage::AppState,
     updates::{parse_scan, referenced_images, UpdateReport, SCAN_COMMAND},
 };
@@ -18,17 +19,18 @@ pub struct ServerUpdates {
     pub error: Option<String>,
 }
 
-type Target = (String, String, String, u16, String, String);
+/// (identifiant, nom, cible SSH)
+type Target = (String, String, SshTarget);
 
-async fn scan_one((id, name, ip, port, user, pass): Target) -> ServerUpdates {
+async fn scan_one((id, name, target): Target) -> ServerUpdates {
     let result: Result<UpdateReport, String> = async {
-        let out = execute_ssh(&ip, port, &user, &pass, SCAN_COMMAND, 15).await?.output;
+        let out = execute_ssh(&target, SCAN_COMMAND, 15).await?.output;
         let images = referenced_images(&out);
         let mut ids = Vec::new();
         if !images.is_empty() {
             let list = images.iter().map(|i| shell_quote(i)).collect::<Vec<_>>().join(" ");
             let cmd = format!("for i in {}; do echo \"$i|$(docker image inspect -f '{{{{.Id}}}}' \"$i\" 2>/dev/null)\"; done", list);
-            let r = execute_ssh(&ip, port, &user, &pass, &cmd, 15).await?;
+            let r = execute_ssh(&target, &cmd, 15).await?;
             ids = r
                 .output
                 .lines()
@@ -52,8 +54,8 @@ fn targets(data: &AppData) -> Vec<Target> {
         // Windows / ESXi : pas d'apt ; TrueNAS : mises à jour gérées par son interface
         .filter(|s| !matches!(s.os_type, OsType::Windows | OsType::ESXi | OsType::TrueNAS))
         .filter_map(|s| {
-            let pass = get_decrypted_password(data, &s.id).ok()?;
-            Some((s.id.clone(), s.name.clone(), s.ip.clone(), s.ssh_port, s.ssh_user.clone(), pass))
+            let target = resolve_ssh(data, &s.id).ok()?;
+            Some((s.id.clone(), s.name.clone(), target))
         })
         .collect()
 }

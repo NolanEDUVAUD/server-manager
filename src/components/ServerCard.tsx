@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Power, RotateCcw, Zap, Pencil, Trash2, Loader2, RefreshCw, TerminalSquare } from "lucide-react";
+import { Power, RotateCcw, Zap, Pencil, Trash2, Loader2, RefreshCw, TerminalSquare, KeyRound } from "lucide-react";
 import { Server, OS_ICONS } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -8,6 +8,7 @@ import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
 import { ServerIconDisplay } from "./IconPicker";
 import { FavoriteButton, TagList } from "./TagChip";
+import { DeployKeyDialog } from "./DeployKeyDialog";
 
 interface ServerCardProps {
   server: Server;
@@ -23,6 +24,7 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
 
   const [loading, setLoading] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"shutdown" | "reboot" | null>(null);
+  const [deploying, setDeploying] = useState(false);
 
   async function runAction(
     key: string,
@@ -91,6 +93,14 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
               title="Ouvrir une console SSH"
             >
               <TerminalSquare size={13} />
+            </button>
+            <button
+              onClick={() => setDeploying(true)}
+              className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
+              title="Déployer la clé SSH"
+              aria-label={`Déployer la clé SSH sur ${server.name}`}
+            >
+              <KeyRound size={13} />
             </button>
             <button
               onClick={() => onEdit(server)}
@@ -202,6 +212,7 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
           onCancel={() => setConfirmAction(null)}
         />
       )}
+      {deploying && <DeployKeyDialog server={server} onClose={() => setDeploying(false)} onMessage={onMessage} />}
       {confirmAction === "reboot" && (
         <ConfirmDialog
           title={`Redémarrer ${server.name}`}

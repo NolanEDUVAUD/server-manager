@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ssh-key-delete"
+description = "Enables the ssh_key_delete command without any pre-configured scope."
+commands.allow = ["ssh_key_delete"]
+
+[[permission]]
+identifier = "deny-ssh-key-delete"
+description = "Denies the ssh_key_delete command without any pre-configured scope."
+commands.deny = ["ssh_key_delete"]

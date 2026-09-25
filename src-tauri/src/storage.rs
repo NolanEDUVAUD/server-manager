@@ -97,6 +97,7 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
             folders: Vec::new(),
             lock: crate::lock::LockConfig::default(),
             backup: crate::backup::BackupConfig::default(),
+            ssh_keys: Vec::new(),
         };
         // Sauvegarder immédiatement en format v2
         if let Ok(json) = serde_json::to_string_pretty(&data) {
@@ -152,4 +153,5 @@ fn verify_migrated(path: &std::path::Path, master: &[u8; 32]) -> bool {
     data.key_version >= crate::crypto::KEY_VERSION_MASTER
         && data.servers.iter().all(|s| crate::crypto::decrypt(&s.ssh_password, master).is_ok())
         && data.proxmox_connections.iter().all(|c| crate::crypto::decrypt(&c.token_secret, master).is_ok())
+        && data.ssh_keys.iter().all(|k| crate::crypto::decrypt(&k.private_key, master).is_ok())
 }

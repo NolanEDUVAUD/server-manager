@@ -5,10 +5,11 @@ use tauri::{AppHandle, State};
 use uuid::Uuid;
 
 use crate::{
-    commands::{servers::get_decrypted_password, ssh::execute_ssh},
+    commands::ssh::execute_ssh,
     cron::{build_line, parse_list, sync_command, CronEntry, LIST_COMMAND},
     models::AppData,
     scheduler::{run_schedule, target_server_ids, validate, Schedule, ScheduleAction, ScheduleMode},
+    ssh_auth::{resolve_ssh, SshTarget},
     storage::AppState,
 };
 
@@ -19,8 +20,8 @@ pub struct SaveReport {
     pub cron_errors: Vec<String>,
 }
 
-/// Paramètres SSH d'un serveur, extraits sous le verrou : (nom, ip, port, utilisateur, mot de passe, timeout)
-type SshParams = (String, String, u16, String, String, u64);
+/// Paramètres SSH d'un serveur, extraits sous le verrou : (nom, cible SSH, timeout)
+type SshParams = (String, SshTarget, u64);
 
 fn ssh_params(data: &AppData, server_id: &str) -> Result<SshParams, String> {
     let server = data
@@ -30,10 +31,7 @@ fn ssh_params(data: &AppData, server_id: &str) -> Result<SshParams, String> {
         .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
     Ok((
         server.name.clone(),
-        server.ip.clone(),
-        server.ssh_port,
-        server.ssh_user.clone(),
-        get_decrypted_password(data, server_id)?,
+        resolve_ssh(data, server_id)?,
         data.settings.network.ssh_timeout_secs.min(15),
     ))
 }
@@ -91,9 +89,9 @@ fn plan_cron_ops(data: &AppData, old: Option<&Schedule>, new: Option<&Schedule>)
 
 async fn apply_cron_ops(id: &str, ops: Vec<CronOp>, mut errors: Vec<String>) -> Vec<String> {
     for op in ops {
-        let (name, ip, port, user, pass, timeout) = op.params;
+        let (name, target, timeout) = op.params;
         let command = sync_command(id, op.line.as_deref());
-        let result = execute_ssh(&ip, port, &user, &pass, &command, timeout).await;
+        let result = execute_ssh(&target, &command, timeout).await;
         match result {
             Ok(r) if r.success => log::info!("Crontab de {} synchronisé (tâche {})", name, id),
             Ok(r) => errors.push(format!("{} : {}", name, r.output)),
@@ -172,11 +170,11 @@ pub async fn run_schedule_now(app: AppHandle, state: State<'_, AppState>, id: St
 /// Crons présents sur un serveur (utilisateur SSH + /etc/crontab + /etc/cron.d)
 #[tauri::command]
 pub async fn cron_list(state: State<'_, AppState>, server_id: String) -> Result<Vec<CronEntry>, String> {
-    let (_, ip, port, user, pass, timeout) = {
+    let (_, target, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         ssh_params(&data, &server_id)?
     };
-    let result = execute_ssh(&ip, port, &user, &pass, LIST_COMMAND, timeout).await?;
+    let result = execute_ssh(&target, LIST_COMMAND, timeout).await?;
     Ok(parse_list(&result.output))
 }
 
@@ -186,10 +184,10 @@ pub async fn cron_remove_managed(state: State<'_, AppState>, server_id: String, 
     if !schedule_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
         return Err(format!("Identifiant de tâche invalide : {}", schedule_id));
     }
-    let (_, ip, port, user, pass, timeout) = {
+    let (_, target, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         ssh_params(&data, &server_id)?
     };
-    let result = execute_ssh(&ip, port, &user, &pass, &sync_command(&schedule_id, None), timeout).await?;
+    let result = execute_ssh(&target, &sync_command(&schedule_id, None), timeout).await?;
     if result.success { Ok(()) } else { Err(result.output) }
 }

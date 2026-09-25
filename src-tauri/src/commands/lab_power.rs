@@ -5,9 +5,10 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::{
-    commands::{ping::ping_host, proxmox::build_client, servers::get_decrypted_password, ssh::execute_ssh, wol::send_magic_packet},
+    commands::{ping::ping_host, proxmox::build_client, ssh::execute_ssh, wol::send_magic_packet},
     events::{EventKind, EventLog},
     lab_power::{shutdown_plan, startup_plan, Action, Guest, Machine, Plan},
+    ssh_auth::resolve_ssh,
     storage::AppState,
 };
 
@@ -173,13 +174,13 @@ fn node_server<'a>(machines: &'a [Machine], node: &str) -> Option<&'a Machine> {
 }
 
 async fn ssh_on(app: &AppHandle, server_id: &str, command: Option<&str>, timeout: u64) -> Result<(), String> {
-    let (ip, port, user, pass, cmd) = {
+    let (target, cmd) = {
         let state = app.state::<AppState>();
         let data = state.data.lock().map_err(|e| e.to_string())?;
         let s = data.servers.iter().find(|s| s.id == server_id).ok_or("Serveur introuvable")?;
-        (s.ip.clone(), s.ssh_port, s.ssh_user.clone(), get_decrypted_password(&data, server_id)?, command.map(str::to_string).unwrap_or(s.shutdown_command.clone()))
+        (resolve_ssh(&data, server_id)?, command.map(str::to_string).unwrap_or(s.shutdown_command.clone()))
     };
-    let r = execute_ssh(&ip, port, &user, &pass, &cmd, timeout).await?;
+    let r = execute_ssh(&target, &cmd, timeout).await?;
     if r.success { Ok(()) } else { Err(r.error.unwrap_or(r.output)) }
 }
 

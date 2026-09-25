@@ -29,9 +29,17 @@ mod storage;
 mod terminal;
 mod tray;
 mod updates;
+// ── Authentification SSH par clé (1.2) ──
+mod ppk;
+mod ssh_agent;
+mod ssh_auth;
+mod ssh_keys;
+#[cfg(test)]
+mod ssh_test_server;
 
 use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use commands::organisation as organisation_cmd;
+use commands::ssh_keys as ssh_keys_cmd;
 use storage::AppState;
 use tauri::Manager;
 
@@ -66,6 +74,7 @@ pub fn run() {
             app.manage(probe_state);
             app.manage(commands::lab_power::LabPowerState::default());
             app.manage(commands::backup::BackupState::default());
+            app.manage(commands::ssh_keys::KeyImportState::default());
             // Boucle du planificateur (tâches WoL / arrêt programmées)
             scheduler::start(app.handle().clone());
             // Surveillance continue (ping + métriques), indépendante de la fenêtre
@@ -279,6 +288,17 @@ pub fn run() {
             backup_cmd::get_backup_settings,
             backup_cmd::save_backup_settings,
             backup_cmd::backup_run_now,
+            // ── Authentification SSH par clé (1.2) ──────────────
+            ssh_keys_cmd::ssh_keys_list,
+            ssh_keys_cmd::ssh_key_generate,
+            ssh_keys_cmd::ssh_key_import_pick,
+            ssh_keys_cmd::ssh_key_import,
+            ssh_keys_cmd::ssh_key_import_cancel,
+            ssh_keys_cmd::ssh_key_rename,
+            ssh_keys_cmd::ssh_key_delete,
+            ssh_keys_cmd::ssh_key_deploy,
+            ssh_keys_cmd::ssh_key_use_for_server,
+            ssh_keys_cmd::ssh_agent_status,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");
@@ -344,8 +364,8 @@ mod dev_tools {
         crate::crypto::set_master_key(crate::keystore::load_or_create_master_key().unwrap());
         crate::known_hosts::init(dir.join("known_hosts.json"));
         let s = data.servers.iter().find(|s| s.name == server || s.ip == server).expect("serveur inconnu");
-        let pass = crate::commands::servers::get_decrypted_password(&data, &s.id).unwrap();
-        let r = crate::commands::ssh::execute_ssh(&s.ip, s.ssh_port, &s.ssh_user, &pass, &cmd, 20).await.unwrap();
+        let target = crate::ssh_auth::resolve_ssh(&data, &s.id).unwrap();
+        let r = crate::commands::ssh::execute_ssh(&target, &cmd, 20).await.unwrap();
         println!("===SORTIE===\n{}\n===FIN=== (succès : {})", r.output, r.success);
     }
 }

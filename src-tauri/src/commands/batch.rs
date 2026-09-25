@@ -4,30 +4,24 @@ use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
 use crate::{
-    batch::{self, list_playbooks_command, playbook_command, wrap_script, AnsibleConfig, BatchInputs, BatchMode, BatchTask, SshTarget},
-    commands::{servers::get_decrypted_password, ssh::execute_ssh},
+    batch::{self, list_playbooks_command, playbook_command, wrap_script, AnsibleConfig, BatchInputs, BatchMode, BatchTask, BatchTarget},
+    commands::ssh::execute_ssh,
     events::{EventKind, EventLog},
     models::AppData,
+    ssh_auth::resolve_ssh,
     storage::AppState,
 };
 
-fn targets(data: &AppData, ids: &[String]) -> Result<Vec<SshTarget>, String> {
+fn targets(data: &AppData, ids: &[String]) -> Result<Vec<BatchTarget>, String> {
     ids.iter()
         .map(|id| {
             let s = data.servers.iter().find(|s| &s.id == id).ok_or_else(|| format!("Serveur introuvable : {}", id))?;
-            Ok(SshTarget {
-                server_id: s.id.clone(),
-                name: s.name.clone(),
-                ip: s.ip.clone(),
-                port: s.ssh_port,
-                user: s.ssh_user.clone(),
-                password: get_decrypted_password(data, id)?,
-            })
+            Ok(BatchTarget { server_id: s.id.clone(), name: s.name.clone(), ssh: resolve_ssh(data, id)? })
         })
         .collect()
 }
 
-fn spawn_run(app: &AppHandle, inputs: &BatchInputs, targets: Vec<SshTarget>, command: String, mode: BatchMode, stop_on_error: bool) -> String {
+fn spawn_run(app: &AppHandle, inputs: &BatchInputs, targets: Vec<BatchTarget>, command: String, mode: BatchMode, stop_on_error: bool) -> String {
     let run_id = Uuid::new_v4().to_string();
     let emitter = app.clone();
     let emit: batch::Emit = Arc::new(move |u| {
@@ -117,7 +111,7 @@ pub fn save_ansible_config(state: State<AppState>, config: AnsibleConfig) -> Res
     state.save()
 }
 
-fn ansible_target(data: &AppData) -> Result<(SshTarget, String), String> {
+fn ansible_target(data: &AppData) -> Result<(BatchTarget, String), String> {
     let cfg = data.ansible.clone().ok_or("Hôte Ansible non configuré")?;
     let t = targets(data, &[cfg.server_id])?.remove(0);
     Ok((t, cfg.dir))
@@ -130,7 +124,7 @@ pub async fn ansible_list_playbooks(state: State<'_, AppState>) -> Result<Vec<St
         let data = state.data.lock().map_err(|e| e.to_string())?;
         ansible_target(&data)?
     };
-    let r = execute_ssh(&t.ip, t.port, &t.user, &t.password, &list_playbooks_command(&dir), 15).await?;
+    let r = execute_ssh(&t.ssh, &list_playbooks_command(&dir), 15).await?;
     Ok(r.output.lines().map(str::trim).filter(|l| !l.is_empty()).map(str::to_string).collect())
 }
 

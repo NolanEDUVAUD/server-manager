@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ssh-key-rename"
+description = "Enables the ssh_key_rename command without any pre-configured scope."
+commands.allow = ["ssh_key_rename"]
+
+[[permission]]
+identifier = "deny-ssh-key-rename"
+description = "Denies the ssh_key_rename command without any pre-configured scope."
+commands.deny = ["ssh_key_rename"]

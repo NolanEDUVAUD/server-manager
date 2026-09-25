@@ -487,7 +487,7 @@ mod tests {
         for c in &ciphertexts {
             assert!(!c.is_empty() && !json.contains(c.as_str()), "secret chiffré présent dans l'export");
         }
-        for plain in ["secret-ssh", "secret-proxmox", "secret-ntfy", "secret-sonde", "secret-sauvegarde", "/sauvegardes"] {
+        for plain in ["secret-ssh", "secret-proxmox", "secret-ntfy", "secret-sonde", "secret-sauvegarde", "/sauvegardes", "OPENSSH PRIVATE KEY"] {
             assert!(!json.contains(plain), "{} présent dans l'export", plain);
         }
     }
@@ -612,6 +612,36 @@ mod tests {
         assert_eq!(target.tags.len(), 2);
         assert_eq!(target.servers[0].folder_id, Some(lab.id));
         assert_eq!(target.servers[0].custom_fields, data.servers[0].custom_fields);
+    }
+
+    /// Clés SSH (1.2) : la clé privée n'apparaît dans aucun export non chiffré
+    #[test]
+    fn exports_never_contain_ssh_private_keys() {
+        let mut data = AppData::default();
+        let master = crate::crypto::data_key(&data).unwrap();
+        let (key, pem) = crate::ssh_keys::tests::sealed_key("minipc", &master);
+        let encrypted = key.private_key.clone();
+        data.ssh_keys.push(key);
+        let mut s = crate::ssh_auth::tests::server(&data, "a", "minipc", "192.168.1.10", "s3cret");
+        s.auth_method = crate::models::AuthMethod::Key;
+        s.ssh_key_id = Some("id-minipc".into());
+        let encrypted_password = s.ssh_password.clone();
+        data.servers.push(s);
+
+        let body: String = pem.lines().filter(|l| !l.starts_with("-----")).collect();
+        for json in [
+            serde_json::to_string(&export_without_secrets(&data)).unwrap(),
+            full_export(&data, "2026-09-25T00:00:00Z").to_string(),
+        ] {
+            assert!(!json.contains(&encrypted) && !json.contains(&encrypted_password));
+            assert!(!json.contains("OPENSSH") && !json.contains(&body[..40]));
+            // La référence à la clé reste (sans secret)
+            assert!(json.contains("id-minipc"));
+        }
+        // La partie publique reste lisible dans l'export simple
+        assert_eq!(export_without_secrets(&data).ssh_keys[0].public_key, data.ssh_keys[0].public_key);
+        // L'original n'est pas modifié
+        assert_eq!(data.ssh_keys[0].private_key, encrypted);
     }
 
     #[test]

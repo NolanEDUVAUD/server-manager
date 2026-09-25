@@ -66,6 +66,28 @@ pub struct Server {
     /// Informations libres, non chiffrées : ce ne sont pas des secrets
     #[serde(default)]
     pub custom_fields: Vec<crate::organisation::CustomField>,
+    // ── Authentification SSH par clé (1.2) ────────────────────────────────
+    /// Méthode d'authentification ; absente d'un ancien fichier = mot de passe
+    #[serde(default)]
+    pub auth_method: AuthMethod,
+    /// Clé de l'app utilisée quand `auth_method` vaut `Key` (voir `AppData.ssh_keys`)
+    #[serde(default)]
+    pub ssh_key_id: Option<String>,
+    /// Serveur de la liste servant d'hôte de rebond (un seul niveau)
+    #[serde(default)]
+    pub jump_host_id: Option<String>,
+}
+
+/// Méthode d'authentification SSH d'un serveur
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub enum AuthMethod {
+    /// Mot de passe enregistré (chiffré par la clé maître)
+    #[default]
+    Password,
+    /// Clé privée gérée par l'app (`AppData.ssh_keys`)
+    Key,
+    /// Agent SSH de la machine (OpenSSH pour Windows, Pageant, SSH_AUTH_SOCK)
+    Agent,
 }
 
 impl Server {
@@ -100,6 +122,9 @@ impl Server {
             folder_id: None,
             favorite: false,
             custom_fields: Vec::new(),
+            auth_method: AuthMethod::Password,
+            ssh_key_id: None,
+            jump_host_id: None,
         }
     }
 }
@@ -129,6 +154,17 @@ pub struct ServerPayload {
     pub favorite: Option<bool>,
     #[serde(default)]
     pub custom_fields: Option<Vec<crate::organisation::CustomField>>,
+    // ── Authentification SSH par clé (1.2) ────────────────────────────────
+    /// Absente (ancien payload, ex. correction des MAC) = méthode, clé et rebond inchangés
+    #[serde(default)]
+    pub auth_method: Option<AuthMethod>,
+    #[serde(default)]
+    pub ssh_key_id: Option<String>,
+    #[serde(default)]
+    pub jump_host_id: Option<String>,
+    /// Efface le mot de passe enregistré (après bascule sur une clé ou l'agent)
+    #[serde(default)]
+    pub clear_password: bool,
 }
 
 // ── Groupe ─────────────────────────────────────────────────────────────────
@@ -435,6 +471,10 @@ pub struct AppData {
     /// frontend (`backup::BackupConfigView`), jamais exportée en JSON
     #[serde(default)]
     pub backup: crate::backup::BackupConfig,
+    // ── Authentification SSH par clé (1.2) ────────────────────────────────
+    /// Clés SSH de l'app ; la clé privée est chiffrée par la clé maître
+    #[serde(default)]
+    pub ssh_keys: Vec<crate::ssh_keys::SshKey>,
 }
 
 fn legacy_key_version() -> u8 {
@@ -463,6 +503,7 @@ impl Default for AppData {
             folders: Vec::new(),
             lock: crate::lock::LockConfig::default(),
             backup: crate::backup::BackupConfig::default(),
+            ssh_keys: Vec::new(),
         }
     }
 }

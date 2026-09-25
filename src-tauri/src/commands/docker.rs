@@ -2,35 +2,32 @@
 use tauri::State;
 
 use crate::{
-    commands::{servers::get_decrypted_password, ssh::execute_ssh},
+    commands::ssh::execute_ssh,
     docker::{parse_list, validate_container_ref, DockerHost, LIST_COMMAND},
     events::{EventKind, EventLog},
+    ssh_auth::{resolve_ssh, SshTarget},
     storage::AppState,
 };
 
-/// Paramètres SSH d'un serveur : (nom, ip, port, utilisateur, mot de passe, timeout)
-fn ssh_params(state: &AppState, server_id: &str) -> Result<(String, String, u16, String, String, u64), String> {
+/// Paramètres SSH d'un serveur : (nom, cible SSH, timeout)
+fn ssh_params(state: &AppState, server_id: &str) -> Result<(String, SshTarget, u64), String> {
     let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
     let server = data
         .servers
         .iter()
         .find(|s| s.id == server_id)
         .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
-    let pass = get_decrypted_password(&data, server_id)?;
     Ok((
         server.name.clone(),
-        server.ip.clone(),
-        server.ssh_port,
-        server.ssh_user.clone(),
-        pass,
+        resolve_ssh(&data, server_id)?,
         data.settings.network.ssh_timeout_secs.min(15),
     ))
 }
 
 #[tauri::command]
 pub async fn docker_list(state: State<'_, AppState>, server_id: String) -> Result<DockerHost, String> {
-    let (_, ip, port, user, pass, timeout) = ssh_params(&state, &server_id)?;
-    let result = execute_ssh(&ip, port, &user, &pass, LIST_COMMAND, timeout).await?;
+    let (_, target, timeout) = ssh_params(&state, &server_id)?;
+    let result = execute_ssh(&target, LIST_COMMAND, timeout).await?;
     parse_list(&result.output)
 }
 
@@ -46,10 +43,10 @@ pub async fn docker_action(
     if !matches!(action.as_str(), "start" | "stop" | "restart") {
         return Err(format!("Action Docker inconnue : {}", action));
     }
-    let (name, ip, port, user, pass, timeout) = ssh_params(&state, &server_id)?;
+    let (name, ssh, timeout) = ssh_params(&state, &server_id)?;
     let command = format!("docker {} {}", action, container);
     let target = format!("{} ({})", container, name);
-    let outcome = execute_ssh(&ip, port, &user, &pass, &command, timeout.max(30))
+    let outcome = execute_ssh(&ssh, &command, timeout.max(30))
         .await
         .and_then(|r| if r.success { Ok(()) } else { Err(r.output) });
     match &outcome {
@@ -67,8 +64,8 @@ pub async fn docker_logs(
     tail: u32,
 ) -> Result<String, String> {
     validate_container_ref(&container)?;
-    let (_, ip, port, user, pass, timeout) = ssh_params(&state, &server_id)?;
+    let (_, target, timeout) = ssh_params(&state, &server_id)?;
     let command = format!("docker logs --tail {} --timestamps {} 2>&1", tail.clamp(10, 2000), container);
-    let result = execute_ssh(&ip, port, &user, &pass, &command, timeout).await?;
+    let result = execute_ssh(&target, &command, timeout).await?;
     Ok(result.output)
 }

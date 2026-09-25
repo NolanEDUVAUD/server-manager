@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ssh-key-import-cancel"
+description = "Enables the ssh_key_import_cancel command without any pre-configured scope."
+commands.allow = ["ssh_key_import_cancel"]
+
+[[permission]]
+identifier = "deny-ssh-key-import-cancel"
+description = "Denies the ssh_key_import_cancel command without any pre-configured scope."
+commands.deny = ["ssh_key_import_cancel"]

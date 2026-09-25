@@ -445,7 +445,9 @@ mod tests {
             .filter(|f| !f.is_empty())
             .map(|f| crypto::decrypt(f, &new_master).unwrap())
             .collect();
-        assert_eq!(plain, ["secret-ssh", "secret-proxmox", "secret-ntfy", "secret-sonde"]);
+        assert_eq!(plain.len(), 5, "la phrase de la sauvegarde automatique ne voyage pas");
+        assert_eq!(plain[..4], ["secret-ssh", "secret-proxmox", "secret-ntfy", "secret-sonde"]);
+        assert!(plain[4].starts_with("-----BEGIN OPENSSH PRIVATE KEY-----"), "clé privée SSH restaurée");
     }
 
     #[test]

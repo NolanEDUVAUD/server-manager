@@ -3,8 +3,9 @@ use tauri::{Manager, State};
 
 use crate::{
     crypto,
-    models::{AppData, Server, ServerPayload},
+    models::{AppData, AuthMethod, Server, ServerPayload},
     organisation::ServerOrganisation,
+    ssh_auth::{check_jump, jump_dependents},
     storage::AppState,
 };
 
@@ -19,7 +20,7 @@ pub fn get_servers(state: State<AppState>) -> Result<Vec<Server>, String> {
 }
 
 /// Copie envoyée au frontend : le mot de passe (même chiffré) reste côté Rust
-fn without_secret(s: &Server) -> Server {
+pub(crate) fn without_secret(s: &Server) -> Server {
     Server { ssh_password: String::new(), ..s.clone() }
 }
 
@@ -38,6 +39,7 @@ pub fn add_server(state: State<AppState>, payload: ServerPayload) -> Result<Serv
     // Chiffrer le mot de passe avant stockage
     let key = crypto::data_key(&data)?;
     let encrypted_password = crypto::encrypt(&payload.ssh_password, &key)?;
+    let auth = auth_update(&data, "", AuthMethod::Password, &payload)?;
 
     let mut server = Server::new(
         payload.name,
@@ -63,6 +65,9 @@ pub fn add_server(state: State<AppState>, payload: ServerPayload) -> Result<Serv
         }
     }
     organisation.apply(&mut server);
+    if let Some(auth) = auth {
+        auth.apply(&mut server, payload.clear_password);
+    }
 
     data.servers.push(server.clone());
     drop(data);
@@ -95,6 +100,8 @@ pub fn update_server(
     } else {
         None
     };
+    let current_method = data.servers.iter().find(|s| s.id == id).map(|s| s.auth_method).unwrap_or_default();
+    let auth = auth_update(&data, &id, current_method, &payload)?;
 
     let server = data
         .servers
@@ -105,6 +112,9 @@ pub fn update_server(
     // Rechiffrer le mot de passe uniquement s'il a changé (non vide)
     if let Some(enc) = encrypted_password {
         server.ssh_password = enc;
+    }
+    if let Some(auth) = auth {
+        auth.apply(server, payload.clear_password);
     }
 
     server.name = payload.name;
@@ -144,6 +154,15 @@ pub fn delete_server(state: State<AppState>, id: String) -> Result<(), String> {
         .lock()
         .map_err(|e| format!("Erreur mutex: {}", e))?;
 
+    // Un rebond supprimé couperait l'accès aux serveurs qui passent par lui
+    let dependents = jump_dependents(&data, &id);
+    if !dependents.is_empty() {
+        return Err(format!(
+            "Ce serveur sert d'hôte de rebond à {} : choisis un autre rebond (ou la connexion directe) pour eux avant de le supprimer",
+            dependents.join(", ")
+        ));
+    }
+
     let len_before = data.servers.len();
     data.servers.retain(|s| s.id != id);
 
@@ -162,16 +181,68 @@ pub fn delete_server(state: State<AppState>, id: String) -> Result<(), String> {
     Ok(())
 }
 
-// ── Décrypter le mot de passe d'un serveur (usage SSH) ───────────────────
-pub fn get_decrypted_password(data: &AppData, server_id: &str) -> Result<String, String> {
-    let server = data
-        .servers
-        .iter()
-        .find(|s| s.id == server_id)
-        .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
+// ── Authentification SSH (1.2) : méthode, clé et rebond ───────────────────
 
-    let key = crypto::data_key(&data)?;
-    crypto::decrypt(&server.ssh_password, &key)
+/// Partie « authentification » d'un payload, validée
+#[derive(Debug, PartialEq)]
+pub(crate) struct AuthUpdate {
+    method: AuthMethod,
+    key_id: Option<String>,
+    jump_id: Option<String>,
+}
+
+impl AuthUpdate {
+    fn apply(self, server: &mut Server, clear_password: bool) {
+        server.auth_method = self.method;
+        server.ssh_key_id = self.key_id;
+        server.jump_host_id = self.jump_id;
+        if clear_password {
+            server.ssh_password = String::new();
+        }
+    }
+}
+
+fn non_empty(v: &Option<String>) -> Option<String> {
+    v.as_deref().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string)
+}
+
+/// Valide méthode, clé et rebond. `None` : payload sans `auth_method` (ancien écran), rien ne change.
+/// `server_id` est vide pour un nouveau serveur.
+pub(crate) fn auth_update(
+    data: &AppData,
+    server_id: &str,
+    current: AuthMethod,
+    payload: &ServerPayload,
+) -> Result<Option<AuthUpdate>, String> {
+    let Some(method) = payload.auth_method else {
+        if payload.clear_password && current == AuthMethod::Password {
+            return Err("Impossible d'effacer le mot de passe d'un serveur qui s'authentifie par mot de passe".into());
+        }
+        return Ok(None);
+    };
+    if payload.clear_password && method == AuthMethod::Password {
+        return Err("Impossible d'effacer le mot de passe d'un serveur qui s'authentifie par mot de passe".into());
+    }
+    let key_id = non_empty(&payload.ssh_key_id);
+    if method == AuthMethod::Key {
+        let id = key_id.as_deref().ok_or("Choisis la clé SSH à utiliser (Paramètres → Clés SSH pour en créer une)")?;
+        if !data.ssh_keys.iter().any(|k| k.id == id) {
+            return Err("La clé SSH choisie n'existe plus".into());
+        }
+    }
+    let jump_id = non_empty(&payload.jump_host_id);
+    if let Some(jump) = jump_id.as_deref() {
+        check_jump(data, server_id, payload.name.trim(), jump)?;
+        let dependents = if server_id.is_empty() { Vec::new() } else { jump_dependents(data, server_id) };
+        if !dependents.is_empty() {
+            return Err(format!(
+                "{} sert d'hôte de rebond à {} : il ne peut pas passer lui-même par un rebond (un seul niveau)",
+                payload.name.trim(),
+                dependents.join(", ")
+            ));
+        }
+    }
+    Ok(Some(AuthUpdate { method, key_id, jump_id }))
 }
 
 // ── Téléverser une icône personnalisée pour un serveur ────────────────────
@@ -230,4 +301,102 @@ fn is_valid_ip(ip: &str) -> bool {
 fn is_valid_mac(mac: &str) -> bool {
     let parts: Vec<&str> = mac.split(':').collect();
     parts.len() == 6 && parts.iter().all(|p| p.len() == 2 && u8::from_str_radix(p, 16).is_ok())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ssh_auth::tests::server;
+
+    fn payload(method: Option<AuthMethod>, key: Option<&str>, jump: Option<&str>) -> ServerPayload {
+        ServerPayload {
+            name: "minipc".into(),
+            ip: "192.168.1.10".into(),
+            mac_address: String::new(),
+            ssh_user: "root".into(),
+            ssh_password: String::new(),
+            ssh_port: 22,
+            shutdown_command: None,
+            reboot_command: None,
+            os_type: crate::models::OsType::Linux,
+            icon: None,
+            notes: None,
+            tag_ids: None,
+            folder_id: None,
+            favorite: None,
+            custom_fields: None,
+            auth_method: method,
+            ssh_key_id: key.map(str::to_string),
+            jump_host_id: jump.map(str::to_string),
+            clear_password: false,
+        }
+    }
+
+    fn fixture() -> AppData {
+        let mut data = AppData::default();
+        let master = crypto::data_key(&data).unwrap();
+        data.ssh_keys.push(crate::ssh_keys::tests::sealed_key("minipc", &master).0);
+        let a = server(&data, "a", "minipc", "192.168.1.10", "s3cret");
+        let b = server(&data, "b", "FwNode", "192.168.1.1", "pw");
+        data.servers.extend([a, b]);
+        data
+    }
+
+    #[test]
+    fn old_payload_leaves_authentication_untouched() {
+        let data = fixture();
+        assert_eq!(auth_update(&data, "a", AuthMethod::Key, &payload(None, None, None)).unwrap(), None);
+    }
+
+    #[test]
+    fn key_method_requires_an_existing_key() {
+        let data = fixture();
+        let key = |k: Option<&str>| payload(Some(AuthMethod::Key), k, None);
+        assert!(auth_update(&data, "a", AuthMethod::Password, &key(None)).unwrap_err().contains("Choisis la clé"));
+        assert!(auth_update(&data, "a", AuthMethod::Password, &key(Some("absente"))).unwrap_err().contains("n'existe plus"));
+        let ok = auth_update(&data, "a", AuthMethod::Password, &payload(Some(AuthMethod::Key), Some("id-minipc"), Some(" ")))
+            .unwrap()
+            .unwrap();
+        assert_eq!(ok, AuthUpdate { method: AuthMethod::Key, key_id: Some("id-minipc".into()), jump_id: None });
+    }
+
+    #[test]
+    fn jump_rules_on_save() {
+        let mut data = fixture();
+        let jump = |j: &str| payload(Some(AuthMethod::Password), None, Some(j));
+        assert!(auth_update(&data, "a", AuthMethod::Password, &jump("a")).is_err());
+        assert!(auth_update(&data, "a", AuthMethod::Password, &jump("absent")).is_err());
+        assert!(auth_update(&data, "a", AuthMethod::Password, &payload(Some(AuthMethod::Agent), None, Some("b"))).is_ok());
+        // a passe par b : b ne peut pas passer par a (boucle) ni par un autre rebond
+        data.servers[0].jump_host_id = Some("b".into());
+        assert!(auth_update(&data, "b", AuthMethod::Password, &jump("a")).unwrap_err().contains("Boucle"));
+        let c = server(&data, "c", "DockerHost", "192.168.1.30", "pw");
+        data.servers.push(c);
+        assert!(auth_update(&data, "b", AuthMethod::Password, &jump("c")).unwrap_err().contains("sert d'hôte de rebond"));
+        // Nouveau serveur passant par a, qui a lui-même un rebond : refusé
+        assert!(auth_update(&data, "", AuthMethod::Password, &jump("a")).unwrap_err().contains("un seul niveau"));
+    }
+
+    #[test]
+    fn password_is_cleared_only_on_request_and_never_for_password_auth() {
+        let data = fixture();
+        let mut s = data.servers[0].clone();
+        let mut p = payload(Some(AuthMethod::Key), Some("id-minipc"), None);
+        auth_update(&data, "a", AuthMethod::Password, &p).unwrap().unwrap().apply(&mut s, p.clear_password);
+        assert!(!s.ssh_password.is_empty(), "laissé vide = conservé");
+        p.clear_password = true;
+        auth_update(&data, "a", AuthMethod::Password, &p).unwrap().unwrap().apply(&mut s, p.clear_password);
+        assert_eq!((s.auth_method, s.ssh_password.as_str()), (AuthMethod::Key, ""));
+        let mut pw = payload(Some(AuthMethod::Password), None, None);
+        pw.clear_password = true;
+        assert!(auth_update(&data, "a", AuthMethod::Key, &pw).is_err());
+    }
+
+    #[test]
+    fn server_view_never_carries_the_password() {
+        let data = fixture();
+        let view = serde_json::to_value(without_secret(&data.servers[0])).unwrap();
+        assert_eq!(view["ssh_password"], "");
+        assert_eq!(view["auth_method"], "Password");
+    }
 }

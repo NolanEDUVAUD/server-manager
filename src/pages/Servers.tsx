@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Plus, Server, Pencil, Trash2, Zap, Power, RotateCcw, Loader2, ChevronDown, ChevronRight, Folder as FolderIcon, Inbox } from "lucide-react";
+import { Plus, Server, Pencil, Trash2, Zap, Power, RotateCcw, Loader2, ChevronDown, ChevronRight, Folder as FolderIcon, Inbox, KeyRound } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { Server as ServerType, ServerPayload, OS_ICONS } from "../types";
 import { ServerForm } from "../components/ServerForm";
@@ -14,6 +14,7 @@ import { useToast } from "../hooks/useToast";
 import { useShortcuts } from "../hooks/useShortcuts";
 import { filterItems, groupByFolder, serverFilterable } from "../utils/filters";
 import { cn } from "../utils";
+import { DeployKeyDialog } from "../components/DeployKeyDialog";
 
 type PowerAction = "shutdown" | "reboot";
 
@@ -34,6 +35,7 @@ export function Servers() {
   const [loadingAction, setLoadingAction] = useState<Record<string, string>>({});
   const [organising, setOrganising] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [deployingServer, setDeployingServer] = useState<ServerType | null>(null);
 
   // « / » : aller à la recherche
   useShortcuts({ search: () => searchRef.current?.focus() });
@@ -169,6 +171,14 @@ export function Servers() {
               Reboot
             </button>
             <div className="w-px h-5 bg-border-primary mx-1" />
+            <button
+              onClick={() => setDeployingServer(server)}
+              className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
+              title="Déployer la clé SSH"
+              aria-label={`Déployer la clé SSH sur ${server.name}`}
+            >
+              <KeyRound size={13} />
+            </button>
             <button
               onClick={() => setEditingServer(server)}
               className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
@@ -314,6 +324,14 @@ export function Servers() {
         />
       )}
       {organising && <OrganisationManager onClose={() => setOrganising(false)} />}
+
+      {deployingServer && (
+        <DeployKeyDialog
+          server={deployingServer}
+          onClose={() => setDeployingServer(null)}
+          onMessage={(msg, type = "info") => toast.addToast(msg, type)}
+        />
+      )}
 
       <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </div>

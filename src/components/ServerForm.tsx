@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { X, Server, Eye, EyeOff } from "lucide-react";
 import {
@@ -8,11 +8,15 @@ import {
   OS_TYPES,
   OS_ICONS,
   DEFAULT_SSH_PORT,
+  SshKeyView,
 } from "../types";
 import { isValidIP, isValidMAC, formatMAC } from "../utils";
 import { IconPicker } from "./IconPicker";
 import { ServerOrganisationFields } from "./OrganisationFields";
 import { checkCustomFields, isBlankField } from "../utils/organisation";
+import { AuthFieldsValue, ServerAuthFields } from "./ServerAuthFields";
+import { authMethodOf, authWarning } from "../utils/sshAuth";
+import { useStore } from "../stores/useStore";
 
 interface ServerFormProps {
   initial?: ServerType;
@@ -61,6 +65,23 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // ── Authentification SSH par clé (1.2) ──
+  const allServers = useStore((s) => s.servers);
+  const [auth, setAuth] = useState<AuthFieldsValue>({
+    auth_method: authMethodOf(initial),
+    ssh_key_id: initial?.ssh_key_id ?? null,
+    jump_host_id: initial?.jump_host_id ?? null,
+    clear_password: false,
+  });
+  const [keys, setKeys] = useState<SshKeyView[] | null>(null);
+  const [keysError, setKeysError] = useState("");
+  useEffect(() => {
+    invoke<SshKeyView[]>("ssh_keys_list")
+      .then((list) => setKeys(list ?? []))
+      .catch((e) => setKeysError(String(e)));
+  }, []);
+  const isPassword = auth.auth_method === "Password";
+
   const set = (field: keyof ServerPayload, value: unknown) => {
     setForm((prev) => {
       const next = { ...prev, [field]: value };
@@ -106,7 +127,9 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
       errs.mac_address = "Format MAC invalide (ex: AA:BB:CC:DD:EE:FF)";
     }
     if (!form.ssh_user.trim()) errs.ssh_user = "Utilisateur SSH requis";
-    if (!initial && !form.ssh_password) errs.ssh_password = "Mot de passe requis pour un nouveau serveur";
+    if (isPassword && !initial && !form.ssh_password) errs.ssh_password = "Mot de passe requis pour un nouveau serveur";
+    const authProblem = authWarning(auth.auth_method, keys ?? [], auth.ssh_key_id);
+    if (authProblem) errs.auth = authProblem;
     if (form.ssh_port < 1 || form.ssh_port > 65535) errs.ssh_port = "Port invalide (1–65535)";
     const fields = checkCustomFields(form.custom_fields ?? []);
     if (fields.global || fields.rows.some(Boolean)) errs.custom_fields = "Corrige les champs personnalisés";
@@ -119,7 +142,8 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const payload = { ...form };
+      // Méthode, clé et rebond toujours envoyés : le backend les valide et les applique
+      const payload: ServerPayload = { ...form, ...auth, ssh_password: isPassword ? form.ssh_password : "" };
       if (form.mac_address) payload.mac_address = formatMAC(form.mac_address);
       payload.custom_fields = (form.custom_fields ?? []).filter((f) => !isBlankField(f));
       await onSubmit(payload);
@@ -234,7 +258,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
           </div>
 
           {/* SSH */}
-          <div className="grid grid-cols-[1fr_1fr_auto] gap-3">
+          <div className={isPassword ? "grid grid-cols-[1fr_1fr_auto] gap-3" : "grid grid-cols-[1fr_auto] gap-3"}>
             <div>
               <label className={labelClass}>Utilisateur SSH *</label>
               <input
@@ -245,6 +269,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
               />
               {errors.ssh_user && <p className={errorClass}>{errors.ssh_user}</p>}
             </div>
+            {isPassword && (
             <div className="relative">
               <label className={labelClass}>
                 Mot de passe SSH{initial ? " (laisser vide = inchangé)" : " *"}
@@ -266,6 +291,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
               </button>
               {errors.ssh_password && <p className={errorClass}>{errors.ssh_password}</p>}
             </div>
+            )}
             <div>
               <label className={labelClass}>Port SSH</label>
               <input
@@ -279,6 +305,18 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
               {errors.ssh_port && <p className={errorClass}>{errors.ssh_port}</p>}
             </div>
           </div>
+
+          <ServerAuthFields
+            serverId={initial?.id}
+            servers={allServers}
+            keys={keys}
+            keysError={keysError}
+            value={auth}
+            onChange={(patch) => {
+              setAuth((a) => ({ ...a, ...patch }));
+              setErrors((e) => ({ ...e, auth: "", ssh_password: "" }));
+            }}
+          />
 
           {initial && <HostKeyReset serverId={initial.id} />}
 

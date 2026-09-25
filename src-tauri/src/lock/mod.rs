@@ -831,8 +831,15 @@ mod tests {
     /// serveurs (ou lire un secret) pendant le verrouillage.
     #[test]
     fn sensitive_commands_call_the_guard() {
-        let sources: [(&str, &str, &[&str]); 10] = [
-            ("ssh.rs", include_str!("../commands/ssh.rs"), &["connect_ssh", "ssh_shutdown", "ssh_reboot", "ssh_execute", "ssh_shutdown_group"]),
+        let sources: [(&str, &str, &[&str]); 12] = [
+            // connect_ssh délègue à connect_with, point de passage de toute connexion
+            ("ssh.rs", include_str!("../commands/ssh.rs"), &["connect_with", "ssh_shutdown", "ssh_reboot", "ssh_execute", "ssh_shutdown_group"]),
+            (
+                "ssh_keys.rs",
+                include_str!("../commands/ssh_keys.rs"),
+                &["ssh_key_generate", "ssh_key_import_pick", "ssh_key_import", "ssh_key_delete", "ssh_key_deploy", "ssh_key_use_for_server"],
+            ),
+            ("backup.rs", include_str!("../commands/backup.rs"), &["backup_export", "backup_inspect", "backup_apply", "save_backup_settings"]),
             ("terminal.rs", include_str!("../commands/terminal.rs"), &["terminal_open", "terminal_write", "terminal_resize"]),
             ("wol.rs", include_str!("../commands/wol.rs"), &["wake_on_lan", "wake_group_inner"]),
             ("settings.rs", include_str!("../commands/settings.rs"), &["export_config", "export_full_config"]),
@@ -849,6 +856,7 @@ mod tests {
                 assert!(body.contains("crypto::ensure_unlocked()?"), "{} : {} n'appelle pas crypto::ensure_unlocked()", file, f);
             }
         }
+        assert!(function_body(include_str!("../commands/ssh.rs"), "connect_ssh").unwrap().contains("connect_with("));
         // La commande de groupe et la zone de notification passent par la fonction gardée
         let wol = include_str!("../commands/wol.rs");
         assert!(function_body(wol, "wake_group").unwrap().contains("wake_group_inner("));
@@ -859,13 +867,18 @@ mod tests {
         // Coffre propre à ce thread de test (voir crypto::vault)
         crypto::set_master_key(generate_key());
         crypto::vault().lock();
-        // Port 1 de la boucle locale : sans la garde, l'erreur serait « connexion refusée »
-        let err = crate::commands::ssh::connect_ssh("127.0.0.1", 1, "root", "x", 2).await.err().unwrap();
-        assert_eq!(err, crypto::LOCKED_MESSAGE);
-        let err = crate::commands::ssh::execute_ssh("127.0.0.1", 1, "root", "x", "true", 2).await.unwrap_err();
+        // Port 1 de la boucle locale : sans la garde, l'erreur serait « connexion refusée ».
+        // L'agent SSH ne déchiffre rien : il doit être refusé lui aussi.
+        let target = |auth| crate::ssh_auth::SshTarget { host: "127.0.0.1".into(), port: 1, user: "root".into(), auth, jump: None };
+        let password = crate::ssh_auth::SshAuth::Password(Zeroizing::new("x".into()));
+        for auth in [password.clone(), crate::ssh_auth::SshAuth::Agent] {
+            let err = crate::commands::ssh::connect_ssh(&target(auth), 2).await.err().unwrap();
+            assert_eq!(err, crypto::LOCKED_MESSAGE);
+        }
+        let err = crate::commands::ssh::execute_ssh(&target(password.clone()), "true", 2).await.unwrap_err();
         assert_eq!(err, crypto::LOCKED_MESSAGE);
         crypto::vault().unlock(None);
-        let err = crate::commands::ssh::connect_ssh("127.0.0.1", 1, "root", "x", 2).await.err().unwrap();
+        let err = crate::commands::ssh::connect_ssh(&target(password), 2).await.err().unwrap();
         assert_ne!(err, crypto::LOCKED_MESSAGE, "déverrouillée, la connexion est tentée");
     }
 
@@ -880,7 +893,12 @@ mod tests {
         );
         let id = server.id.clone();
         data.servers.push(server);
-        let read = |d: &AppData| crate::commands::servers::get_decrypted_password(d, &id);
+        let read = |d: &AppData| {
+            crate::ssh_auth::resolve_ssh(d, &id).map(|t| match t.auth {
+                crate::ssh_auth::SshAuth::Password(p) => p.to_string(),
+                _ => String::new(),
+            })
+        };
         assert_eq!(read(&data).unwrap(), "hunter2");
         crypto::vault().lock();
         assert_eq!(read(&data).unwrap_err(), crypto::LOCKED_MESSAGE);

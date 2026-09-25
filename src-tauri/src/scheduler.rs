@@ -4,9 +4,10 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
 use crate::{
-    commands::{servers::get_decrypted_password, ssh::execute_ssh, wol::send_magic_packet},
+    commands::{ssh::execute_ssh, wol::send_magic_packet},
     events::{EventKind, EventLog},
     models::AppData,
+    ssh_auth::{resolve_ssh, SshTarget},
     storage::AppState,
 };
 
@@ -137,10 +138,8 @@ fn to_local(ms: i64) -> Option<NaiveDateTime> {
 struct ServerJob {
     id: String,
     name: String,
-    ip: String,
-    port: u16,
-    user: String,
-    password: Option<String>,
+    /// Cible SSH (arrêt / redémarrage seulement : rien n'est déchiffré pour un réveil)
+    ssh: Option<Result<SshTarget, String>>,
     mac: String,
     shutdown_command: String,
     reboot_command: String,
@@ -154,10 +153,7 @@ fn jobs_for(schedule: &Schedule, data: &AppData) -> Vec<ServerJob> {
         .map(|s| ServerJob {
             id: s.id.clone(),
             name: s.name.clone(),
-            ip: s.ip.clone(),
-            port: s.ssh_port,
-            user: s.ssh_user.clone(),
-            password: get_decrypted_password(data, &s.id).ok(),
+            ssh: (schedule.action != ScheduleAction::Wake).then(|| resolve_ssh(data, &s.id)),
             mac: s.mac_address.clone(),
             shutdown_command: s.shutdown_command.clone(),
             reboot_command: s.reboot_command.clone(),
@@ -195,9 +191,10 @@ pub async fn run_schedule(app: &AppHandle, schedule: &Schedule) {
                 } else {
                     &job.reboot_command
                 };
-                match &job.password {
-                    None => Err("mot de passe SSH illisible".into()),
-                    Some(pass) => execute_ssh(&job.ip, job.port, &job.user, pass, command, job.timeout)
+                match &job.ssh {
+                    None => Err("paramètres SSH absents".into()),
+                    Some(Err(e)) => Err(e.clone()),
+                    Some(Ok(target)) => execute_ssh(target, command, job.timeout)
                         .await
                         .and_then(|r| if r.success { Ok(()) } else { Err(r.error.unwrap_or(r.output)) }),
                 }

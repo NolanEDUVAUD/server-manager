@@ -17,6 +17,7 @@ Construit avec **Tauri v2** (backend Rust) et **React + TypeScript + Tailwind** 
 - **Proxmox** : état du cluster, VM/CT, sauvegardes, migration
 - **Docker** : conteneurs et images à mettre à jour
 - **Console SSH** intégrée, snippets, tâches en lot sur plusieurs serveurs avec réponse aux questions interactives (dpkg, apt)
+- **Clés SSH** : paire ed25519 générée dans l'app ou import d'une clé OpenSSH / PuTTY (.ppk), agent SSH (OpenSSH de Windows, Pageant), déploiement de la clé sur un serveur en un clic, hôte de rebond
 - **Planificateur** : tâches programmées, avec création des cronjobs directement sur les serveurs Linux
 - **Mises à jour** (apt), **réseau**, **logs** (Loki), zone de notification Windows
 - **Thèmes** : One Half Dark, Fluent, Gruvbox Dark, Nord, Dracula, Catppuccin Mocha, Tokyo Night, ou thème personnalisé
@@ -113,6 +114,7 @@ Les raccourcis à une touche sont ignorés pendant la saisie dans un champ et da
 - **Sauvegarde chiffrée `.spmbackup`** (Paramètres → Configuration) : toute la configuration, secrets compris, chiffrée par une phrase de passe (Argon2id + AES-256-GCM, en-tête authentifié). Elle se restaure sur un autre PC, où les secrets sont rechiffrés par la clé maître locale. La sauvegarde automatique vers un dossier est optionnelle (quotidienne ou hebdomadaire, rotation) ; sa phrase de passe est elle-même chiffrée par la clé maître.
 - L'export JSON de la configuration ne contient aucun secret (à ressaisir après un import). Tags, dossiers, favoris et champs personnalisés y figurent : ce ne sont pas des secrets, l'interface le rappelle et avertit si un champ personnalisé ressemble à un mot de passe ou un jeton.
 - **Verrouillage** (optionnel, Paramètres → Sécurité) : PIN ou Windows Hello, verrouillage après inactivité ou avec la session Windows. Verrouillée, l'app efface la clé maître de la mémoire. Un **mot de passe maître** (Argon2id) peut chiffrer la clé dans le coffre : l'app démarre alors verrouillée et lui seul la déverrouille ; oublié, les secrets sont irrécupérables.
+- Les clés privées SSH gérées par l'app sont chiffrées de la même façon : seule la clé publique est affichée, et aucune n'est exportée.
 - Clés d'hôte SSH vérifiées (mémorisées à la première connexion), commandes Tauri limitées à la fenêtre principale, CSP stricte.
 
 ## Développement

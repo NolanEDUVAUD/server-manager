@@ -24,6 +24,12 @@ export interface Server {
   favorite?: boolean;
   /** Informations libres, non chiffrées : jamais de secret */
   custom_fields?: CustomField[];
+  // ── Authentification SSH par clé (1.2) ──
+  /** Absente d'un ancien serveur = mot de passe */
+  auth_method?: AuthMethod;
+  ssh_key_id?: string | null;
+  /** Serveur de la liste servant d'hôte de rebond */
+  jump_host_id?: string | null;
 }
 
 export interface ServerPayload {
@@ -45,6 +51,13 @@ export interface ServerPayload {
   folder_id?: string;
   favorite?: boolean;
   custom_fields?: CustomField[];
+  // ── Authentification SSH par clé (1.2) ──
+  /** Absente = méthode, clé et rebond inchangés côté Rust */
+  auth_method?: AuthMethod;
+  ssh_key_id?: string | null;
+  jump_host_id?: string | null;
+  /** Efface le mot de passe enregistré (méthode clé ou agent) */
+  clear_password?: boolean;
 }
 
 export interface Group {
@@ -683,4 +696,49 @@ export interface BackupConfig {
 
 export interface BackupConfigView extends BackupConfig {
   has_passphrase: boolean;
+}
+
+// ─── Authentification SSH par clé (1.2) ─────────────────────────────────────
+
+export type AuthMethod = "Password" | "Key" | "Agent";
+
+/** Clé SSH de l'app : la clé privée n'est jamais envoyée au frontend */
+export interface SshKeyView {
+  id: string;
+  name: string;
+  algorithm: string;
+  /** Ligne authorized_keys : « ssh-ed25519 AAAA… commentaire » */
+  public_key: string;
+  /** « SHA256:… » */
+  fingerprint: string;
+  /** Millisecondes */
+  created_at: number;
+  has_private_key: boolean;
+}
+
+/** Fichier de clé choisi, décrit avant son import (sans phrase de passe) */
+export interface KeyFileInfo {
+  file_name: string;
+  format: string;
+  encrypted: boolean;
+  algorithm: string | null;
+  comment: string | null;
+}
+
+export interface DeployReport {
+  /** false : la clé était déjà dans authorized_keys */
+  added: boolean;
+  /** Une connexion par clé a réussi juste après */
+  verified: boolean;
+  detail: string | null;
+}
+
+export interface AgentKey { source: string; algorithm: string; fingerprint: string; comment: string }
+
+export interface AgentStatus {
+  available: boolean;
+  sources: string[];
+  keys: AgentKey[];
+  errors: string[];
+  hint: string;
 }

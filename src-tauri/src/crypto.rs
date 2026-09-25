@@ -199,6 +199,7 @@ pub fn secret_fields_mut(data: &mut AppData) -> Vec<&mut String> {
     fields.extend(data.proxmox_connections.iter_mut().map(|c| &mut c.token_secret));
     fields.extend(data.integrations.iter_mut().map(|i| &mut i.secret));
     fields.extend(data.probes.iter_mut().map(|p| &mut p.secret));
+    fields.extend(data.ssh_keys.iter_mut().map(|k| &mut k.private_key));
     fields.push(&mut data.backup.passphrase);
     fields
 }
@@ -435,6 +436,7 @@ pub(crate) mod test_support {
         .unwrap();
         probe.secret = enc("secret-sonde");
         data.probes.push(probe);
+        data.ssh_keys.push(crate::ssh_keys::tests::sealed_key("minipc", key).0);
         data.backup.passphrase = enc("secret-sauvegarde");
         data
     }
@@ -489,7 +491,10 @@ mod tests {
         let mut data = test_support::data_with_every_secret(&old);
         reencrypt_all(&mut data, &old, &new).unwrap();
         let plain: Vec<String> = secret_fields_mut(&mut data).iter().map(|f| decrypt(f, &new).unwrap()).collect();
-        assert_eq!(plain, ["secret-ssh", "secret-proxmox", "secret-ntfy", "secret-sonde", "secret-sauvegarde"]);
+        assert_eq!(plain.len(), 6);
+        assert_eq!(plain[..4], ["secret-ssh", "secret-proxmox", "secret-ntfy", "secret-sonde"]);
+        assert!(plain[4].starts_with("-----BEGIN OPENSSH PRIVATE KEY-----"), "clé privée SSH");
+        assert_eq!(plain[5], "secret-sauvegarde");
     }
 
     #[test]

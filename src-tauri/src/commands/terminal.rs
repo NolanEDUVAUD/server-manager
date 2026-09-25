@@ -6,7 +6,8 @@ use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 use uuid::Uuid;
 
 use crate::{
-    commands::{servers::get_decrypted_password, ssh::connect_ssh},
+    commands::ssh::connect_ssh,
+    ssh_auth::resolve_ssh,
     storage::AppState,
     terminal::{validate_size, TerminalInput, TerminalState},
 };
@@ -30,18 +31,14 @@ pub async fn terminal_open(
 ) -> Result<String, String> {
     crate::crypto::ensure_unlocked()?;
     let (cols, rows) = validate_size(cols, rows)?;
-    let (ip, port, user, password, timeout) = {
+    let (target, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
-        let server = data
-            .servers
-            .iter()
-            .find(|s| s.id == server_id)
-            .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
-        let pass = get_decrypted_password(&data, &server_id)?;
-        (server.ip.clone(), server.ssh_port, server.ssh_user.clone(), pass, data.settings.network.ssh_timeout_secs)
+        (resolve_ssh(&data, &server_id)?, data.settings.network.ssh_timeout_secs)
     };
+    let (user, ip) = (target.user.clone(), target.host.clone());
 
-    let session = connect_ssh(&ip, port, &user, &password, timeout).await?;
+    let session = connect_ssh(&target, timeout).await?;
+    drop(target);
     let channel = session
         .channel_open_session()
         .await
@@ -146,4 +143,56 @@ pub async fn terminal_close(terminals: State<'_, TerminalState>, session_id: Str
     // Idempotent : une session déjà terminée côté serveur n'est pas une erreur
     let _ = terminals.send(&session_id, TerminalInput::Close);
     Ok(())
+}
+
+/// Boucle de la console contre le serveur SSH de test : PTY, saisie, sortie, redimensionnement
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::commands::ssh::{connect_with, HostVerifier};
+    use crate::known_hosts::Trust;
+    use crate::ssh_auth::{SshAuth, SshTarget};
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn console_session_relays_input_output_and_resize() {
+        let server = crate::ssh_test_server::start(Some("pw"), vec![]).await;
+        let target = SshTarget {
+            host: "127.0.0.1".into(),
+            port: server.port,
+            user: "admin".into(),
+            auth: SshAuth::Password(zeroize::Zeroizing::new("pw".into())),
+            jump: None,
+        };
+        let verify: HostVerifier = Arc::new(|_, _| Trust::New);
+        let session = connect_with(&target, 5, verify).await.unwrap();
+        let channel = session.channel_open_session().await.unwrap();
+        channel.request_pty(false, "xterm-256color", 80, 24, 0, 0, &[]).await.unwrap();
+        channel.request_shell(false).await.unwrap();
+
+        let (out_tx, mut out_rx) = unbounded_channel();
+        let on_event: OutputChannel = Channel::new(move |body| {
+            if let InvokeResponseBody::Raw(bytes) = body {
+                let _ = out_tx.send(bytes);
+            }
+            Ok(())
+        });
+        let (tx, rx) = unbounded_channel();
+        let task = tokio::spawn(async move {
+            let _session = session;
+            run_session(channel, rx, &on_event).await
+        });
+
+        tx.send(TerminalInput::Data(b"ls".to_vec())).unwrap();
+        assert_eq!(out_rx.recv().await.unwrap(), b"echo:ls");
+        tx.send(TerminalInput::Resize { cols: 120, rows: 40 }).unwrap();
+        // La saisie suivante est traitée après le redimensionnement (ordre du protocole)
+        tx.send(TerminalInput::Data(b"x".to_vec())).unwrap();
+        assert_eq!(out_rx.recv().await.unwrap(), b"echo:x");
+        tx.send(TerminalInput::Close).unwrap();
+        assert_eq!(task.await.unwrap(), "Session fermée");
+        let log = server.log();
+        assert!(log.contains(&"pty:xterm-256color:80x24".to_string()), "{:?}", log);
+        assert!(log.contains(&"resize:120x40".to_string()), "{:?}", log);
+    }
 }
