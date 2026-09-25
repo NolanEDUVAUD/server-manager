@@ -93,7 +93,7 @@ mod live {
     async fn live_loki() {
         let r = Resolved {
             config: Integration {
-                kind: IntegrationKind::Loki, enabled: true, url: "http://192.168.50.59:3100".into(),
+                kind: IntegrationKind::Loki, enabled: true, url: "http://192.168.1.59:3100".into(),
                 username: String::new(), secret: String::new(), verify_tls: false, extra: Default::default(),
             },
             secret: String::new(),

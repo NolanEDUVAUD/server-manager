@@ -80,11 +80,13 @@ pub async fn network_scan(state: State<'_, AppState>, subnet_of: Option<String>)
 
 #[cfg(test)]
 mod live {
-    /// Lecture seule (ping + table ARP locale) : cargo test live_detect -- --ignored --nocapture
+    /// Lecture seule (ping + table ARP locale) :
+    /// DEV_IPS=192.168.1.10,192.168.1.11 cargo test live_detect -- --ignored --nocapture
     #[tokio::test]
     #[ignore]
     async fn live_detect() {
-        for ip in ["192.168.50.53", "192.168.50.2", "192.168.50.54"] {
+        let ips = std::env::var("DEV_IPS").expect("DEV_IPS (adresses séparées par des virgules)");
+        for ip in ips.split(',').map(str::trim).filter(|ip| !ip.is_empty()) {
             println!("{} → {:?}", ip, super::detect_mac(ip.into()).await.map(|d| (d.mac, d.virtual_nic)));
         }
     }

@@ -576,7 +576,7 @@ mod tests {
             id: String::new(),
             name: "Proxmox".into(),
             enabled: true,
-            kind: ProbeKind::Tcp { host: "192.168.50.53".into(), port: 8006 },
+            kind: ProbeKind::Tcp { host: "192.168.1.53".into(), port: 8006 },
             server_id: None,
             interval_secs: 60,
             verify_tls: false,

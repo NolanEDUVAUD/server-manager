@@ -85,13 +85,13 @@ mod tests {
     use super::*;
 
     /// Sortie réelle de `arp -a` sur le PC (2026-09-25), en-têtes localisés compris
-    const ARP: &str = "Interface\u{ff} : 192.168.50.20 --- 0x17
+    const ARP: &str = "Interface\u{ff} : 192.168.1.20 --- 0x17
   Adresse Internet      Adresse physique      Type
-  192.168.50.1           02-00-00-00-00-10     dynamique
-  192.168.50.2           02-00-00-00-00-04     dynamique
-  192.168.50.53          02-00-00-00-00-01     dynamique
-  192.168.50.54          bc-24-11-00-00-02     dynamique
-  192.168.50.255         ff-ff-ff-ff-ff-ff     statique
+  192.168.1.1           02-00-00-00-00-10     dynamique
+  192.168.1.2           02-00-00-00-00-04     dynamique
+  192.168.1.53          02-00-00-00-00-01     dynamique
+  192.168.1.54          bc-24-11-00-00-02     dynamique
+  192.168.1.255         ff-ff-ff-ff-ff-ff     statique
   224.0.0.22            01-00-5e-00-00-16     statique
   255.255.255.255       ff-ff-ff-ff-ff-ff     statique
 ";
@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn parses_unicast_entries_only() {
         let e = parse_arp(ARP);
-        assert_eq!(e.iter().map(|x| x.ip.as_str()).collect::<Vec<_>>(), vec!["192.168.50.1", "192.168.50.2", "192.168.50.53", "192.168.50.54"]);
+        assert_eq!(e.iter().map(|x| x.ip.as_str()).collect::<Vec<_>>(), vec!["192.168.1.1", "192.168.1.2", "192.168.1.53", "192.168.1.54"]);
         assert_eq!(e[2].mac, "02:00:00:00:00:01");
     }
 
@@ -111,9 +111,9 @@ mod tests {
 
     #[test]
     fn subnet_of_private_ip() {
-        let hosts = subnet_hosts("192.168.50.53").unwrap();
+        let hosts = subnet_hosts("192.168.1.53").unwrap();
         assert_eq!(hosts.len(), 254);
-        assert_eq!(hosts[0], "192.168.50.1");
+        assert_eq!(hosts[0], "192.168.1.1");
         assert!(subnet_hosts("8.8.8.8").is_none());
         assert!(subnet_hosts("pas une ip").is_none());
     }

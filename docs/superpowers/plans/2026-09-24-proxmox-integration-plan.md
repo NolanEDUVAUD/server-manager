@@ -23,7 +23,7 @@
 ## Review Focus
 
 - **Fichier `data.json` v2 existant sans `proxmox_connections`** (créé par une version antérieure de l'app) : doit se charger avec une liste vide, sans crash — testé Tâche 1.
-- **URL d'API sans schéma** (`192.168.50.10:8006` au lieu de `https://192.168.50.10:8006`) : doit être rejetée avec un message clair avant sauvegarde, pas silencieusement mal formée — testé Tâche 7.
+- **URL d'API sans schéma** (`192.168.1.10:8006` au lieu de `https://192.168.1.10:8006`) : doit être rejetée avec un message clair avant sauvegarde, pas silencieusement mal formée — testé Tâche 7.
 - **VM avec le même `vmid` sur deux nœuds/types différents** (config Proxmox atypique mais possible) : l'UI doit les distinguer par `(node, vmid, vm_type)`, pas par `vmid` seul — testé Tâche 12.
 - **Token révoqué après la sauvegarde de la connexion** (marchait au `test_connection`, ne marche plus au polling suivant) : la page doit afficher l'erreur par connexion sans casser le reste du dashboard, sans boucle de retry agressive — testé Tâche 11.
 - **Double clic sur un bouton d'action pendant qu'une requête est en cours** : ne doit pas déclencher deux appels concurrents vers Proxmox — testé Tâche 12.
@@ -98,21 +98,21 @@ mod tests {
     fn new_generates_unique_id_and_keeps_fields() {
         let c1 = ProxmoxConnection::new(
             "PVE1".to_string(),
-            "https://192.168.50.10:8006".to_string(),
+            "https://192.168.1.10:8006".to_string(),
             "root@pam!sm".to_string(),
             "encrypted-secret".to_string(),
             false,
         );
         let c2 = ProxmoxConnection::new(
             "PVE2".to_string(),
-            "https://192.168.50.11:8006".to_string(),
+            "https://192.168.1.11:8006".to_string(),
             "root@pam!sm".to_string(),
             "encrypted-secret".to_string(),
             true,
         );
         assert_ne!(c1.id, c2.id);
         assert_eq!(c1.name, "PVE1");
-        assert_eq!(c1.api_url, "https://192.168.50.10:8006");
+        assert_eq!(c1.api_url, "https://192.168.1.10:8006");
         assert!(!c1.verify_tls);
         assert!(c2.verify_tls);
     }
@@ -2118,7 +2118,7 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
             <input
               value={form.api_url}
               onChange={(e) => setForm((f) => ({ ...f, api_url: e.target.value }))}
-              placeholder="https://192.168.50.10:8006"
+              placeholder="https://192.168.1.10:8006"
               required
               className="w-full bg-bg-input border border-border-primary rounded-win px-3 py-2 text-text-primary text-sm font-mono"
             />

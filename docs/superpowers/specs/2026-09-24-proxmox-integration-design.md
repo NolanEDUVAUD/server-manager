@@ -40,7 +40,7 @@ Nouvelle entité ajoutée à `AppData` (`src-tauri/src/models.rs`), suivant le m
 pub struct ProxmoxConnection {
     pub id: String,
     pub name: String,
-    pub api_url: String,          // ex: https://192.168.50.10:8006
+    pub api_url: String,          // ex: https://192.168.1.10:8006
     pub token_id: String,         // ex: root@pam!server-manager
     pub token_secret: String,     // chiffré AES-256-GCM (comme ssh_password)
     pub verify_tls: bool,         // défaut: false

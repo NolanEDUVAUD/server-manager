@@ -8,13 +8,13 @@ const srv = (id: string, name: string, ip: string, os_type: Server["os_type"]): 
 });
 
 const conn: ProxmoxConnection = {
-  id: "c1", name: "Datacenter", api_url: "http://192.168.50.53:8006/", token_id: "t", token_secret: "", verify_tls: false,
+  id: "c1", name: "Datacenter", api_url: "http://192.168.1.53:8006/", token_id: "t", token_secret: "", verify_tls: false,
 };
 
 describe("webTargets", () => {
   it("liste les connexions Proxmox avec leur URL", () => {
     expect(webTargets([], [conn])).toEqual([
-      { label: "c1", connectionId: "c1", url: "http://192.168.50.53:8006/", title: "Datacenter", kind: "Proxmox" },
+      { label: "c1", connectionId: "c1", url: "http://192.168.1.53:8006/", title: "Datacenter", kind: "Proxmox" },
     ]);
   });
 
@@ -33,7 +33,7 @@ describe("webTargets", () => {
   });
 
   it("n'affiche pas deux fois un nœud déjà couvert par une connexion Proxmox", () => {
-    const targets = webTargets([srv("o", "minipc", "192.168.50.53", "Proxmox")], [conn]);
+    const targets = webTargets([srv("o", "minipc", "192.168.1.53", "Proxmox")], [conn]);
     expect(targets.map((t) => t.title)).toEqual(["Datacenter"]);
   });
 });

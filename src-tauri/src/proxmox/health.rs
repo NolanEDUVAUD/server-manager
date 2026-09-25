@@ -168,7 +168,7 @@ mod tests {
     fn sample() -> ClusterHealth {
         let status = json!([
             {"id":"cluster","name":"Homelab-Lab","nodes":4,"quorate":1,"type":"cluster","version":7},
-            {"id":"node/workstation2","ip":"192.168.50.56","name":"workstation2","online":1,"type":"node"}
+            {"id":"node/workstation2","ip":"192.168.1.56","name":"workstation2","online":1,"type":"node"}
         ]);
         let resources = json!([
             {"type":"node","id":"node/workstation2","node":"workstation2","status":"online","cpu":0.0103,"maxcpu":12,"mem":4482494464u64,"maxmem":67193556992u64,"disk":20678356992u64,"maxdisk":72594137088u64,"uptime":3054},

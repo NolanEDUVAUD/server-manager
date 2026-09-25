@@ -115,21 +115,21 @@ mod tests {
     fn new_generates_unique_id_and_keeps_fields() {
         let c1 = ProxmoxConnection::new(
             "PVE1".to_string(),
-            "https://192.168.50.10:8006".to_string(),
+            "https://192.168.1.10:8006".to_string(),
             "root@pam!sm".to_string(),
             "encrypted-secret".to_string(),
             false,
         );
         let c2 = ProxmoxConnection::new(
             "PVE2".to_string(),
-            "https://192.168.50.11:8006".to_string(),
+            "https://192.168.1.11:8006".to_string(),
             "root@pam!sm".to_string(),
             "encrypted-secret".to_string(),
             true,
         );
         assert_ne!(c1.id, c2.id);
         assert_eq!(c1.name, "PVE1");
-        assert_eq!(c1.api_url, "https://192.168.50.10:8006");
+        assert_eq!(c1.api_url, "https://192.168.1.10:8006");
         assert!(!c1.verify_tls);
         assert!(c2.verify_tls);
     }
