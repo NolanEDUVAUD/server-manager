@@ -6,6 +6,7 @@ use std::sync::Arc;
 use tauri::State;
 use crate::{
     commands::servers::get_decrypted_password,
+    events::{EventKind, EventLog},
     models::SshResult,
     storage::AppState,
 };
@@ -109,13 +110,29 @@ pub(crate) async fn execute_ssh(
     })
 }
 
+/// Journalise le résultat d'une demande d'arrêt / de redémarrage.
+fn record_power(events: &EventLog, kind: EventKind, server_id: &str, name: &str, result: &Result<SshResult, String>) {
+    let action = if kind == EventKind::Reboot { "Redémarrage" } else { "Arrêt" };
+    match result {
+        Ok(r) if r.success => events.record(kind, Some(server_id), name, format!("{} demandé", action)),
+        Ok(r) => events.record(
+            EventKind::Failure,
+            Some(server_id),
+            name,
+            format!("{} échoué : {}", action, r.error.clone().unwrap_or_else(|| r.output.clone())),
+        ),
+        Err(e) => events.record(EventKind::Failure, Some(server_id), name, format!("{} échoué : {}", action, e)),
+    }
+}
+
 // ── Shutdown d'un serveur ─────────────────────────────────────────────────
 #[tauri::command]
 pub async fn ssh_shutdown(
     state: State<'_, AppState>,
+    events: State<'_, EventLog>,
     server_id: String,
 ) -> Result<SshResult, String> {
-    let (ip, port, user, password, command, timeout) = {
+    let (name, ip, port, user, password, command, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         let server = data
             .servers
@@ -124,6 +141,7 @@ pub async fn ssh_shutdown(
             .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
         let pass = get_decrypted_password(&data, &server_id)?;
         (
+            server.name.clone(),
             server.ip.clone(),
             server.ssh_port,
             server.ssh_user.clone(),
@@ -134,16 +152,19 @@ pub async fn ssh_shutdown(
     };
 
     log::info!("Shutdown SSH de {}:{} — commande: {}", ip, port, command);
-    execute_ssh(&ip, port, &user, &password, &command, timeout).await
+    let result = execute_ssh(&ip, port, &user, &password, &command, timeout).await;
+    record_power(&events, EventKind::Shutdown, &server_id, &name, &result);
+    result
 }
 
 // ── Reboot d'un serveur ───────────────────────────────────────────────────
 #[tauri::command]
 pub async fn ssh_reboot(
     state: State<'_, AppState>,
+    events: State<'_, EventLog>,
     server_id: String,
 ) -> Result<SshResult, String> {
-    let (ip, port, user, password, command, timeout) = {
+    let (name, ip, port, user, password, command, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         let server = data
             .servers
@@ -152,6 +173,7 @@ pub async fn ssh_reboot(
             .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
         let pass = get_decrypted_password(&data, &server_id)?;
         (
+            server.name.clone(),
             server.ip.clone(),
             server.ssh_port,
             server.ssh_user.clone(),
@@ -162,7 +184,9 @@ pub async fn ssh_reboot(
     };
 
     log::info!("Reboot SSH de {}:{} — commande: {}", ip, port, command);
-    execute_ssh(&ip, port, &user, &password, &command, timeout).await
+    let result = execute_ssh(&ip, port, &user, &password, &command, timeout).await;
+    record_power(&events, EventKind::Reboot, &server_id, &name, &result);
+    result
 }
 
 // ── Exécuter une commande libre sur un serveur ────────────────────────────
@@ -197,6 +221,7 @@ pub async fn ssh_execute(
 #[tauri::command]
 pub async fn ssh_shutdown_group(
     state: State<'_, AppState>,
+    events: State<'_, EventLog>,
     group_id: String,
 ) -> Result<Vec<(String, SshResult)>, String> {
     let servers_info = {
@@ -212,6 +237,7 @@ pub async fn ssh_shutdown_group(
             if let Some(server) = data.servers.iter().find(|s| &s.id == sid) {
                 if let Ok(pass) = get_decrypted_password(&data, sid) {
                     list.push((
+                        sid.clone(),
                         server.name.clone(),
                         server.ip.clone(),
                         server.ssh_port,
@@ -227,8 +253,9 @@ pub async fn ssh_shutdown_group(
     };
 
     let mut results = Vec::new();
-    for (name, ip, port, user, password, command, timeout) in servers_info {
+    for (sid, name, ip, port, user, password, command, timeout) in servers_info {
         let result = execute_ssh(&ip, port, &user, &password, &command, timeout).await;
+        record_power(&events, EventKind::Shutdown, &sid, &name, &result);
         match result {
             Ok(r) => results.push((name, r)),
             Err(e) => results.push((

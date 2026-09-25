@@ -244,3 +244,23 @@ export interface TerminalSession {
   /** Incrémenté à chaque reconnexion pour relancer la connexion du terminal */
   attempt: number;
 }
+
+// ─── Historique des événements ──────────────────────────────────────────────
+
+export type EventKind = "Offline" | "Online" | "Wake" | "Shutdown" | "Reboot" | "VmAction" | "Failure";
+
+export interface AppEvent {
+  id: string;
+  /** Horodatage en millisecondes */
+  ts: number;
+  kind: EventKind;
+  server_id: string | null;
+  target: string;
+  message: string;
+}
+
+export interface ServerEventStats {
+  server_id: string;
+  outages: number;
+  downtime_ms: number;
+}

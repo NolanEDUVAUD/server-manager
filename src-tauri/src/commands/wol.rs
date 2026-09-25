@@ -2,11 +2,18 @@
 use std::net::UdpSocket;
 use tauri::State;
 
-use crate::storage::AppState;
+use crate::{
+    events::{EventKind, EventLog},
+    storage::AppState,
+};
 
 // ── Réveiller un serveur via WoL ──────────────────────────────────────────
 #[tauri::command]
-pub async fn wake_on_lan(state: State<'_, AppState>, server_id: String) -> Result<String, String> {
+pub async fn wake_on_lan(
+    state: State<'_, AppState>,
+    events: State<'_, EventLog>,
+    server_id: String,
+) -> Result<String, String> {
     let (mac, _ip, name) = {
         let data = state
             .data
@@ -27,14 +34,22 @@ pub async fn wake_on_lan(state: State<'_, AppState>, server_id: String) -> Resul
         ));
     }
 
-    send_magic_packet(&mac)?;
+    if let Err(e) = send_magic_packet(&mac) {
+        events.record(EventKind::Failure, Some(&server_id), &name, format!("Wake-on-LAN échoué : {}", e));
+        return Err(e);
+    }
     log::info!("Magic packet WoL envoyé à {} ({})", name, mac);
+    events.record(EventKind::Wake, Some(&server_id), &name, "Wake-on-LAN envoyé");
     Ok(format!("Magic packet envoyé à {} ({})", name, mac))
 }
 
 // ── Réveiller tous les serveurs d'un groupe ───────────────────────────────
 #[tauri::command]
-pub async fn wake_group(state: State<'_, AppState>, group_id: String) -> Result<Vec<String>, String> {
+pub async fn wake_group(
+    state: State<'_, AppState>,
+    events: State<'_, EventLog>,
+    group_id: String,
+) -> Result<Vec<String>, String> {
     let servers_to_wake = {
         let data = state
             .data
@@ -56,7 +71,7 @@ pub async fn wake_group(state: State<'_, AppState>, group_id: String) -> Result<
     };
 
     let mut results = Vec::new();
-    for (_id, name, mac) in servers_to_wake {
+    for (id, name, mac) in servers_to_wake {
         if mac.is_empty() {
             results.push(format!("{}: adresse MAC manquante", name));
             continue;
@@ -64,10 +79,12 @@ pub async fn wake_group(state: State<'_, AppState>, group_id: String) -> Result<
         match send_magic_packet(&mac) {
             Ok(_) => {
                 log::info!("WoL envoyé à {} ({})", name, mac);
+                events.record(EventKind::Wake, Some(&id), &name, "Wake-on-LAN envoyé (groupe)");
                 results.push(format!("{}: magic packet envoyé", name));
             }
             Err(e) => {
                 log::error!("Erreur WoL pour {} : {}", name, e);
+                events.record(EventKind::Failure, Some(&id), &name, format!("Wake-on-LAN échoué : {}", e));
                 results.push(format!("{}: erreur — {}", name, e));
             }
         }

@@ -1,4 +1,5 @@
 pub mod dashboards;
+pub mod events;
 pub mod groups;
 pub mod metrics;
 pub mod ping;

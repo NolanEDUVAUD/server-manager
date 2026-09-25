@@ -7,10 +7,12 @@ import { Groups } from "./pages/Groups";
 import { Proxmox } from "./pages/Proxmox";
 import { Dashboards } from "./pages/Dashboards";
 import { Resources } from "./pages/Resources";
+import { History } from "./pages/History";
 import { Settings } from "./pages/Settings";
 import { useStore } from "./stores/useStore";
 import { usePing } from "./hooks/usePing";
 import { useMetrics } from "./hooks/useMetrics";
+import { useEventFeed } from "./hooks/useEventFeed";
 
 function AppContent() {
   const { initialize, loading } = useStore();
@@ -25,6 +27,9 @@ function AppContent() {
 
   // Collecter les ressources (CPU / RAM / disques) des serveurs en ligne
   useMetrics();
+
+  // Historique des événements (chargement + flux en direct)
+  useEventFeed();
 
   if (loading) {
     return (
@@ -44,6 +49,7 @@ function AppContent() {
         <Route path="/servers" element={<Servers />} />
         <Route path="/groups" element={<Groups />} />
         <Route path="/resources" element={<Resources />} />
+        <Route path="/history" element={<History />} />
         {/* Rendue en permanence par Layout, la route sert juste à l'activer */}
         <Route path="/console" element={null} />
         <Route path="/proxmox" element={<Proxmox />} />

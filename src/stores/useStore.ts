@@ -21,6 +21,7 @@ import {
   VmType,
   DashboardTab,
   MetricsSample,
+  AppEvent,
   TerminalSession,
   ServerMetrics,
 } from "../types";
@@ -113,6 +114,13 @@ interface AppStore {
   metricsHistory: Record<string, MetricsSample[]>;
   fetchMetrics: (serverId: string) => Promise<void>;
 
+  // ── Historique des événements ──────────────────────────────────────────
+  /** Du plus récent au plus ancien */
+  events: AppEvent[];
+  loadEvents: () => Promise<void>;
+  addEvent: (event: AppEvent) => void;
+  clearEvents: () => Promise<void>;
+
   // ── Console SSH ────────────────────────────────────────────────────────
   terminalSessions: TerminalSession[];
   activeTerminalKey: string | null;
@@ -180,6 +188,7 @@ export const useStore = create<AppStore>((set, get) => ({
   metricsHistory: {},
   terminalSessions: [],
   activeTerminalKey: null,
+  events: [],
 
   // ── Initialisation ─────────────────────────────────────────────────────
   initialize: async () => {
@@ -537,6 +546,21 @@ export const useStore = create<AppStore>((set, get) => ({
         return { metrics, metricsErrors: { ...s.metricsErrors, [serverId]: String(e) } };
       });
     }
+  },
+
+  // ── Historique des événements ──────────────────────────────────────────
+  loadEvents: async () => {
+    const events = await invoke<AppEvent[]>("get_events");
+    set({ events });
+  },
+
+  addEvent: (event) => {
+    set((s) => (s.events.some((e) => e.id === event.id) ? s : { events: [event, ...s.events] }));
+  },
+
+  clearEvents: async () => {
+    await invoke("clear_events");
+    set({ events: [] });
   },
 
   // ── Console SSH ────────────────────────────────────────────────────────

@@ -1,6 +1,8 @@
 /// Commandes Tauri — Connexions Proxmox et opérations VM/LXC
 use tauri::State;
 
+use crate::events::{EventKind, EventLog};
+
 use crate::{
     crypto,
     models::AppData,
@@ -167,6 +169,7 @@ pub async fn proxmox_list_vms(
 #[tauri::command]
 pub async fn proxmox_vm_action(
     state: State<'_, AppState>,
+    events: State<'_, EventLog>,
     connection_id: String,
     node: String,
     vmid: u32,
@@ -177,7 +180,14 @@ pub async fn proxmox_vm_action(
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         build_client(&data, &connection_id)?
     };
-    client.vm_action(&node, vmid, vm_type, action).await
+    let result = client.vm_action(&node, vmid, vm_type, action).await;
+    let target = format!("{} {} ({})", vm_type.api_segment().to_uppercase(), vmid, node);
+    let action_name = action.api_segment();
+    match &result {
+        Ok(_) => events.record(EventKind::VmAction, None, &target, format!("Action « {} » lancée", action_name)),
+        Err(e) => events.record(EventKind::Failure, None, &target, format!("Action « {} » échouée : {}", action_name, e)),
+    }
+    result
 }
 
 #[tauri::command]

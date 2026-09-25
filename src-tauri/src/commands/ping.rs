@@ -3,25 +3,27 @@ use std::time::Instant;
 use tauri::State;
 use tokio::process::Command;
 
-use crate::{models::PingResult, storage::AppState};
+use crate::{events::EventLog, models::PingResult, storage::AppState};
 
 // ── Pinger un serveur par son ID ──────────────────────────────────────────
 #[tauri::command]
 pub async fn ping_server(
     state: State<'_, AppState>,
+    events: State<'_, EventLog>,
     server_id: String,
 ) -> Result<PingResult, String> {
-    let (ip, timeout_ms) = {
+    let (ip, name, timeout_ms) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         let server = data
             .servers
             .iter()
             .find(|s| s.id == server_id)
             .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
-        (server.ip.clone(), data.settings.network.ping_timeout_ms)
+        (server.ip.clone(), server.name.clone(), data.settings.network.ping_timeout_ms)
     };
 
     let result = ping_host(&ip, timeout_ms).await;
+    events.observe_ping(&server_id, &name, result.0);
     Ok(PingResult {
         server_id,
         online: result.0,
@@ -31,12 +33,15 @@ pub async fn ping_server(
 
 // ── Pinger tous les serveurs (pour le dashboard) ──────────────────────────
 #[tauri::command]
-pub async fn ping_all(state: State<'_, AppState>) -> Result<Vec<PingResult>, String> {
+pub async fn ping_all(
+    state: State<'_, AppState>,
+    events: State<'_, EventLog>,
+) -> Result<Vec<PingResult>, String> {
     let servers = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         data.servers
             .iter()
-            .map(|s| (s.id.clone(), s.ip.clone()))
+            .map(|s| (s.id.clone(), s.ip.clone(), s.name.clone()))
             .collect::<Vec<_>>()
     };
 
@@ -48,24 +53,31 @@ pub async fn ping_all(state: State<'_, AppState>) -> Result<Vec<PingResult>, Str
     // Pinger tous les serveurs en parallèle
     let futures: Vec<_> = servers
         .into_iter()
-        .map(|(id, ip)| async move {
+        .map(|(id, ip, name)| async move {
             let (online, latency) = ping_host(&ip, timeout_ms).await;
-            PingResult {
-                server_id: id,
-                online,
-                latency_ms: latency,
-            }
+            (
+                PingResult {
+                    server_id: id,
+                    online,
+                    latency_ms: latency,
+                },
+                name,
+            )
         })
         .collect();
 
     let results = futures::future::join_all(futures).await;
-    Ok(results)
+    for (r, name) in &results {
+        events.observe_ping(&r.server_id, name, r.online);
+    }
+    Ok(results.into_iter().map(|(r, _)| r).collect())
 }
 
 // ── Pinger tous les serveurs d'un groupe ──────────────────────────────────
 #[tauri::command]
 pub async fn ping_group(
     state: State<'_, AppState>,
+    events: State<'_, EventLog>,
     group_id: String,
 ) -> Result<Vec<PingResult>, String> {
     let (server_ips, timeout_ms) = {
@@ -80,16 +92,19 @@ pub async fn ping_group(
             .server_ids
             .iter()
             .filter_map(|sid| data.servers.iter().find(|s| &s.id == sid))
-            .map(|s| (s.id.clone(), s.ip.clone()))
+            .map(|s| (s.id.clone(), s.ip.clone(), s.name.clone()))
             .collect::<Vec<_>>();
 
         (ips, data.settings.network.ping_timeout_ms)
     };
 
+    // Référence partagée (Copy) : chaque future du ping parallèle peut l'emprunter
+    let events: &EventLog = events.inner();
     let futures: Vec<_> = server_ips
         .into_iter()
-        .map(|(id, ip)| async move {
+        .map(|(id, ip, name)| async move {
             let (online, latency) = ping_host(&ip, timeout_ms).await;
+            events.observe_ping(&id, &name, online);
             PingResult {
                 server_id: id,
                 online,
