@@ -7,6 +7,8 @@ Construit avec **Tauri v2** (backend Rust) et **React + TypeScript + Tailwind** 
 ## Fonctionnalités
 
 - **Serveurs & groupes** : ajout/édition avec validation, actions groupées en 1 clic (WoL, arrêt, ping), import/export JSON
+- **Organisation** : tags colorés, dossiers, favoris et champs personnalisés (emplacement, numéro de série…) pour les serveurs et les services ; recherche et filtres combinés (texte, tags, dossier, favoris, en ligne / hors ligne)
+- **Palette de commandes** (Ctrl+K) : pages et actions sur un serveur précis (réveiller, arrêter, redémarrer, console, ping, modifier), toujours avec confirmation pour ce qui agit sur une machine
 - **Alimentation** : Wake-on-LAN, arrêt et redémarrage par SSH avec commande personnalisable par OS
 - **Supervision** : statut et latence en temps réel, ressources (CPU, RAM, disque), historique des événements, alertes (ntfy, Discord, Telegram…)
 - **Historique persistant** : événements, disponibilité et latence des serveurs et des services, courbes de ressources conservés dans une base locale SQLite ; mesures détaillées 7 jours et agrégats horaires 90 jours par défaut (réglable dans Paramètres → Historique)
@@ -86,6 +88,21 @@ Les installateurs sont générés dans :
 4. **Proxmox** (optionnel) : créer un jeton d'API (*Datacenter → Permissions → API Tokens*) et le renseigner dans l'app.
 5. **Paramètres → Intégrations** (optionnel) : notifications ntfy, Loki, etc.
 
+## Raccourcis clavier
+
+L'aide s'ouvre avec <kbd>?</kbd> (ou « Afficher les raccourcis clavier » dans la palette). Elle est générée depuis la même table que le gestionnaire clavier (`src/utils/shortcuts.ts`).
+
+| Raccourci | Action |
+|---|---|
+| <kbd>Ctrl</kbd>+<kbd>K</kbd> | Ouvrir ou fermer la palette de commandes |
+| <kbd>↑</kbd> <kbd>↓</kbd> <kbd>Entrée</kbd> | Dans la palette : choisir et exécuter une action (les actions sur un serveur demandent confirmation) |
+| <kbd>Échap</kbd> | Fermer la palette, l'aide ou la demande de confirmation |
+| <kbd>?</kbd> | Afficher l'aide des raccourcis |
+| <kbd>/</kbd> | Aller à la recherche (pages Serveurs et Services) |
+| <kbd>g</kbd> puis <kbd>d</kbd> / <kbd>s</kbd> / <kbd>v</kbd> / <kbd>c</kbd> / <kbd>p</kbd> | Aller au tableau de bord / aux serveurs / aux services / à la console / aux paramètres |
+
+Les raccourcis à une touche sont ignorés pendant la saisie dans un champ et dans la console SSH.
+
 ## Données et sécurité
 
 - La configuration est stockée dans `%APPDATA%\com.homelab.server-manager\`.
@@ -93,7 +110,7 @@ Les installateurs sont générés dans :
 - Tous les secrets (mots de passe SSH, jetons Proxmox, identifiants des intégrations et des services) sont chiffrés en AES-256-GCM avec une clé maître conservée dans le **Gestionnaire d'identification Windows**. Rien n'est écrit en clair sur le disque.
 - Les secrets ne sont jamais renvoyés à l'interface (seulement « enregistré ») et ne sont déchiffrés qu'au moment de la connexion, puis effacés de la mémoire.
 - Les en-têtes d'authentification sont marqués sensibles et les redirections sont refusées pour les requêtes authentifiées. L'interface prévient si un secret passerait en HTTP ou sans vérification du certificat.
-- L'export JSON de la configuration ne contient aucun secret (à ressaisir après un import).
+- L'export JSON de la configuration ne contient aucun secret (à ressaisir après un import). Tags, dossiers, favoris et champs personnalisés y figurent : ce ne sont pas des secrets, l'interface le rappelle et avertit si un champ personnalisé ressemble à un mot de passe ou un jeton.
 - Clés d'hôte SSH vérifiées (mémorisées à la première connexion), commandes Tauri limitées à la fenêtre principale, CSP stricte.
 
 ## Développement

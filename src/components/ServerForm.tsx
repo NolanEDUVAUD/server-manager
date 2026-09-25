@@ -11,6 +11,8 @@ import {
 } from "../types";
 import { isValidIP, isValidMAC, formatMAC } from "../utils";
 import { IconPicker } from "./IconPicker";
+import { ServerOrganisationFields } from "./OrganisationFields";
+import { checkCustomFields, isBlankField } from "../utils/organisation";
 
 interface ServerFormProps {
   initial?: ServerType;
@@ -49,6 +51,10 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
     os_type: initial?.os_type ?? "Linux",
     icon: initial?.icon ?? "",
     notes: initial?.notes ?? "",
+    // Organisation
+    tag_ids: initial?.tag_ids ?? [],
+    folder_id: initial?.folder_id ?? "",
+    custom_fields: initial?.custom_fields ?? [],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -102,6 +108,8 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
     if (!form.ssh_user.trim()) errs.ssh_user = "Utilisateur SSH requis";
     if (!initial && !form.ssh_password) errs.ssh_password = "Mot de passe requis pour un nouveau serveur";
     if (form.ssh_port < 1 || form.ssh_port > 65535) errs.ssh_port = "Port invalide (1–65535)";
+    const fields = checkCustomFields(form.custom_fields ?? []);
+    if (fields.global || fields.rows.some(Boolean)) errs.custom_fields = "Corrige les champs personnalisés";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -113,6 +121,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
     try {
       const payload = { ...form };
       if (form.mac_address) payload.mac_address = formatMAC(form.mac_address);
+      payload.custom_fields = (form.custom_fields ?? []).filter((f) => !isBlankField(f));
       await onSubmit(payload);
     } finally {
       setSubmitting(false);
@@ -305,6 +314,13 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
               placeholder="Notes libres sur ce serveur..."
             />
           </div>
+
+          {/* Organisation : tags, dossier, champs personnalisés */}
+          <ServerOrganisationFields
+            value={{ tag_ids: form.tag_ids ?? [], folder_id: form.folder_id ?? "", custom_fields: form.custom_fields ?? [] }}
+            onChange={(patch) => { setForm((prev) => ({ ...prev, ...patch })); setErrors((e) => ({ ...e, custom_fields: "" })); }}
+          />
+          {errors.custom_fields && <p className={errorClass}>{errors.custom_fields}</p>}
 
           {/* Actions */}
           <div className="flex gap-3 justify-end pt-2 border-t border-border-primary">

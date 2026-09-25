@@ -71,6 +71,13 @@ pub struct Probe {
     /// Secret chiffré (clé maître) ; jamais envoyé au frontend
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub secret: String,
+    // ── Organisation (données seulement, voir organisation.rs) ────────────
+    #[serde(default)]
+    pub tag_ids: Vec<String>,
+    #[serde(default)]
+    pub folder_id: Option<String>,
+    #[serde(default)]
+    pub favorite: bool,
 }
 
 /// Sonde telle que vue par le frontend : le secret est remplacé par un indicateur
@@ -491,6 +498,9 @@ mod tests {
             verify_tls: true,
             auth,
             secret: String::new(),
+            tag_ids: Vec::new(),
+            folder_id: None,
+            favorite: false,
         }
     }
 
@@ -572,6 +582,9 @@ mod tests {
             verify_tls: false,
             auth: ProbeAuth::None,
             secret: String::new(),
+            tag_ids: Vec::new(),
+            folder_id: None,
+            favorite: false,
         };
         assert!(validate(&p).is_ok());
         p.interval_secs = 5;

@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Plus, Pencil, Trash2, Play, Radar, Sparkles, X, Lock, Loader2, ShieldAlert, KeyRound, LayoutGrid, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Play, Radar, Sparkles, X, Lock, Loader2, ShieldAlert, KeyRound, LayoutGrid, Search, ChevronDown, ChevronRight, Folder as FolderIcon, Inbox } from "lucide-react";
+import { FilterBar, NoFilterResults } from "../components/FilterBar";
+import { FavoriteButton, TagList } from "../components/TagChip";
+import { FolderSelect, TagPicker } from "../components/OrganisationFields";
+import { OrganisationManager } from "../components/OrganisationManager";
+import { useShortcuts } from "../hooks/useShortcuts";
+import { filterItems, groupByFolder, probeFilterable } from "../utils/filters";
 import { useStore } from "../stores/useStore";
 import { Probe, ProbeKind, ProbeResult } from "../types";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -70,6 +76,11 @@ function ProbeForm({ initial, help, onSubmit, onCancel }: { initial: Probe; help
                 {servers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </label>
+          </div>
+          {/* Organisation */}
+          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
+            <TagPicker value={p.tag_ids ?? []} onChange={(tag_ids) => setP({ ...p, tag_ids })} />
+            <FolderSelect value={p.folder_id ?? ""} onChange={(id) => setP({ ...p, folder_id: id || null })} />
           </div>
           {k.type === "Http" && (
             <>
@@ -215,7 +226,7 @@ function CatalogPicker({ onPick, onCancel }: { onPick: (p: Probe, preset: Servic
 }
 
 export function Services() {
-  const { servers } = useStore();
+  const { servers, tags, folders, filters, toggleFavorite } = useStore();
   const { toasts, removeToast, success, error } = useToast();
   const [probes, setProbes] = useState<Probe[]>([]);
   const [results, setResults] = useState<Record<string, ProbeResult>>({});
@@ -223,13 +234,30 @@ export function Services() {
   const [editingHelp, setEditingHelp] = useState<string | undefined>();
   const [picking, setPicking] = useState(false);
   const [deleting, setDeleting] = useState<Probe | null>(null);
+  const [organising, setOrganising] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // « / » : aller à la recherche
+  useShortcuts({ search: () => searchRef.current?.focus() });
+
+  const loadProbes = () => invoke<Probe[]>("get_probes").then(setProbes).catch((e) => error(String(e)));
 
   useEffect(() => {
-    invoke<Probe[]>("get_probes").then(setProbes).catch((e) => error(String(e)));
+    loadProbes();
     invoke<ProbeResult[]>("get_probe_results").then((rs) => setResults(Object.fromEntries(rs.map((r) => [r.probe_id, r])))).catch(() => {});
     const un = listen<ProbeResult>("probe-result", (e) => setResults((prev) => ({ ...prev, [e.payload.probe_id]: e.payload })));
     return () => { un.then((f) => f()); };
   }, []);
+
+  async function toggleProbeFavorite(p: Probe) {
+    try {
+      const favorite = await toggleFavorite("probe", p.id);
+      setProbes((prev) => prev.map((x) => (x.id === p.id ? { ...x, favorite } : x)));
+    } catch (e) {
+      error(String(e));
+    }
+  }
 
   const suggestions = suggestProbes(servers, probes);
 
@@ -247,6 +275,48 @@ export function Services() {
   }
 
   const serverName = (id: string | null) => servers.find((s) => s.id === id)?.name;
+
+  const f = filters.services;
+  const filtered = useMemo(
+    () => filterItems(probes, f, (p) => probeFilterable(p, { tags, folders }, results[p.id], serverName(p.server_id))),
+    [probes, f, tags, folders, results, servers]
+  );
+  const sections = useMemo(() => groupByFolder(filtered, folders, (p) => p.folder_id), [filtered, folders]);
+
+  function renderRow(p: Probe) {
+    const r = results[p.id];
+    return (
+      <div key={p.id} className={cn("flex items-center gap-4 px-4 py-3", !p.enabled && "opacity-50")}>
+        <FavoriteButton favorite={!!p.favorite} name={p.name} onToggle={() => toggleProbeFavorite(p)} />
+        <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", !r ? "bg-text-muted" : r.ok ? "bg-accent-success" : "bg-accent-error")} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="text-sm text-text-primary truncate">
+              <span className="font-medium">{p.name}</span>
+              {serverName(p.server_id) && <span className="text-text-muted"> · {serverName(p.server_id)}</span>}
+            </p>
+            <TagList tagIds={p.tag_ids} tags={tags} max={3} />
+          </div>
+          <p className="text-xs text-text-muted truncate">{p.auth.type !== "None" && <KeyRound size={10} className="inline mr-1" />}{describeProbe(p.kind)}</p>
+        </div>
+        <div className="text-right text-xs shrink-0 w-56">
+          {r ? (
+            <>
+              <p className={cn("truncate", r.ok ? "text-text-primary" : "text-accent-error")} title={r.detail}>
+                {p.kind.type === "TlsExpiry" && <Lock size={11} className="inline mr-1" />}{r.detail}
+              </p>
+              <p className="text-text-muted tabular-nums">
+                {r.latency_ms !== null && `${r.latency_ms} ms · `}dispo 24 h {r.uptime_percent.toFixed(r.uptime_percent === 100 ? 0 : 1)} %
+              </p>
+            </>
+          ) : <p className="text-text-muted">en attente…</p>}
+        </div>
+        <button onClick={() => invoke<ProbeResult>("run_probe_now", { id: p.id }).catch((e) => error(String(e)))} className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10" title="Tester maintenant"><Play size={13} /></button>
+        <button onClick={() => { setEditingHelp(undefined); setEditing(p); }} className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover" title="Modifier"><Pencil size={13} /></button>
+        <button onClick={() => setDeleting(p)} className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10" title="Supprimer"><Trash2 size={13} /></button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -271,41 +341,51 @@ export function Services() {
         </div>
       </div>
 
+      {probes.length > 0 && (
+        <FilterBar
+          scope="services"
+          searchRef={searchRef}
+          placeholder="Nom, adresse, serveur, tag…"
+          shown={filtered.length}
+          total={probes.length}
+          onOrganise={() => setOrganising(true)}
+        />
+      )}
+
       {probes.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16 text-text-muted text-sm">
           <Radar size={28} className="opacity-50" />
           Aucun service surveillé. « Ajouter un service » propose un catalogue (Home Assistant, Jellyfin, Pi-hole, Proxmox…) ou n'importe quelle URL.
         </div>
+      ) : filtered.length === 0 ? (
+        <NoFilterResults scope="services" />
       ) : (
-        <div className="bg-bg-tertiary border border-border-primary rounded-win divide-y divide-border-secondary overflow-hidden">
-          {probes.map((p) => {
-            const r = results[p.id];
+        <div className="space-y-4">
+          {sections.map(({ folder, items }) => {
+            const key = folder?.id ?? "";
+            const isCollapsed = !!collapsed[key];
             return (
-              <div key={p.id} className={cn("flex items-center gap-4 px-4 py-3", !p.enabled && "opacity-50")}>
-                <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", !r ? "bg-text-muted" : r.ok ? "bg-accent-success" : "bg-accent-error")} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-text-primary truncate">
-                    <span className="font-medium">{p.name}</span>
-                    {serverName(p.server_id) && <span className="text-text-muted"> · {serverName(p.server_id)}</span>}
-                  </p>
-                  <p className="text-xs text-text-muted truncate">{p.auth.type !== "None" && <KeyRound size={10} className="inline mr-1" />}{describeProbe(p.kind)}</p>
-                </div>
-                <div className="text-right text-xs shrink-0 w-56">
-                  {r ? (
-                    <>
-                      <p className={cn("truncate", r.ok ? "text-text-primary" : "text-accent-error")} title={r.detail}>
-                        {p.kind.type === "TlsExpiry" && <Lock size={11} className="inline mr-1" />}{r.detail}
-                      </p>
-                      <p className="text-text-muted tabular-nums">
-                        {r.latency_ms !== null && `${r.latency_ms} ms · `}dispo 24 h {r.uptime_percent.toFixed(r.uptime_percent === 100 ? 0 : 1)} %
-                      </p>
-                    </>
-                  ) : <p className="text-text-muted">en attente…</p>}
-                </div>
-                <button onClick={() => invoke<ProbeResult>("run_probe_now", { id: p.id }).catch((e) => error(String(e)))} className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10" title="Tester maintenant"><Play size={13} /></button>
-                <button onClick={() => { setEditingHelp(undefined); setEditing(p); }} className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover" title="Modifier"><Pencil size={13} /></button>
-                <button onClick={() => setDeleting(p)} className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10" title="Supprimer"><Trash2 size={13} /></button>
-              </div>
+              <section key={key || "sans-dossier"} className="space-y-2">
+                {/* En-têtes de dossier seulement si des dossiers existent */}
+                {folders.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setCollapsed((c) => ({ ...c, [key]: !isCollapsed }))}
+                    aria-expanded={!isCollapsed}
+                    className="flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-text-primary"
+                  >
+                    {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+                    {folder ? <FolderIcon size={13} /> : <Inbox size={13} />}
+                    {folder?.name ?? "Sans dossier"}
+                    <span className="text-text-muted">({items.length})</span>
+                  </button>
+                )}
+                {!isCollapsed && (
+                  <div className="bg-bg-tertiary border border-border-primary rounded-win divide-y divide-border-secondary overflow-hidden">
+                    {items.map(renderRow)}
+                  </div>
+                )}
+              </section>
             );
           })}
         </div>
@@ -329,6 +409,7 @@ export function Services() {
           }}
         />
       )}
+      {organising && <OrganisationManager probes={probes} onChanged={loadProbes} onClose={() => setOrganising(false)} />}
     </div>
   );
 }

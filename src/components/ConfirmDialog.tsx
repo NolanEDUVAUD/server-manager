@@ -1,4 +1,5 @@
 import { AlertTriangle, X } from "lucide-react";
+import { useShortcuts } from "../hooks/useShortcuts";
 
 interface ConfirmDialogProps {
   title: string;
@@ -19,6 +20,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  // Échap = Annuler (raccourci « close » de la table des raccourcis)
+  useShortcuts({ close: onCancel });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}

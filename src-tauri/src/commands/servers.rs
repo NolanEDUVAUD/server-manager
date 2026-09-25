@@ -4,6 +4,7 @@ use tauri::{Manager, State};
 use crate::{
     crypto,
     models::{AppData, Server, ServerPayload},
+    organisation::ServerOrganisation,
     storage::AppState,
 };
 
@@ -31,6 +32,8 @@ pub fn add_server(state: State<AppState>, payload: ServerPayload) -> Result<Serv
         .data
         .lock()
         .map_err(|e| format!("Erreur mutex: {}", e))?;
+    // Organisation (tags, dossier, favori, champs personnalisés), validée avant tout ajout
+    let organisation = ServerOrganisation::from_payload(&data, &payload)?;
 
     // Chiffrer le mot de passe avant stockage
     let key = crypto::data_key(&data)?;
@@ -59,6 +62,7 @@ pub fn add_server(state: State<AppState>, payload: ServerPayload) -> Result<Serv
             server.reboot_command = cmd;
         }
     }
+    organisation.apply(&mut server);
 
     data.servers.push(server.clone());
     drop(data);
@@ -81,6 +85,8 @@ pub fn update_server(
         .data
         .lock()
         .map_err(|e| format!("Erreur mutex: {}", e))?;
+    // Organisation validée avant toute modification (None = champ inchangé)
+    let organisation = ServerOrganisation::from_payload(&data, &payload)?;
 
     // Extraire le salt avant le borrow mutable sur servers
     let encrypted_password = if !payload.ssh_password.is_empty() {
@@ -120,6 +126,7 @@ pub fn update_server(
         .reboot_command
         .filter(|c| !c.trim().is_empty())
         .unwrap_or_else(|| payload.os_type.default_reboot_command().to_string());
+    organisation.apply(server);
 
     let updated = server.clone();
     drop(data);

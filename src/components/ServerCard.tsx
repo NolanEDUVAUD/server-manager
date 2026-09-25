@@ -7,6 +7,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
 import { ServerIconDisplay } from "./IconPicker";
+import { FavoriteButton, TagList } from "./TagChip";
 
 interface ServerCardProps {
   server: Server;
@@ -16,7 +17,7 @@ interface ServerCardProps {
 }
 
 export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardProps) {
-  const { statuses, wakeServer, shutdownServer, rebootServer, pingServer, openTerminal } = useStore();
+  const { statuses, wakeServer, shutdownServer, rebootServer, pingServer, openTerminal, tags, toggleFavorite } = useStore();
   const navigate = useNavigate();
   const status = statuses[server.id];
 
@@ -51,6 +52,11 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
+            <FavoriteButton
+              favorite={!!server.favorite}
+              name={server.name}
+              onToggle={() => toggleFavorite("server", server.id).catch((e) => onMessage(String(e), "error"))}
+            />
             <span className="shrink-0">
               {server.icon
                 ? <ServerIconDisplay icon={server.icon} size={20} />
@@ -103,8 +109,11 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
           </div>
         </div>
 
-        {/* Statut */}
-        <StatusBadge status={status} size="sm" />
+        {/* Statut + tags */}
+        <div className="flex items-center gap-2 min-w-0">
+          <StatusBadge status={status} size="sm" />
+          <TagList tagIds={server.tag_ids} tags={tags} max={3} />
+        </div>
 
         {/* Actions */}
         <div className="flex gap-2">

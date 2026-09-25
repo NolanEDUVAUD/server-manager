@@ -503,6 +503,7 @@ function SectionConfig() {
               <p>Version : <span className="text-text-primary">{pendingImport.config_version}</span></p>
               <p>Serveurs : <span className="text-text-primary">{pendingImport.servers_count}</span></p>
               <p>Groupes : <span className="text-text-primary">{pendingImport.groups_count}</span></p>
+              <p>Tags et dossiers : <span className="text-text-primary">{pendingImport.tags_count ?? 0} / {pendingImport.folders_count ?? 0}</span></p>
               <p>Paramètres : <span className="text-text-primary">{pendingImport.settings_present ? 'inclus' : 'non inclus'}</span></p>
               {pendingImport.exported_at && (
                 <p>Exporté le : <span className="text-text-primary">{pendingImport.exported_at}</span></p>
@@ -579,7 +580,7 @@ function SectionConfig() {
       {showConfirmReplace && (
         <ConfirmDialog
           title="Remplacer la configuration"
-          message="Toute la configuration actuelle (serveurs, groupes, paramètres) sera remplacée. Cette action est irréversible."
+          message="Toute la configuration actuelle (serveurs, groupes, paramètres, tags et dossiers) sera remplacée. Cette action est irréversible."
           dangerous
           onConfirm={async () => {
             await handleApplyImport('replace');

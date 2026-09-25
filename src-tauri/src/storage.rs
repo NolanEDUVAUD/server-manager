@@ -91,6 +91,9 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
             snippets: crate::commands::snippets::default_snippets(),
             batch_tasks: Vec::new(),
             ansible: None,
+            // Organisation
+            tags: Vec::new(),
+            folders: Vec::new(),
         };
         // Sauvegarder immédiatement en format v2
         if let Ok(json) = serde_json::to_string_pretty(&data) {

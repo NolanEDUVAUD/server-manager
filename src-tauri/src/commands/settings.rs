@@ -42,11 +42,27 @@ pub fn update_settings(state: State<AppState>, settings: AppSettings) -> Result<
     Ok(())
 }
 
+/// Taille maximale d'une configuration importée
+const MAX_IMPORT_BYTES: usize = 10 * 1024 * 1024;
+
+fn check_import_size(len: usize) -> Result<(), String> {
+    if len > MAX_IMPORT_BYTES {
+        return Err(format!("Fichier trop volumineux ({} Mo au plus)", MAX_IMPORT_BYTES / 1024 / 1024));
+    }
+    Ok(())
+}
+
 // ── Exporter la configuration en JSON (sans mots de passe) ────────────────
 #[tauri::command]
 pub fn export_config(state: State<AppState>) -> Result<String, String> {
     let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+    let export_data = export_without_secrets(&data);
+    serde_json::to_string_pretty(&export_data).map_err(|e| format!("Erreur de sérialisation: {}", e))
+}
 
+/// Copie de la configuration sans aucun secret (tags, dossiers, favoris et champs
+/// personnalisés inclus : ce ne sont pas des secrets)
+fn export_without_secrets(data: &AppData) -> AppData {
     // Copie sans aucun secret : mots de passe SSH, jetons Proxmox, secrets des
     // intégrations et des sondes (même chiffrés, ils ne quittent pas cette machine)
     let mut export_data = data.clone();
@@ -62,13 +78,13 @@ pub fn export_config(state: State<AppState>) -> Result<String, String> {
     for p in export_data.probes.iter_mut() {
         p.secret = String::new();
     }
-
-    serde_json::to_string_pretty(&export_data).map_err(|e| format!("Erreur de sérialisation: {}", e))
+    export_data
 }
 
 // ── Importer une configuration depuis un JSON ─────────────────────────────
 #[tauri::command]
 pub fn import_config(state: State<AppState>, json: String) -> Result<String, String> {
+    check_import_size(json.len())?;
     let imported: AppData =
         serde_json::from_str(&json).map_err(|e| format!("JSON invalide: {}", e))?;
 
@@ -76,10 +92,28 @@ pub fn import_config(state: State<AppState>, json: String) -> Result<String, Str
     let group_count = imported.groups.len();
 
     let mut data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+    merge_config(&mut data, imported);
+
+    // Conserver les paramètres actuels (ne pas les écraser)
+    drop(data);
+    state.save()?;
+
+    Ok(format!(
+        "Import réussi : {} serveurs, {} groupes traités",
+        server_count, group_count
+    ))
+}
+
+/// Fusion d'une configuration importée (ancienne API) : serveurs par IP, groupes par
+/// nom, tags et dossiers par nom ; les paramètres actuels sont conservés
+fn merge_config(data: &mut AppData, imported: AppData) {
+    // Organisation d'abord : les serveurs importés sont rattachés aux tags et dossiers locaux
+    let remap = crate::organisation::merge_definitions(data, imported.tags, imported.folders);
 
     // Fusionner : ajouter les serveurs importés qui n'existent pas déjà (par IP)
-    for server in imported.servers {
+    for mut server in imported.servers {
         if !data.servers.iter().any(|s| s.ip == server.ip) {
+            remap.apply_to_server(&mut server);
             data.servers.push(server);
         }
     }
@@ -90,15 +124,7 @@ pub fn import_config(state: State<AppState>, json: String) -> Result<String, Str
             data.groups.push(group);
         }
     }
-
-    // Conserver les paramètres actuels (ne pas les écraser)
-    drop(data);
-    state.save()?;
-
-    Ok(format!(
-        "Import réussi : {} serveurs, {} groupes traités",
-        server_count, group_count
-    ))
+    crate::organisation::normalize(data);
 }
 
 // ── Retourner le chemin du fichier de données ─────────────────────────────
@@ -184,23 +210,9 @@ pub async fn export_full_config(
     state: tauri::State<'_, crate::storage::AppState>,
 ) -> Result<String, String> {
     let data = state.data.lock().map_err(|e| e.to_string())?;
-    // Exclure les mots de passe SSH
-    let servers_clean: Vec<serde_json::Value> = data.servers.iter().map(|s| {
-        let mut v = serde_json::to_value(s).unwrap_or_default();
-        if let Some(obj) = v.as_object_mut() {
-            obj.insert("ssh_password".to_string(), serde_json::Value::String(String::new()));
-        }
-        v
-    }).collect();
     let exported_at = Utc::now().to_rfc3339();
     let default_filename = format!("spm-config-{}.json", &exported_at[..10]);
-    let export = serde_json::json!({
-        "config_version": "2.0",
-        "exported_at": exported_at,
-        "servers": servers_clean,
-        "groups": data.groups,
-        "settings": data.settings,
-    });
+    let export = full_export(&data, &exported_at);
     let json = serde_json::to_string_pretty(&export).map_err(|e| e.to_string())?;
     drop(data); // relâcher le verrou avant le dialogue
     let file_path = app.dialog()
@@ -217,6 +229,69 @@ pub async fn export_full_config(
     Ok(file_path_buf.to_string_lossy().to_string())
 }
 
+/// Contenu de l'export complet, sans secret
+fn full_export(data: &AppData, exported_at: &str) -> serde_json::Value {
+    // Exclure les mots de passe SSH
+    let servers_clean: Vec<serde_json::Value> = data.servers.iter().map(|s| {
+        let mut v = serde_json::to_value(s).unwrap_or_default();
+        if let Some(obj) = v.as_object_mut() {
+            obj.insert("ssh_password".to_string(), serde_json::Value::String(String::new()));
+        }
+        v
+    }).collect();
+    serde_json::json!({
+        "config_version": "2.0",
+        "exported_at": exported_at,
+        "servers": servers_clean,
+        "groups": data.groups,
+        "settings": data.settings,
+        // Organisation : tags et dossiers (favoris et champs personnalisés sont dans chaque serveur)
+        "tags": data.tags,
+        "folders": data.folders,
+    })
+}
+
+/// Lit un export complet : import en attente et récapitulatif à présenter
+fn parse_full_import(content: &str) -> Result<(crate::models::PendingImport, crate::models::ImportSummary), String> {
+    check_import_size(content.len())?;
+    let v = validate_import_json(content)?;
+    let servers: Vec<crate::models::Server> = serde_json::from_value(
+        v["servers"].clone()
+    ).map_err(|e| format!("Erreur parsing servers : {}", e))?;
+    let groups: Vec<crate::models::Group> = serde_json::from_value(
+        v["groups"].clone()
+    ).map_err(|e| format!("Erreur parsing groups : {}", e))?;
+    let settings: Option<crate::models::AppSettings> = v.get("settings")
+        .and_then(|s| serde_json::from_value(s.clone()).ok());
+    // Organisation : absente d'un export antérieur = rien à importer
+    let tags: Vec<crate::organisation::Tag> = match v.get("tags") {
+        Some(t) => serde_json::from_value(t.clone()).map_err(|e| format!("Erreur parsing tags : {}", e))?,
+        None => Vec::new(),
+    };
+    let folders: Vec<crate::organisation::Folder> = match v.get("folders") {
+        Some(f) => serde_json::from_value(f.clone()).map_err(|e| format!("Erreur parsing folders : {}", e))?,
+        None => Vec::new(),
+    };
+    let summary = crate::models::ImportSummary {
+        servers_count: servers.len(),
+        groups_count: groups.len(),
+        settings_present: settings.is_some(),
+        config_version: v["config_version"].as_str().unwrap_or("?").to_string(),
+        exported_at: v.get("exported_at").and_then(|d| d.as_str()).map(|s| s.to_string()),
+        tags_count: tags.len(),
+        folders_count: folders.len(),
+    };
+    let pending = crate::models::PendingImport {
+        servers,
+        groups,
+        settings,
+        config_version: summary.config_version.clone(),
+        tags,
+        folders,
+    };
+    Ok((pending, summary))
+}
+
 #[tauri::command]
 pub async fn import_full_config(
     app: tauri::AppHandle,
@@ -231,31 +306,12 @@ pub async fn import_full_config(
         Some(p) => p.into_path().map_err(|e| e.to_string())?,
         None => return Err("Import annulé".to_string()),
     };
+    // Taille vérifiée avant lecture : un fichier démesuré n'est jamais chargé en mémoire
+    let size = std::fs::metadata(&file_path_buf).map_err(|e| e.to_string())?.len();
+    check_import_size(usize::try_from(size).unwrap_or(usize::MAX))?;
     let content = std::fs::read_to_string(&file_path_buf).map_err(|e| e.to_string())?;
-    let v = validate_import_json(&content)?;
-    let servers: Vec<crate::models::Server> = serde_json::from_value(
-        v["servers"].clone()
-    ).map_err(|e| format!("Erreur parsing servers : {}", e))?;
-    let groups: Vec<crate::models::Group> = serde_json::from_value(
-        v["groups"].clone()
-    ).map_err(|e| format!("Erreur parsing groups : {}", e))?;
-    let settings: Option<crate::models::AppSettings> = v.get("settings")
-        .and_then(|s| serde_json::from_value(s.clone()).ok());
-    let summary = crate::models::ImportSummary {
-        servers_count: servers.len(),
-        groups_count: groups.len(),
-        settings_present: settings.is_some(),
-        config_version: v["config_version"].as_str().unwrap_or("?").to_string(),
-        exported_at: v.get("exported_at").and_then(|d| d.as_str()).map(|s| s.to_string()),
-    };
-    *state.pending_import.lock().map_err(|e| e.to_string())? = Some(
-        crate::models::PendingImport {
-            servers,
-            groups,
-            settings,
-            config_version: summary.config_version.clone(),
-        }
-    );
+    let (pending, summary) = parse_full_import(&content)?;
+    *state.pending_import.lock().map_err(|e| e.to_string())? = Some(pending);
     Ok(summary)
 }
 
@@ -268,18 +324,35 @@ pub fn apply_import_config(
         .take()
         .ok_or("Aucun import en attente")?;
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
-    match mode.as_str() {
+    apply_import(&mut data, pending, &mode);
+    drop(data);
+    state.save()
+}
+
+/// Applique un import en attente : « replace » remplace serveurs, groupes, paramètres,
+/// tags et dossiers ; sinon fusion (serveurs par IP, groupes par id, tags et dossiers par nom)
+fn apply_import(data: &mut AppData, pending: crate::models::PendingImport, mode: &str) {
+    match mode {
         "replace" => {
+            // Organisation revalidée comme n'importe quelle donnée importée
+            data.tags.clear();
+            data.folders.clear();
+            let remap = crate::organisation::merge_definitions(data, pending.tags, pending.folders);
             data.servers = pending.servers;
+            for srv in data.servers.iter_mut() {
+                remap.apply_to_server(srv);
+            }
             data.groups = pending.groups;
             if let Some(s) = pending.settings { data.settings = s; }
         }
         _ => {
+            let remap = crate::organisation::merge_definitions(data, pending.tags, pending.folders);
             // fusion : ajouter les serveurs importés qui n'existent pas déjà (par IP)
             let existing_ips: std::collections::HashSet<String> =
                 data.servers.iter().map(|s| s.ip.clone()).collect();
-            for srv in pending.servers {
+            for mut srv in pending.servers {
                 if !existing_ips.contains(&srv.ip) {
+                    remap.apply_to_server(&mut srv);
                     data.servers.push(srv);
                 }
             }
@@ -292,8 +365,8 @@ pub fn apply_import_config(
             }
         }
     }
-    drop(data);
-    state.save()
+    // Références orphelines (services non importés, tags écartés) et champs invalides retirés
+    crate::organisation::normalize(data);
 }
 
 // ── Thèmes personnalisés ───────────────────────────────────────────────────
@@ -356,6 +429,155 @@ mod tests {
         let result = validate_import_json(json);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("config_version"));
+    }
+
+    // ── Organisation : export / import ────────────────────────────────────
+
+    use crate::organisation::{self, CustomField, Folder, Tag};
+
+    /// Configuration organisée : 2 tags, 1 dossier, un serveur favori avec des champs personnalisés
+    fn organised_data() -> AppData {
+        let mut data = AppData::default();
+        let key = crate::crypto::derive_key(&data.encryption_salt);
+        let prod = organisation::save_tag(&mut data, Tag { id: String::new(), name: "Prod".into(), color: "#ff0000".into() }).unwrap();
+        let media = organisation::save_tag(&mut data, Tag { id: String::new(), name: "Média".into(), color: "#00ff00".into() }).unwrap();
+        let lab = organisation::save_folder(&mut data, Folder { id: String::new(), name: "Lab".into() }).unwrap();
+        let mut s = crate::models::Server::new(
+            "minipc".into(), "192.168.1.10".into(), "02:00:00:00:00:01".into(), "root".into(),
+            crate::crypto::encrypt("hunter2", &key).unwrap(), 22, crate::models::OsType::Linux, None, None,
+        );
+        s.tag_ids = vec![prod.id, media.id];
+        s.folder_id = Some(lab.id);
+        s.favorite = true;
+        s.custom_fields = vec![CustomField { key: "Emplacement".into(), value: "Baie 2".into() }];
+        data.servers.push(s);
+        data
+    }
+
+    fn org_of(s: &crate::models::Server) -> (Vec<String>, Option<String>, bool, Vec<CustomField>) {
+        (s.tag_ids.clone(), s.folder_id.clone(), s.favorite, s.custom_fields.clone())
+    }
+
+    #[test]
+    fn full_export_import_roundtrip_keeps_organisation_without_secrets() {
+        let data = organised_data();
+        let json = serde_json::to_string_pretty(&full_export(&data, "2026-09-25T00:00:00Z")).unwrap();
+        assert!(!json.contains(&data.servers[0].ssh_password), "aucun secret dans l'export");
+        assert!(json.contains("Emplacement") && json.contains("Média"));
+
+        let (pending, summary) = parse_full_import(&json).unwrap();
+        assert_eq!((summary.tags_count, summary.folders_count, summary.servers_count), (2, 1, 1));
+        assert!(pending.servers[0].ssh_password.is_empty());
+
+        // Remplacement dans une installation vierge : tout revient à l'identique
+        let mut target = AppData::default();
+        apply_import(&mut target, pending, "replace");
+        assert_eq!(target.tags, data.tags);
+        assert_eq!(target.folders, data.folders);
+        assert_eq!(org_of(&target.servers[0]), org_of(&data.servers[0]));
+    }
+
+    #[test]
+    fn full_import_merge_links_to_existing_tags_by_name() {
+        let json = serde_json::to_string(&full_export(&organised_data(), "2026-09-25T00:00:00Z")).unwrap();
+        let (pending, _) = parse_full_import(&json).unwrap();
+
+        // L'installation locale a déjà un tag « PROD » (autre identifiant) et un service étiqueté
+        let mut target = AppData::default();
+        let local = organisation::save_tag(&mut target, Tag { id: String::new(), name: "PROD".into(), color: "#123456".into() }).unwrap();
+        apply_import(&mut target, pending, "merge");
+        assert_eq!(target.tags.len(), 2, "« Prod » rattaché à « PROD », « Média » ajouté");
+        assert_eq!(target.tags[0], local);
+        let s = &target.servers[0];
+        assert_eq!(s.tag_ids[0], local.id);
+        assert_eq!(s.tag_ids[1], target.tags[1].id);
+        assert_eq!(s.folder_id.as_deref(), Some(target.folders[0].id.as_str()));
+        assert!(s.favorite);
+    }
+
+    #[test]
+    fn replace_import_cleans_references_of_services_kept_locally() {
+        let json = serde_json::to_string(&full_export(&organised_data(), "2026-09-25T00:00:00Z")).unwrap();
+        let (pending, _) = parse_full_import(&json).unwrap();
+        let mut target = AppData::default();
+        let old = organisation::save_tag(&mut target, Tag { id: String::new(), name: "Ancien".into(), color: "#123456".into() }).unwrap();
+        target.probes.push(serde_json::from_value(serde_json::json!({
+            "id": "p1", "name": "Jellyfin", "enabled": true, "kind": {"type": "Tcp", "host": "192.168.1.20", "port": 8096},
+            "interval_secs": 60, "tag_ids": [old.id], "favorite": true
+        })).unwrap());
+        apply_import(&mut target, pending, "replace");
+        assert!(target.probes[0].tag_ids.is_empty(), "tag remplacé : référence retirée du service");
+        assert!(target.probes[0].favorite, "le favori du service est conservé");
+    }
+
+    #[test]
+    fn import_sanitizes_invalid_organisation() {
+        let fields: Vec<_> = (0..30).map(|i| serde_json::json!({"key": format!("k{i}"), "value": "v"})).collect();
+        let json = serde_json::json!({
+            "config_version": "2.0",
+            "servers": [{"id":"1","name":"minipc","ip":"192.168.1.10","mac_address":"02:00:00:00:00:01","ssh_user":"root",
+                         "ssh_password":"","ssh_port":22,"shutdown_command":"poweroff","reboot_command":"reboot","os_type":"Linux",
+                         "tag_ids": ["t1", "t2", "inconnu"], "folder_id": "inconnu", "custom_fields": fields}],
+            "groups": [],
+            "tags": [{"id": "t1", "name": "Prod", "color": "#FF0000"}, {"id": "t2", "name": "Rouge", "color": "red"},
+                     {"id": "t3", "name": "", "color": "#000000"}],
+            "folders": [{"id": "f1", "name": "x".repeat(41)}]
+        }).to_string();
+        let (pending, _) = parse_full_import(&json).unwrap();
+        let mut target = AppData::default();
+        apply_import(&mut target, pending, "merge");
+        assert_eq!(target.tags, vec![Tag { id: "t1".into(), name: "Prod".into(), color: "#ff0000".into() }]);
+        assert!(target.folders.is_empty());
+        let s = &target.servers[0];
+        assert_eq!(s.tag_ids, vec!["t1".to_string()]);
+        assert_eq!(s.folder_id, None);
+        assert_eq!(s.custom_fields.len(), organisation::MAX_CUSTOM_FIELDS);
+
+        // Structure invalide : refusée avec un message clair
+        let bad = r#"{"config_version":"2.0","servers":[],"groups":[],"tags":"oups"}"#;
+        assert!(parse_full_import(bad).unwrap_err().contains("tags"));
+    }
+
+    #[test]
+    fn import_of_an_old_export_without_organisation_works() {
+        let (pending, summary) = parse_full_import(make_valid_json()).unwrap();
+        assert_eq!((summary.tags_count, summary.folders_count), (0, 0));
+        let mut target = AppData::default();
+        apply_import(&mut target, pending, "merge");
+        assert!(target.servers[0].tag_ids.is_empty() && !target.servers[0].favorite);
+    }
+
+    #[test]
+    fn oversized_import_is_refused() {
+        let huge = format!("{{\"config_version\":\"2.0\",\"servers\":[],\"groups\":[],\"x\":\"{}\"}}", "a".repeat(MAX_IMPORT_BYTES));
+        assert!(parse_full_import(&huge).unwrap_err().contains("volumineux"));
+    }
+
+    #[test]
+    fn legacy_export_config_roundtrip_keeps_organisation_without_secrets() {
+        let mut data = organised_data();
+        data.probes.push(serde_json::from_value(serde_json::json!({
+            "id": "p1", "name": "Jellyfin", "enabled": true, "kind": {"type": "Tcp", "host": "192.168.1.20", "port": 8096},
+            "interval_secs": 60, "tag_ids": [data.tags[0].id], "folder_id": data.folders[0].id, "favorite": true
+        })).unwrap());
+        let exported = export_without_secrets(&data);
+        assert!(exported.servers[0].ssh_password.is_empty());
+        let json = serde_json::to_string_pretty(&exported).unwrap();
+        let imported: AppData = serde_json::from_str(&json).unwrap();
+        assert_eq!(imported.tags, data.tags);
+        assert_eq!(imported.folders, data.folders);
+        assert_eq!(org_of(&imported.servers[0]), org_of(&data.servers[0]));
+        assert_eq!(imported.probes[0].tag_ids, data.probes[0].tag_ids);
+        assert!(imported.probes[0].favorite);
+
+        // Fusion (import_config) dans une installation qui a déjà un dossier « lab »
+        let mut target = AppData::default();
+        let lab = organisation::save_folder(&mut target, Folder { id: String::new(), name: "lab".into() }).unwrap();
+        merge_config(&mut target, imported);
+        assert_eq!(target.folders, vec![lab.clone()]);
+        assert_eq!(target.tags.len(), 2);
+        assert_eq!(target.servers[0].folder_id, Some(lab.id));
+        assert_eq!(target.servers[0].custom_fields, data.servers[0].custom_fields);
     }
 
     #[test]

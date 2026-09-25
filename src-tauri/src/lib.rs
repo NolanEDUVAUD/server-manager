@@ -18,6 +18,7 @@ mod metrics;
 mod monitor;
 mod notify;
 mod models;
+mod organisation;
 mod probes;
 mod proxmox;
 mod scheduler;
@@ -27,6 +28,7 @@ mod tray;
 mod updates;
 
 use commands::{loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::organisation as organisation_cmd;
 use storage::AppState;
 use tauri::Manager;
 
@@ -232,6 +234,13 @@ pub fn run() {
             terminal_cmd::terminal_write,
             terminal_cmd::terminal_resize,
             terminal_cmd::terminal_close,
+            // ── Organisation (tags, dossiers, favoris) ──────────
+            organisation_cmd::get_organisation,
+            organisation_cmd::save_tag,
+            organisation_cmd::delete_tag,
+            organisation_cmd::save_folder,
+            organisation_cmd::delete_folder,
+            organisation_cmd::toggle_favorite,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

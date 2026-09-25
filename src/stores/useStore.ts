@@ -27,7 +27,11 @@ import {
   ScheduleSaveReport,
   TerminalSession,
   ServerMetrics,
+  Tag,
+  Folder,
+  ItemKind,
 } from "../types";
+import { EMPTY_FILTERS, FilterScope, ItemFilters, withoutFolder, withoutTag } from "../utils/filters";
 import {
   applyTheme,
   applyFontSize,
@@ -162,6 +166,26 @@ interface AppStore {
   importFullConfig: () => Promise<ImportSummary>;
   applyImportConfig: (mode: 'merge' | 'replace') => Promise<void>;
   resetSettings: () => Promise<void>;
+
+  // ── Organisation (tags, dossiers, favoris, filtres, aide clavier) ──────
+  tags: Tag[];
+  folders: Folder[];
+  loadOrganisation: () => Promise<void>;
+  /** Crée (id vide) ou modifie un tag */
+  saveTag: (tag: Tag) => Promise<Tag>;
+  /** Supprime le tag ; le backend le retire de tous les serveurs et services */
+  deleteTag: (id: string) => Promise<void>;
+  saveFolder: (folder: Folder) => Promise<Folder>;
+  /** Supprime le dossier ; ses éléments passent « sans dossier » */
+  deleteFolder: (id: string) => Promise<void>;
+  /** Bascule un favori ; les serveurs du store sont mis à jour (les services le sont par leur page) */
+  toggleFavorite: (kind: ItemKind, id: string) => Promise<boolean>;
+  /** Filtres des pages Serveurs et Services, conservés pendant la session */
+  filters: Record<FilterScope, ItemFilters>;
+  setFilters: (scope: FilterScope, patch: Partial<ItemFilters>) => void;
+  clearFilters: (scope: FilterScope) => void;
+  shortcutsHelpOpen: boolean;
+  setShortcutsHelpOpen: (open: boolean) => void;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -232,6 +256,8 @@ export const useStore = create<AppStore>((set, get) => ({
         allThemes: [...BUILTIN_THEMES, ...customThemes],
         initialized: true,
       });
+      // Tags et dossiers : chargés à part, un échec n'empêche pas le démarrage
+      get().loadOrganisation().catch(console.error);
     } finally {
       set({ loading: false });
     }
@@ -714,6 +740,7 @@ export const useStore = create<AppStore>((set, get) => ({
       invoke<Group[]>("get_groups"),
     ]);
     set({ servers, groups });
+    await get().loadOrganisation();
     return msg;
   },
 
@@ -767,4 +794,61 @@ export const useStore = create<AppStore>((set, get) => ({
     applyDensity('Normal');
     set({ settings: defaults, allThemes: [...BUILTIN_THEMES] });
   },
+
+  // ── Organisation ───────────────────────────────────────────────────────
+  tags: [],
+  folders: [],
+  filters: { servers: EMPTY_FILTERS, services: EMPTY_FILTERS },
+  shortcutsHelpOpen: false,
+
+  loadOrganisation: async () => {
+    const org = await invoke<{ tags: Tag[]; folders: Folder[] }>("get_organisation");
+    set({ tags: org.tags, folders: org.folders });
+  },
+
+  saveTag: async (tag) => {
+    const saved = await invoke<Tag>("save_tag", { tag });
+    set((s) => ({
+      tags: s.tags.some((t) => t.id === saved.id) ? s.tags.map((t) => (t.id === saved.id ? saved : t)) : [...s.tags, saved],
+    }));
+    return saved;
+  },
+
+  deleteTag: async (id) => {
+    await invoke("delete_tag", { id });
+    set((s) => ({
+      tags: s.tags.filter((t) => t.id !== id),
+      servers: s.servers.map((sv) => (sv.tag_ids?.includes(id) ? { ...sv, tag_ids: sv.tag_ids.filter((t) => t !== id) } : sv)),
+      filters: { servers: withoutTag(s.filters.servers, id), services: withoutTag(s.filters.services, id) },
+    }));
+  },
+
+  saveFolder: async (folder) => {
+    const saved = await invoke<Folder>("save_folder", { folder });
+    set((s) => ({
+      folders: s.folders.some((f) => f.id === saved.id) ? s.folders.map((f) => (f.id === saved.id ? saved : f)) : [...s.folders, saved],
+    }));
+    return saved;
+  },
+
+  deleteFolder: async (id) => {
+    await invoke("delete_folder", { id });
+    set((s) => ({
+      folders: s.folders.filter((f) => f.id !== id),
+      servers: s.servers.map((sv) => (sv.folder_id === id ? { ...sv, folder_id: null } : sv)),
+      filters: { servers: withoutFolder(s.filters.servers, id), services: withoutFolder(s.filters.services, id) },
+    }));
+  },
+
+  toggleFavorite: async (kind, id) => {
+    const favorite = await invoke<boolean>("toggle_favorite", { kind, id });
+    if (kind === "server") {
+      set((s) => ({ servers: s.servers.map((sv) => (sv.id === id ? { ...sv, favorite } : sv)) }));
+    }
+    return favorite;
+  },
+
+  setFilters: (scope, patch) => set((s) => ({ filters: { ...s.filters, [scope]: { ...s.filters[scope], ...patch } } })),
+  clearFilters: (scope) => set((s) => ({ filters: { ...s.filters, [scope]: EMPTY_FILTERS } })),
+  setShortcutsHelpOpen: (open) => set({ shortcutsHelpOpen: open }),
 }));

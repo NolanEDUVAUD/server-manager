@@ -255,6 +255,12 @@
           "markdownDescription": "Enables the delete_custom_theme command without any pre-configured scope."
         },
         {
+          "description": "Enables the delete_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-folder",
+          "markdownDescription": "Enables the delete_folder command without any pre-configured scope."
+        },
+        {
           "description": "Enables the delete_group command without any pre-configured scope.",
           "type": "string",
           "const": "allow-delete-group",
@@ -283,6 +289,12 @@
           "type": "string",
           "const": "allow-delete-snippet",
           "markdownDescription": "Enables the delete_snippet command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_tag command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-tag",
+          "markdownDescription": "Enables the delete_tag command without any pre-configured scope."
         },
         {
           "description": "Enables the detect_mac command without any pre-configured scope.",
@@ -385,6 +397,12 @@
           "type": "string",
           "const": "allow-get-integrations",
           "markdownDescription": "Enables the get_integrations command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_organisation command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-organisation",
+          "markdownDescription": "Enables the get_organisation command without any pre-configured scope."
         },
         {
           "description": "Enables the get_probe_results command without any pre-configured scope.",
@@ -675,6 +693,12 @@
           "markdownDescription": "Enables the save_custom_theme command without any pre-configured scope."
         },
         {
+          "description": "Enables the save_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-folder",
+          "markdownDescription": "Enables the save_folder command without any pre-configured scope."
+        },
+        {
           "description": "Enables the save_integration command without any pre-configured scope.",
           "type": "string",
           "const": "allow-save-integration",
@@ -697,6 +721,12 @@
           "type": "string",
           "const": "allow-save-snippet",
           "markdownDescription": "Enables the save_snippet command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_tag command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-tag",
+          "markdownDescription": "Enables the save_tag command without any pre-configured scope."
         },
         {
           "description": "Enables the set_autostart command without any pre-configured scope.",
@@ -769,6 +799,12 @@
           "type": "string",
           "const": "allow-test-integration",
           "markdownDescription": "Enables the test_integration command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the toggle_favorite command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-toggle-favorite",
+          "markdownDescription": "Enables the toggle_favorite command without any pre-configured scope."
         },
         {
           "description": "Enables the toggle_server_in_group command without any pre-configured scope.",
@@ -903,6 +939,12 @@
           "markdownDescription": "Denies the delete_custom_theme command without any pre-configured scope."
         },
         {
+          "description": "Denies the delete_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-folder",
+          "markdownDescription": "Denies the delete_folder command without any pre-configured scope."
+        },
+        {
           "description": "Denies the delete_group command without any pre-configured scope.",
           "type": "string",
           "const": "deny-delete-group",
@@ -931,6 +973,12 @@
           "type": "string",
           "const": "deny-delete-snippet",
           "markdownDescription": "Denies the delete_snippet command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_tag command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-tag",
+          "markdownDescription": "Denies the delete_tag command without any pre-configured scope."
         },
         {
           "description": "Denies the detect_mac command without any pre-configured scope.",
@@ -1033,6 +1081,12 @@
           "type": "string",
           "const": "deny-get-integrations",
           "markdownDescription": "Denies the get_integrations command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_organisation command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-organisation",
+          "markdownDescription": "Denies the get_organisation command without any pre-configured scope."
         },
         {
           "description": "Denies the get_probe_results command without any pre-configured scope.",
@@ -1323,6 +1377,12 @@
           "markdownDescription": "Denies the save_custom_theme command without any pre-configured scope."
         },
         {
+          "description": "Denies the save_folder command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-folder",
+          "markdownDescription": "Denies the save_folder command without any pre-configured scope."
+        },
+        {
           "description": "Denies the save_integration command without any pre-configured scope.",
           "type": "string",
           "const": "deny-save-integration",
@@ -1345,6 +1405,12 @@
           "type": "string",
           "const": "deny-save-snippet",
           "markdownDescription": "Denies the save_snippet command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_tag command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-tag",
+          "markdownDescription": "Denies the save_tag command without any pre-configured scope."
         },
         {
           "description": "Denies the set_autostart command without any pre-configured scope.",
@@ -1417,6 +1483,12 @@
           "type": "string",
           "const": "deny-test-integration",
           "markdownDescription": "Denies the test_integration command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the toggle_favorite command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-toggle-favorite",
+          "markdownDescription": "Denies the toggle_favorite command without any pre-configured scope."
         },
         {
           "description": "Denies the toggle_server_in_group command without any pre-configured scope.",

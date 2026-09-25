@@ -16,6 +16,14 @@ export interface Server {
   os_type: OsType;
   icon?: string | null;
   notes?: string | null;
+  // ── Organisation ──────────────────────────────────────────────────────────
+  /** Identifiants de tags (voir `Tag`) */
+  tag_ids?: string[];
+  /** Dossier d'affichage (un seul), distinct des groupes */
+  folder_id?: string | null;
+  favorite?: boolean;
+  /** Informations libres, non chiffrées : jamais de secret */
+  custom_fields?: CustomField[];
 }
 
 export interface ServerPayload {
@@ -31,6 +39,12 @@ export interface ServerPayload {
   os_type: OsType;
   icon?: string | null;
   notes?: string | null;
+  // ── Organisation : absent = inchangé lors d'une modification ─────────────
+  tag_ids?: string[];
+  /** "" = sans dossier */
+  folder_id?: string;
+  favorite?: boolean;
+  custom_fields?: CustomField[];
 }
 
 export interface Group {
@@ -105,6 +119,9 @@ export interface ImportSummary {
   settings_present: boolean;
   config_version: string;
   exported_at: string | null;
+  // ── Organisation ──
+  tags_count?: number;
+  folders_count?: number;
 }
 
 export interface PingResult {
@@ -423,6 +440,10 @@ export interface Probe {
   auth: ProbeAuth;
   /** Un secret chiffré est enregistré (sa valeur n'est jamais renvoyée) */
   has_secret?: boolean;
+  // ── Organisation ──────────────────────────────────────────────────────────
+  tag_ids?: string[];
+  folder_id?: string | null;
+  favorite?: boolean;
 }
 
 /** Authentification HTTP d'une sonde ; le secret est saisi à part et chiffré côté Rust */
@@ -544,3 +565,28 @@ export interface ServerUpdates { server_id: string; name: string; report: Update
 // ─── Logs Loki ──────────────────────────────────────────────────────────────
 
 export interface LogEntry { ts: number; line: string; unit: string; priority: number | null }
+
+// ─── Organisation : tags, dossiers, champs personnalisés ────────────────────
+
+export interface Tag {
+  /** Vide à la création (généré côté Rust) */
+  id: string;
+  name: string;
+  /** « #rrggbb » */
+  color: string;
+}
+
+export interface Folder {
+  /** Vide à la création (généré côté Rust) */
+  id: string;
+  name: string;
+}
+
+/** Information libre d'un serveur (emplacement, numéro de série…). Non chiffrée. */
+export interface CustomField {
+  key: string;
+  value: string;
+}
+
+/** Élément organisable : serveur ou service (sonde) */
+export type ItemKind = "server" | "probe";

@@ -7,6 +7,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Server as ServerType, ServerPayload } from "../types";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
+import { sortFavoritesFirst } from "../utils/filters";
 
 export function Dashboard() {
   const { servers, statuses, pingAll, addServer, updateServer, deleteServer } = useStore();
@@ -159,7 +160,7 @@ export function Dashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-          {servers.map((server) => (
+          {sortFavoritesFirst(servers, (s) => !!s.favorite).map((server) => (
             <ServerCard
               key={server.id}
               server={server}

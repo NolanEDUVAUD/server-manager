@@ -32,6 +32,8 @@ pub async fn save_probe(app: AppHandle, state: State<'_, AppState>, mut probe: P
     probe.name = probe.name.trim().to_string();
     {
         let mut data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        // Organisation : tags et dossier inconnus ignorés
+        crate::organisation::clean_probe(&data, &mut probe);
         let key = crypto::data_key(&data)?;
         let previous = data.probes.iter().find(|p| p.id == probe.id && !probe.id.is_empty()).cloned();
         apply_secret(&mut probe, previous.as_ref(), secret, &key)?;

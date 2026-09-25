@@ -10,6 +10,7 @@ pub mod integrations;
 pub mod lab_power;
 pub mod loki;
 pub mod metrics;
+pub mod organisation;
 pub mod ping;
 pub mod probes;
 pub mod schedules;

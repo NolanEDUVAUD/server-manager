@@ -54,6 +54,18 @@ pub struct Server {
     pub os_type: OsType,
     pub icon: Option<String>,
     pub notes: Option<String>,
+    // ── Organisation (tags, dossier, favori, champs personnalisés) ────────
+    /// Tags (identifiants de `AppData::tags`)
+    #[serde(default)]
+    pub tag_ids: Vec<String>,
+    /// Dossier d'affichage (un seul), distinct des groupes qui servent aux actions en lot
+    #[serde(default)]
+    pub folder_id: Option<String>,
+    #[serde(default)]
+    pub favorite: bool,
+    /// Informations libres, non chiffrées : ce ne sont pas des secrets
+    #[serde(default)]
+    pub custom_fields: Vec<crate::organisation::CustomField>,
 }
 
 impl Server {
@@ -83,6 +95,11 @@ impl Server {
             os_type,
             icon,
             notes,
+            // Organisation
+            tag_ids: Vec::new(),
+            folder_id: None,
+            favorite: false,
+            custom_fields: Vec::new(),
         }
     }
 }
@@ -102,6 +119,16 @@ pub struct ServerPayload {
     pub os_type: OsType,
     pub icon: Option<String>,
     pub notes: Option<String>,
+    // ── Organisation : None = inchangé lors d'une modification ────────────
+    #[serde(default)]
+    pub tag_ids: Option<Vec<String>>,
+    /// Some("") = sans dossier
+    #[serde(default)]
+    pub folder_id: Option<String>,
+    #[serde(default)]
+    pub favorite: Option<bool>,
+    #[serde(default)]
+    pub custom_fields: Option<Vec<crate::organisation::CustomField>>,
 }
 
 // ── Groupe ─────────────────────────────────────────────────────────────────
@@ -325,6 +352,11 @@ pub struct PendingImport {
     pub groups: Vec<Group>,
     pub settings: Option<AppSettings>,
     pub config_version: String,
+    // ── Organisation ──────────────────────────────────────────────────────
+    #[serde(default)]
+    pub tags: Vec<crate::organisation::Tag>,
+    #[serde(default)]
+    pub folders: Vec<crate::organisation::Folder>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -334,6 +366,11 @@ pub struct ImportSummary {
     pub settings_present: bool,
     pub config_version: String,
     pub exported_at: Option<String>,
+    // ── Organisation ──────────────────────────────────────────────────────
+    #[serde(default)]
+    pub tags_count: usize,
+    #[serde(default)]
+    pub folders_count: usize,
 }
 
 // ── Données globales de l'application ─────────────────────────────────────
@@ -367,6 +404,12 @@ pub struct AppData {
     /// Schéma de la clé de chiffrement des secrets (voir crypto::KEY_VERSION_MASTER)
     #[serde(default = "legacy_key_version")]
     pub key_version: u8,
+    // ── Organisation (tags et dossiers des serveurs et des services) ──────
+    #[serde(default)]
+    pub tags: Vec<crate::organisation::Tag>,
+    /// Dossiers d'affichage (un niveau), partagés par les serveurs et les services
+    #[serde(default)]
+    pub folders: Vec<crate::organisation::Folder>,
 }
 
 fn legacy_key_version() -> u8 {
@@ -390,6 +433,9 @@ impl Default for AppData {
             snippets: crate::commands::snippets::default_snippets(),
             batch_tasks: Vec::new(),
             ansible: None,
+            // Organisation
+            tags: Vec::new(),
+            folders: Vec::new(),
         }
     }
 }

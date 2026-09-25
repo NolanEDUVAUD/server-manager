@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare, History, CalendarClock, Container, BellRing, Radar, Archive, PowerOff, Network, ListChecks, PackageSearch, ScrollText } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
@@ -6,6 +6,9 @@ import { isVisible } from "../utils/modules";
 import { Onboarding } from "./Onboarding";
 import { Console } from "../pages/Console";
 import { CommandPalette } from "./CommandPalette";
+import { ShortcutsHelp } from "./ShortcutsHelp";
+import { useShortcuts, ShortcutHandlers } from "../hooks/useShortcuts";
+import { NAV_SHORTCUTS } from "../utils/shortcuts";
 
 const NAV_ITEMS: { to: string; icon: typeof Server; label: string; module?: string }[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -40,6 +43,13 @@ export function Layout({ children }: LayoutProps) {
 
   const onlineCount = servers.filter((s) => statuses[s.id]?.online).length;
   const totalCount = servers.length;
+
+  // Raccourcis de navigation (« g » puis une lettre) : lus dans la table, vers les pages visibles
+  const navigate = useNavigate();
+  const navShortcuts: ShortcutHandlers = Object.fromEntries(
+    NAV_SHORTCUTS.map((s) => [s.id, () => { if (nav.some((n) => n.to === s.to)) navigate(s.to); }])
+  );
+  useShortcuts(navShortcuts);
 
   return (
     <div id="app-root" className="flex h-screen bg-bg-primary text-text-primary overflow-hidden select-none">
@@ -108,6 +118,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
       <CommandPalette pages={nav} />
+      <ShortcutsHelp />
       <Onboarding />
       <main className="flex-1 min-w-0 relative overflow-hidden">
         <div className={cn("h-full overflow-y-auto", onConsole && "hidden")}>{children}</div>
