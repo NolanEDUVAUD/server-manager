@@ -54,6 +54,9 @@ thiserror = "1"
 
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
+# Mise à jour automatique signée (minisign) depuis les releases GitHub. Sans la
+# fonctionnalité « zip » : elle ne sert qu'aux paquets de mise à jour du format Tauri v1.
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Client HTTP pour l'intégration Proxmox VE

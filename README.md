@@ -127,3 +127,65 @@ src/            Frontend React (pages, composants, stores Zustand)
 src-tauri/src/  Backend Rust (commandes Tauri, SSH, WoL, ping, stockage chiffré)
 docs/           Spécifications et plans de conception
 ```
+
+## Mises à jour automatiques et signature
+
+Au démarrage (réglage *Paramètres → Général → Vérifier les mises à jour au démarrage*, activé par défaut) ou avec le bouton *Rechercher maintenant*, l'application lit le manifeste `latest.json` de la dernière release publiée du dépôt. Si une version plus récente existe, une bannière affiche son numéro et ses notes ; rien n'est installé sans confirmation. L'installateur est alors téléchargé, **sa signature est vérifiée** avec la clé publique intégrée à l'application (un paquet non signé ou modifié est refusé), puis il remplace l'application et la relance.
+
+- Sous Windows, l'installateur NSIS s'exécute en **mode passif** (`plugins.updater.windows.installMode = "passive"`) : une simple barre de progression, aucune question, pas de droits administrateur (installation par utilisateur), et relance automatique. Une installation faite avec le `.msi` se met à jour avec le `.msi` (`msiexec /passive`).
+- Tant que `src-tauri/updater-pubkey.txt` est vide, les mises à jour automatiques sont désactivées : l'application affiche « Mises à jour automatiques non configurées pour cette version » et ne contacte pas GitHub.
+- Cette signature (minisign, format Tauri) protège les mises à jour ; ce n'est pas une signature Authenticode, SmartScreen peut donc toujours s'afficher à la première installation.
+
+### 1. Générer la paire de clés (une seule fois, sur ton PC)
+
+```powershell
+npm run tauri signer generate -- -w "$env:USERPROFILE\.tauri\server-power-manager.key"
+```
+
+Choisis un mot de passe. Deux fichiers sont créés **hors du dépôt** :
+
+- `server-power-manager.key` : la clé **privée**. Ne la commite jamais, ne la partage pas, et sauvegarde-la avec son mot de passe : sans elle, aucune mise à jour ne pourra plus être proposée aux applications déjà installées (elles ne font confiance qu'à la clé publique qu'elles embarquent). Par précaution, `.gitignore` refuse les fichiers `*.key` et `*.key.pub`.
+- `server-power-manager.key.pub` : la clé publique.
+
+### 2. Mettre la clé publique dans le dépôt
+
+```powershell
+Copy-Item "$env:USERPROFILE\.tauri\server-power-manager.key.pub" src-tauri\updater-pubkey.txt
+git add src-tauri/updater-pubkey.txt
+git commit -m "chore: clé publique de mise à jour"
+```
+
+La clé est intégrée au binaire à la compilation. Le fichier ne doit contenir que la clé (les lignes `#` et les blancs sont ignorés par l'application et par la CI, mais un build local signé lit le fichier tel quel : `Copy-Item` donne exactement le bon contenu).
+
+### 3. Ajouter les secrets GitHub
+
+Dans le dépôt : *Settings → Secrets and variables → Actions → New repository secret*.
+
+- `TAURI_SIGNING_PRIVATE_KEY` : le contenu du fichier `.key` (`Get-Content "$env:USERPROFILE\.tauri\server-power-manager.key" -Raw | Set-Clipboard` le copie dans le presse-papiers) ;
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` : son mot de passe.
+
+### 4. Publier une version
+
+1. Mets le même numéro de version dans `package.json`, `src-tauri/Cargo.toml` et `src-tauri/tauri.conf.json` (c'est ce dernier que l'application compare), puis commite.
+2. Pose un tag **annoté** : son message devient les notes de version affichées dans l'application.
+
+   ```powershell
+   git tag -a v0.3.0 -m "Server Power Manager 0.3.0" -m "- Nouveauté…`n- Correction…"
+   git push origin v0.3.0
+   ```
+
+3. Le workflow *Release* (`.github/workflows/release.yml`, runner Windows) vérifie que le tag correspond à la version, construit l'application, signe les installateurs et crée une release **brouillon** contenant l'installateur NSIS, le `.msi`, leurs `.sig`, `latest.json` et `SHA256SUMS.txt`. Il peut aussi être lancé à la main (*Actions → Release → Run workflow*, avec des notes facultatives).
+4. Relis le brouillon puis **publie-le** : ce n'est qu'à ce moment que `latest.json` devient la « dernière release » et que les applications installées proposent la mise à jour. Les notes affichées dans l'application sont celles du tag, copiées dans `latest.json` au moment du build : modifier ensuite la description de la release ne les change pas.
+
+Pour vérifier un installateur téléchargé : `Get-FileHash .\<installateur> -Algorithm SHA256`, à comparer avec la ligne correspondante de `SHA256SUMS.txt`.
+
+### Build signé en local (facultatif)
+
+```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = "$env:USERPROFILE\.tauri\server-power-manager.key"   # chemin ou contenu de la clé
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = Read-Host "Mot de passe de la clé"
+$env:RUSTFLAGS = "--remap-path-prefix=$env:USERPROFILE=~"
+npm run tauri build -- --config src-tauri/tauri.release.conf.json
+```
+
+`tauri.release.conf.json` active `bundle.createUpdaterArtifacts` et indique à la CLI où lire la clé publique ; les `.sig` sont écrits à côté des installateurs. Sans cette option, `npm run tauri build` fonctionne comme avant, sans clé ni signature. Ferme ensuite le terminal (ou `Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY*`) pour ne pas laisser le mot de passe dans la session.

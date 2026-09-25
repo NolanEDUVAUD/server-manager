@@ -188,11 +188,16 @@ pub struct GeneralSettings {
     /// en service : on ne le montre qu'aux nouvelles installations (Default = false).
     #[serde(default = "default_true")]
     pub onboarding_done: bool,
+    // ── Mise à jour automatique de l'application (1.5) ──
+    /// Rechercher une nouvelle version au démarrage (activé par défaut, y compris
+    /// pour un fichier existant qui ne connaît pas encore ce réglage)
+    #[serde(default = "default_true")]
+    pub check_updates: bool,
 }
 
 impl Default for GeneralSettings {
     fn default() -> Self {
-        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false }
+        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false, check_updates: true }
     }
 }
 
@@ -515,6 +520,20 @@ mod tests {
         assert!(with(7, 731, 90).validate().is_err());
         assert!(with(7, 90, 3651).validate().is_err());
         assert!(with(31, 730, 3650).validate().is_ok());
+    }
+
+    // ── Mise à jour automatique de l'application (1.5) ──
+    #[test]
+    fn check_updates_defaults_to_true_for_old_and_new_settings() {
+        let old: GeneralSettings =
+            serde_json::from_str(r#"{"start_minimized": false, "auto_start": false, "notifications": true}"#).unwrap();
+        assert!(old.check_updates, "un ancien data.json doit garder la vérification au démarrage");
+        assert!(GeneralSettings::default().check_updates);
+        let off: GeneralSettings = serde_json::from_str(
+            r#"{"start_minimized": false, "auto_start": false, "notifications": true, "check_updates": false}"#,
+        )
+        .unwrap();
+        assert!(!off.check_updates);
     }
 }
 

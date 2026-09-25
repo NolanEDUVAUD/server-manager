@@ -9,6 +9,7 @@ import { CommandPalette } from "./CommandPalette";
 import { ShortcutsHelp } from "./ShortcutsHelp";
 import { useShortcuts, ShortcutHandlers } from "../hooks/useShortcuts";
 import { NAV_SHORTCUTS } from "../utils/shortcuts";
+import { UpdateBanner } from "./UpdateBanner";
 
 const NAV_ITEMS: { to: string; icon: typeof Server; label: string; module?: string }[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -120,11 +121,13 @@ export function Layout({ children }: LayoutProps) {
       <CommandPalette pages={nav} />
       <ShortcutsHelp />
       <Onboarding />
-      <main className="flex-1 min-w-0 relative overflow-hidden">
-        <div className={cn("h-full overflow-y-auto", onConsole && "hidden")}>{children}</div>
+      <main className="flex-1 min-w-0 relative overflow-hidden flex flex-col">
+        {/* Nouvelle version signée disponible (au-dessus du contenu, qu'elle pousse vers le bas) */}
+        <UpdateBanner />
+        <div className={cn("flex-1 min-h-0 overflow-y-auto", onConsole && "hidden")}>{children}</div>
         {/* Console montée en permanence : les terminaux et leurs sessions SSH
             survivent à la navigation entre les pages */}
-        <div className={cn("h-full overflow-y-auto", !onConsole && "hidden")}>
+        <div className={cn("flex-1 min-h-0 overflow-y-auto", !onConsole && "hidden")}>
           <Console />
         </div>
       </main>

@@ -1,0 +1,141 @@
+# Release signée de Server Power Manager.
+#
+# Produit les installateurs Windows (NSIS + MSI), leurs signatures de mise à jour
+# (.sig), le manifeste latest.json lu par l'application et un SHA256SUMS.txt, le
+# tout dans une release GitHub en BROUILLON : rien n'est proposé aux utilisateurs
+# tant que le brouillon n'a pas été relu et publié à la main.
+#
+# La clé privée de signature n'existe que dans les secrets du dépôt
+# (TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD). La clé publique
+# correspondante est versionnée dans src-tauri/updater-pubkey.txt.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Notes de version (affichées dans l'application)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build Windows signé
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Installer Rust stable
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Vérifier la version
+        id: version
+        shell: bash
+        run: |
+          version="$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Le tag $GITHUB_REF_NAME ne correspond pas à la version $version de src-tauri/tauri.conf.json"
+            exit 1
+          fi
+
+      - name: Préparer la clé publique de mise à jour
+        shell: bash
+        run: |
+          # Même règle que l'application : lignes « # » et blancs ignorés. La CLI Tauri
+          # relit ce fichier (voir tauri.release.conf.json) et attend un base64 sans blanc.
+          key="$( (grep -v '^[[:space:]]*#' src-tauri/updater-pubkey.txt || true) | tr -d '[:space:]')"
+          if [[ -z "$key" ]]; then
+            echo "::error::src-tauri/updater-pubkey.txt est vide : ajoute la clé publique de signature (voir le README)"
+            exit 1
+          fi
+          printf '%s' "$key" > src-tauri/updater-pubkey.txt
+
+      - name: Notes de version
+        id: notes
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          INPUT_NOTES: ${{ inputs.notes }}
+        run: |
+          body="$INPUT_NOTES"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            # actions/checkout ne conserve pas le message des tags annotés : on le relit
+            git fetch --force --depth=1 origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+            body="$(git tag -l --format='%(contents:subject)%0a%0a%(contents:body)' "$GITHUB_REF_NAME")"
+          fi
+          if [[ -z "${body//[[:space:]]/}" ]]; then
+            body="Server Power Manager $VERSION"
+          fi
+          delimiter="NOTES_${RANDOM}${RANDOM}${RANDOM}"
+          {
+            echo "body<<$delimiter"
+            echo "$body"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Installer les dépendances npm
+        run: npm ci --no-audit --no-fund
+
+      - name: Retirer les chemins du runner du binaire
+        shell: pwsh
+        run: |
+          # Équivalent CI du RUSTFLAGS conseillé dans le README pour un build local
+          "RUSTFLAGS=--remap-path-prefix=$env:GITHUB_WORKSPACE=. --remap-path-prefix=$env:USERPROFILE=~" >> $env:GITHUB_ENV
+
+      - name: Construire, signer et créer la release (brouillon)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: v__VERSION__
+          releaseName: Server Power Manager v__VERSION__
+          releaseBody: ${{ steps.notes.outputs.body }}
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+          args: --config src-tauri/tauri.release.conf.json
+
+      - name: Joindre SHA256SUMS.txt
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          $bundle = "src-tauri/target/release/bundle"
+          $files = @(Get-ChildItem "$bundle/nsis/*-setup.exe") + @(Get-ChildItem "$bundle/msi/*.msi")
+          if ($files.Count -eq 0) { throw "Aucun installateur trouvé dans $bundle" }
+          $lines = foreach ($f in $files) {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $f.FullName).Hash.ToLowerInvariant()
+            # Même renommage que GitHub pour les pièces jointes (espaces, parenthèses → « . »)
+            $name = ($f.Name -replace '[ ()\[\]{}]', '.') -replace '\.\.', '.'
+            "$hash  $name"
+          }
+          # Fins de ligne LF : vérifiable avec `sha256sum -c` comme avec Get-FileHash
+          [IO.File]::WriteAllText("SHA256SUMS.txt", (($lines -join "`n") + "`n"))
+          Get-Content SHA256SUMS.txt
+          gh release upload $env:TAG SHA256SUMS.txt --clobber

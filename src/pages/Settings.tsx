@@ -12,6 +12,8 @@ import { ThemeEditor } from '../components/ThemeEditor';
 import { IntegrationsSettings } from '../components/IntegrationsSettings';
 import { HistorySettingsPanel } from '../components/HistorySettingsPanel';
 import { MODULES } from '../utils/modules';
+import { AppUpdateSettings } from '../components/AppUpdateSettings';
+import { useAppUpdate } from '../stores/useAppUpdate';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
 type Section = 'general' | 'appearance' | 'network' | 'history' | 'integrations' | 'config' | 'about';
@@ -216,6 +218,8 @@ function SectionGeneral() {
           onChange={v => handleToggle('close_to_tray', v)}
         />
       </div>
+
+      <AppUpdateSettings />
 
       <h2 className="text-text-primary font-medium text-base">Modules</h2>
       <p className="text-xs text-text-secondary -mt-4">Masque les onglets que tu n'utilises pas. Rien n'est supprimé.</p>
@@ -595,13 +599,18 @@ function SectionConfig() {
 
 // ── Section : À propos ─────────────────────────────────────────────────────────
 function SectionAbout() {
+  const { info, loadInfo } = useAppUpdate();
+  useEffect(() => {
+    if (!info) loadInfo();
+  }, [info, loadInfo]);
+
   return (
     <div className="space-y-4 max-w-lg">
       <h2 className="text-text-primary font-medium text-base">À propos</h2>
       <div className="bg-bg-tertiary rounded-win p-4 space-y-2 text-sm card">
         <div className="flex justify-between py-1 border-b border-border-secondary">
           <span className="text-text-secondary">Version</span>
-          <span className="text-text-primary">0.1.0</span>
+          <span className="text-text-primary">{info?.current_version ?? '…'}</span>
         </div>
         <div className="flex justify-between py-1 border-b border-border-secondary">
           <span className="text-text-secondary">Framework</span>

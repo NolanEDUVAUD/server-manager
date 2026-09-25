@@ -77,6 +77,9 @@ export interface GeneralSettings {
   hidden_modules: string[];
   /** Écran d'accueil déjà passé */
   onboarding_done: boolean;
+  // ── Mise à jour automatique de l'application (1.5) ──
+  /** Rechercher une nouvelle version au démarrage */
+  check_updates: boolean;
 }
 
 export interface AppearanceSettings {
@@ -590,3 +593,33 @@ export interface CustomField {
 
 /** Élément organisable : serveur ou service (sonde) */
 export type ItemKind = "server" | "probe";
+
+// ─── Mise à jour automatique de l'application (1.5) ─────────────────────────
+
+/** Réponse de `app_update_info` (sans accès réseau) */
+export interface AppUpdateInfo {
+  /** Clé publique de signature embarquée : sinon les mises à jour sont désactivées */
+  configured: boolean;
+  current_version: string;
+}
+
+/** Réponse de `app_update_check` */
+export interface AppUpdateCheck {
+  configured: boolean;
+  available: boolean;
+  version: string | null;
+  current_version: string;
+  /** Date de publication (RFC 3339) */
+  date: string | null;
+  /** Notes nettoyées et tronquées côté Rust, à afficher en texte uniquement */
+  notes: string | null;
+}
+
+export type AppUpdatePhase = "downloading" | "verifying" | "installing";
+
+/** Événement `app-update-progress` */
+export interface AppUpdateProgress {
+  phase: AppUpdatePhase;
+  downloaded: number;
+  total: number | null;
+}

@@ -1,4 +1,5 @@
 mod alerts;
+mod app_update;
 mod batch;
 mod commands;
 mod cron;
@@ -98,6 +99,9 @@ pub fn run() {
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        // ── Mise à jour automatique de l'application (1.5) ──
+        .plugin(commands::app_update::plugin())
+        .manage(commands::app_update::AppUpdateState::default())
         .invoke_handler(tauri::generate_handler![
             // ── Serveurs ──────────────────────────────────────
             servers::get_servers,
@@ -241,6 +245,10 @@ pub fn run() {
             organisation_cmd::save_folder,
             organisation_cmd::delete_folder,
             organisation_cmd::toggle_favorite,
+            // ── Mise à jour automatique de l'application (1.5) ──
+            commands::app_update::app_update_info,
+            commands::app_update::app_update_check,
+            commands::app_update::app_update_install,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

@@ -24,6 +24,7 @@ import { usePing } from "./hooks/usePing";
 import { useMetrics } from "./hooks/useMetrics";
 import { useEventFeed } from "./hooks/useEventFeed";
 import { useTraySync } from "./hooks/useTraySync";
+import { useAppUpdateCheck } from "./hooks/useAppUpdateCheck";
 
 function AppContent() {
   const { initialize, loading } = useStore();
@@ -44,6 +45,9 @@ function AppContent() {
 
   // Infobulle et menu de l'icône de zone de notification
   useTraySync();
+
+  // Recherche silencieuse d'une nouvelle version signée (réglage « au démarrage »)
+  useAppUpdateCheck();
 
   if (loading) {
     return (

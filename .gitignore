@@ -20,6 +20,12 @@ src-tauri/WixTools/
 .env
 .env.local
 
+# Clés de signature des mises à jour : la clé privée ne doit JAMAIS être commitée
+# (seule la clé publique va dans src-tauri/updater-pubkey.txt)
+*.key
+*.key.pub
+.tauri/
+
 # IDE
 .vscode/settings.json
 .idea/
