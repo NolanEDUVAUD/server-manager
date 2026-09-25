@@ -13,6 +13,7 @@ mod integration_checks;
 mod integrations;
 mod keystore;
 mod lab_power;
+mod lock;
 mod loki;
 mod known_hosts;
 mod metrics;
@@ -28,7 +29,7 @@ mod terminal;
 mod tray;
 mod updates;
 
-use commands::{loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use commands::organisation as organisation_cmd;
 use storage::AppState;
 use tauri::Manager;
@@ -45,10 +46,14 @@ pub fn run() {
             if let Some(dir) = state.data_path.parent() {
                 known_hosts::init(dir.join("known_hosts.json"));
             }
+            // Clé maître : lecture du coffre Windows, migration des anciens secrets,
+            // démarrage verrouillé si un verrouillage ou un mot de passe maître est configuré
+            let lock_manager = lock::boot_app(&state);
             // Base d'historique (événements, mesures, agrégats) à côté de data.json
             let db = db::Db::open(&state.data_path.with_file_name("history.db"));
             let probe_ids: Vec<String> = state.data.lock().map(|d| d.probes.iter().map(|p| p.id.clone()).collect()).unwrap_or_default();
             app.manage(state);
+            app.manage(lock_manager);
             app.manage(db);
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
@@ -66,6 +71,8 @@ pub fn run() {
             probes::start(app.handle().clone());
             // Rétention de l'historique (purge horaire)
             db::start_maintenance(app.handle().clone());
+            // Verrouillage automatique (inactivité, session Windows verrouillée)
+            lock::start(app.handle().clone());
             // Icône de zone de notification ; la fenêtre, créée masquée, n'est
             // affichée que si l'utilisateur n'a pas demandé un démarrage minimisé
             tray::create(app.handle())?;
@@ -249,6 +256,17 @@ pub fn run() {
             commands::app_update::app_update_info,
             commands::app_update::app_update_check,
             commands::app_update::app_update_install,
+            // ── Verrouillage de l'application (1.3) ───────────
+            lock_cmd::lock_status,
+            lock_cmd::lock_now,
+            lock_cmd::lock_activity,
+            lock_cmd::lock_configure,
+            lock_cmd::unlock_with_pin,
+            lock_cmd::unlock_with_password,
+            lock_cmd::unlock_with_hello,
+            lock_cmd::master_password_enable,
+            lock_cmd::master_password_change,
+            lock_cmd::master_password_remove,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

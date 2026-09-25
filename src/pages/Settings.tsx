@@ -12,18 +12,20 @@ import { ThemeEditor } from '../components/ThemeEditor';
 import { IntegrationsSettings } from '../components/IntegrationsSettings';
 import { HistorySettingsPanel } from '../components/HistorySettingsPanel';
 import { LanguageSelect } from '../components/LanguageSelect';
+import { SecuritySettings } from '../components/SecuritySettings';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
 import { useAppUpdate } from '../stores/useAppUpdate';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
-type Section = 'general' | 'appearance' | 'network' | 'history' | 'integrations' | 'config' | 'about';
+type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'config' | 'about';
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'general',    label: 'Général' },
   { id: 'appearance', label: 'Apparence' },
   { id: 'network',    label: 'Réseau' },
   { id: 'history',    label: 'Historique' },
+  { id: 'security',   label: 'Sécurité' },
   { id: 'integrations', label: 'Intégrations' },
   { id: 'config',     label: 'Configuration' },
   { id: 'about',      label: 'À propos' },
@@ -60,6 +62,7 @@ export function Settings() {
         {active === 'appearance' && <SectionAppearance />}
         {active === 'network'    && <SectionNetwork />}
         {active === 'history'    && <HistorySettingsPanel />}
+        {active === 'security'   && <SecuritySettings />}
         {active === 'integrations' && <IntegrationsSettings />}
         {active === 'config'     && <SectionConfig />}
         {active === 'about'      && <SectionAbout />}

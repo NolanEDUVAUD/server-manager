@@ -35,6 +35,15 @@ impl TerminalState {
         tx.send(input).map_err(|_| format!("Session terminée : {}", id))
     }
 
+    /// Ferme toutes les sessions (verrouillage de l'application)
+    pub fn close_all(&self) {
+        if let Ok(mut sessions) = self.lock() {
+            for (_, tx) in sessions.drain() {
+                let _ = tx.send(TerminalInput::Close);
+            }
+        }
+    }
+
     fn lock(&self) -> Result<std::sync::MutexGuard<'_, HashMap<String, UnboundedSender<TerminalInput>>>, String> {
         self.sessions.lock().map_err(|e| format!("Erreur mutex: {}", e))
     }
@@ -82,6 +91,21 @@ mod tests {
 
         assert!(state.send("s1", TerminalInput::Close).is_err());
         assert!(state.send("inconnue", TerminalInput::Close).is_err());
+    }
+
+    #[test]
+    fn close_all_closes_and_forgets_every_session() {
+        let state = TerminalState::default();
+        let (tx1, mut rx1) = unbounded_channel();
+        let (tx2, mut rx2) = unbounded_channel();
+        state.insert("s1".into(), tx1).unwrap();
+        state.insert("s2".into(), tx2).unwrap();
+
+        state.close_all();
+
+        assert_eq!(rx1.try_recv().unwrap(), TerminalInput::Close);
+        assert_eq!(rx2.try_recv().unwrap(), TerminalInput::Close);
+        assert!(state.send("s1", TerminalInput::Data(b"id\n".to_vec())).is_err());
     }
 
     #[test]

@@ -107,7 +107,9 @@ pub fn start(app: AppHandle) {
                     data.servers.iter().map(|s| (s.id.clone(), s.os_type.clone())).collect::<Vec<_>>(),
                 )
             };
-            if enabled {
+            // Verrouillée : collecte SSH suspendue (aucun mot de passe déchiffrable), sans
+            // émettre d'erreur à chaque tour ; le ping, lui, continue
+            if enabled && !crate::crypto::is_locked() {
                 let targets = {
                     let online = shared.online.lock().map(|o| o.clone()).unwrap_or_default();
                     let mut in_flight = shared.in_flight.lock().unwrap_or_else(|e| e.into_inner());

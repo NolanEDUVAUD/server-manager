@@ -156,6 +156,7 @@ pub async fn delete_schedule(state: State<'_, AppState>, id: String) -> Result<V
 
 #[tauri::command]
 pub async fn run_schedule_now(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
+    crate::crypto::ensure_unlocked()?;
     let schedule = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         data.schedules

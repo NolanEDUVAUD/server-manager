@@ -427,6 +427,12 @@ pub async fn execute(app: &AppHandle, probe: &Probe) -> ProbeResult {
     result
 }
 
+/// Verrouillée, une sonde avec secret attend le déverrouillage : sinon « secret
+/// illisible » déclencherait de fausses alertes. Les sondes sans secret continuent.
+pub fn suspended_by_lock(probe: &Probe, locked: bool) -> bool {
+    locked && !probe.secret.is_empty()
+}
+
 /// Boucle : vérifie toutes les 5 s quelles sondes sont dues selon leur intervalle
 pub fn start(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
@@ -436,9 +442,10 @@ pub fn start(app: AppHandle) {
                 let st = app.state::<ProbeState>();
                 let mut last = st.last_run.lock().unwrap_or_else(|e| e.into_inner());
                 let now = Instant::now();
+                let locked = crate::crypto::is_locked();
                 let due: Vec<Probe> = probes
                     .into_iter()
-                    .filter(|p| p.enabled)
+                    .filter(|p| p.enabled && !suspended_by_lock(p, locked))
                     .filter(|p| last.get(&p.id).map_or(true, |t| now.duration_since(*t) >= Duration::from_secs(p.interval_secs)))
                     .collect();
                 for p in &due {
@@ -502,6 +509,16 @@ mod tests {
             folder_id: None,
             favorite: false,
         }
+    }
+
+    #[test]
+    fn only_probes_with_a_secret_are_suspended_while_locked() {
+        let open = http_probe(ProbeAuth::None);
+        let mut authed = http_probe(ProbeAuth::Bearer);
+        authed.secret = crypto::encrypt("tok", &crypto::generate_key()).unwrap();
+        assert!(!suspended_by_lock(&open, true));
+        assert!(suspended_by_lock(&authed, true));
+        assert!(!suspended_by_lock(&authed, false));
     }
 
     #[test]

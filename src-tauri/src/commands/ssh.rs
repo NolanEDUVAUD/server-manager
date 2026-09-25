@@ -48,6 +48,8 @@ pub(crate) async fn connect_ssh(
     password: &str,
     timeout_secs: u64,
 ) -> Result<client::Handle<SshHandler>, String> {
+    // Point de passage de toute connexion SSH : refusée tant que l'app est verrouillée
+    crate::crypto::ensure_unlocked()?;
     // Le timeout est géré par tokio::time::timeout ci-dessous
     let config = Arc::new(client::Config::default());
 
@@ -233,6 +235,7 @@ pub async fn ssh_shutdown(
     events: State<'_, EventLog>,
     server_id: String,
 ) -> Result<SshResult, String> {
+    crate::crypto::ensure_unlocked()?;
     let (name, ip, port, user, password, command, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         let server = data
@@ -265,6 +268,7 @@ pub async fn ssh_reboot(
     events: State<'_, EventLog>,
     server_id: String,
 ) -> Result<SshResult, String> {
+    crate::crypto::ensure_unlocked()?;
     let (name, ip, port, user, password, command, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         let server = data
@@ -297,6 +301,7 @@ pub async fn ssh_execute(
     server_id: String,
     command: String,
 ) -> Result<SshResult, String> {
+    crate::crypto::ensure_unlocked()?;
     let (ip, port, user, password, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         let server = data
@@ -325,6 +330,8 @@ pub async fn ssh_shutdown_group(
     events: State<'_, EventLog>,
     group_id: String,
 ) -> Result<Vec<(String, SshResult)>, String> {
+    // Sans cette garde, les serveurs au mot de passe illisible seraient ignorés en silence
+    crate::crypto::ensure_unlocked()?;
     let servers_info = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         let group = data

@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare, History, CalendarClock, Container, BellRing, Radar, Archive, PowerOff, Network, ListChecks, PackageSearch, ScrollText } from "lucide-react";
+import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare, History, CalendarClock, Container, BellRing, Radar, Archive, PowerOff, Network, ListChecks, PackageSearch, ScrollText, Lock } from "lucide-react";
 import { useStore } from "../stores/useStore";
+import { useLockStore } from "../stores/useLockStore";
 import { cn } from "../utils";
 import { isVisible } from "../utils/modules";
 import { Onboarding } from "./Onboarding";
@@ -44,6 +45,8 @@ export function Layout({ children }: LayoutProps) {
 
   const onlineCount = servers.filter((s) => statuses[s.id]?.online).length;
   const totalCount = servers.length;
+  const lockEnabled = useLockStore((s) => !!s.status?.enabled);
+  const lockNow = useLockStore((s) => s.lockNow);
 
   // Raccourcis de navigation (« g » puis une lettre) : lus dans la table, vers les pages visibles
   const navigate = useNavigate();
@@ -93,6 +96,20 @@ export function Layout({ children }: LayoutProps) {
             </NavLink>
           ))}
         </nav>
+
+        {/* Verrouillage (si une méthode est configurée) */}
+        {lockEnabled && (
+          <div className="px-2 md:px-3 pt-2 border-t border-border-primary shrink-0">
+            <button
+              onClick={() => lockNow().catch(() => {})}
+              title="Verrouiller maintenant (Ctrl+Maj+L)"
+              className="w-full flex items-center justify-center md:justify-start gap-3 px-3 py-2 rounded-win text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all duration-150"
+            >
+              <Lock size={16} className="shrink-0" />
+              <span className="hidden md:inline truncate">Verrouiller</span>
+            </button>
+          </div>
+        )}
 
         {/* Compteur en ligne */}
         {totalCount > 0 && (

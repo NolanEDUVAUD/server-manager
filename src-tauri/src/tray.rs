@@ -10,6 +10,7 @@ use crate::{commands::wol::wake_group_inner, events::EventLog, storage::AppState
 
 pub const TRAY_ID: &str = "main";
 const WOL_PREFIX: &str = "wol:";
+const LOCK_ID: &str = "lock";
 
 /// Texte de l'infobulle selon le nombre de serveurs en ligne
 pub fn tooltip(online: u32, total: u32) -> String {
@@ -28,12 +29,17 @@ pub fn parse_wol_id(id: &str) -> Option<&str> {
 /// Menu reconstruit à partir des groupes actuels. Pas d'arrêt ici, volontairement :
 /// un menu de zone de notification ne permet pas de demander une confirmation.
 pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
-    let groups: Vec<(String, String)> = app
+    let (groups, lock_cfg): (Vec<(String, String)>, _) = app
         .state::<AppState>()
         .data
         .lock()
-        .map(|d| d.groups.iter().map(|g| (g.id.clone(), g.name.clone())).collect())
+        .map(|d| (d.groups.iter().map(|g| (g.id.clone(), g.name.clone())).collect(), d.lock.clone()))
         .unwrap_or_default();
+    // Verrouillée : WoL grisé ; « Verrouiller » seulement si une méthode est configurée
+    let (lock_enabled, locked) = app
+        .try_state::<crate::lock::LockManager>()
+        .map(|l| (l.is_enabled(&lock_cfg), l.is_locked()))
+        .unwrap_or((false, false));
 
     let open = MenuItem::with_id(app, "open", "Ouvrir Server Manager", true, None::<&str>)?;
     let sep1 = PredefinedMenuItem::separator(app)?;
@@ -42,10 +48,22 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         .map(|(id, name)| MenuItem::with_id(app, format!("{}{}", WOL_PREFIX, id), name, true, None::<&str>))
         .collect::<tauri::Result<_>>()?;
     let wol_refs: Vec<&dyn IsMenuItem<Wry>> = wol_items.iter().map(|i| i as &dyn IsMenuItem<Wry>).collect();
-    let wake = Submenu::with_items(app, "Réveiller un groupe (WoL)", !groups.is_empty(), &wol_refs)?;
+    let wake = Submenu::with_items(app, "Réveiller un groupe (WoL)", !groups.is_empty() && !locked, &wol_refs)?;
+    let lock = MenuItem::with_id(app, LOCK_ID, "Verrouiller maintenant", !locked, None::<&str>)?;
     let sep2 = PredefinedMenuItem::separator(app)?;
     let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
-    Menu::with_items(app, &[&open, &sep1, &wake, &sep2, &quit])
+    if lock_enabled {
+        Menu::with_items(app, &[&open, &sep1, &wake, &lock, &sep2, &quit])
+    } else {
+        Menu::with_items(app, &[&open, &sep1, &wake, &sep2, &quit])
+    }
+}
+
+/// Reconstruit le menu (groupes modifiés, verrouillage / déverrouillage)
+pub fn refresh_menu(app: &AppHandle) {
+    if let (Some(tray), Ok(menu)) = (app.tray_by_id(TRAY_ID), build_menu(app)) {
+        let _ = tray.set_menu(Some(menu));
+    }
 }
 
 pub fn show_main_window(app: &AppHandle) {
@@ -61,6 +79,11 @@ fn on_menu(app: &AppHandle, event: MenuEvent) {
     match id {
         "open" => show_main_window(app),
         "quit" => app.exit(0),
+        LOCK_ID => {
+            if let Err(e) = crate::lock::lock_app(app, "zone de notification") {
+                log::warn!("Verrouillage impossible : {}", e);
+            }
+        }
         _ => {
             if let Some(group_id) = parse_wol_id(id) {
                 let app = app.clone();

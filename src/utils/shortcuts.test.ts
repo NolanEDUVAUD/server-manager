@@ -7,7 +7,7 @@ const ALL = SHORTCUTS.map((s) => s.id) as ShortcutId[];
 function press(match: ReturnType<typeof createShortcutMatcher>, def: ShortcutDef, t0 = 1000): ShortcutId | null {
   let result: ShortcutId | null = null;
   def.keys.forEach((key, i) => {
-    result = match({ key, ctrlKey: !!def.ctrl, inEditable: def.context === "palette" }, t0 + i * 100);
+    result = match({ key, ctrlKey: !!def.ctrl, shiftKey: !!def.shift, inEditable: def.context === "palette" }, t0 + i * 100);
   });
   return result;
 }
@@ -15,7 +15,7 @@ function press(match: ReturnType<typeof createShortcutMatcher>, def: ShortcutDef
 describe("table des raccourcis", () => {
   it("identifiants et combinaisons uniques par contexte, descriptions renseignées", () => {
     expect(new Set(ALL).size).toBe(ALL.length);
-    const combos = SHORTCUTS.map((s) => `${s.context}:${"ctrl" in s ? "ctrl+" : ""}${s.keys.join(">")}`);
+    const combos = SHORTCUTS.map((s) => `${s.context}:${"ctrl" in s ? "ctrl+" : ""}${"shift" in s ? "shift+" : ""}${s.keys.join(">")}`);
     expect(new Set(combos).size).toBe(combos.length);
     for (const s of SHORTCUTS) {
       expect(s.description.length).toBeGreaterThan(5);

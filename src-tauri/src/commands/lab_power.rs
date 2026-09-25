@@ -98,6 +98,7 @@ async fn inventory(app: &AppHandle) -> Result<(Vec<Machine>, Vec<Guest>), String
 /// Mode simulation : calcule le plan sans rien exécuter
 #[tauri::command]
 pub async fn lab_power_plan(app: AppHandle, state: State<'_, AppState>, startup: bool) -> Result<Plan, String> {
+    crate::crypto::ensure_unlocked()?;
     let (machines, guests) = inventory(&app).await?;
     if startup {
         let previous = state.data.lock().map_err(|e| e.to_string())?.last_lab_running.clone();
@@ -115,6 +116,7 @@ pub fn lab_power_cancel(lab: State<LabPowerState>) {
 /// Exécution réelle, étape par étape. `confirm` doit être la phrase attendue.
 #[tauri::command]
 pub async fn lab_power_execute(app: AppHandle, startup: bool, confirm: String) -> Result<(), String> {
+    crate::crypto::ensure_unlocked()?;
     let expected = if startup { CONFIRM_STARTUP } else { CONFIRM_SHUTDOWN };
     if confirm.trim() != expected {
         return Err(format!("Confirmation incorrecte : recopie « {} »", expected));

@@ -9,6 +9,7 @@ pub mod groups;
 pub mod history;
 pub mod integrations;
 pub mod lab_power;
+pub mod lock;
 pub mod loki;
 pub mod metrics;
 pub mod organisation;

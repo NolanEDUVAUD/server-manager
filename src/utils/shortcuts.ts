@@ -14,6 +14,8 @@ export interface ShortcutDef {
   keys: readonly string[];
   /** Avec Ctrl (ou ⌘ sur macOS) */
   ctrl?: boolean;
+  /** Avec Maj, en plus de Ctrl (Ctrl+Maj+L) */
+  shift?: boolean;
   description: string;
   group: string;
   context: ShortcutContext;
@@ -31,6 +33,7 @@ export const SHORTCUTS = [
   { id: "palette-prev", keys: ["ArrowUp"], description: "Résultat précédent", group: "Palette de commandes", context: "palette", inInputs: true },
   { id: "palette-run", keys: ["Enter"], description: "Exécuter l'action choisie (les actions sur un serveur demandent confirmation)", group: "Palette de commandes", context: "palette", inInputs: true },
   // ── Nouveaux ──
+  { id: "lock", keys: ["l"], ctrl: true, shift: true, description: "Verrouiller l'application (si un verrouillage est configuré)", group: "Général", context: "global", inInputs: true },
   { id: "help", keys: ["?"], description: "Afficher cette aide", group: "Général", context: "global" },
   { id: "search", keys: ["/"], description: "Aller à la recherche (pages Serveurs et Services)", group: "Pages Serveurs et Services", context: "page" },
   { id: "go-dashboard", keys: ["g", "d"], description: "Aller au tableau de bord", group: "Navigation", context: "global", to: "/" },
@@ -63,7 +66,7 @@ const KEY_LABELS: Record<string, string> = {
  */
 export function shortcutKeys(def: ShortcutDef): string[][] {
   const label = (k: string) => KEY_LABELS[k] ?? (def.ctrl ? k.toUpperCase() : k);
-  return def.ctrl ? [["Ctrl", ...def.keys.map(label)]] : def.keys.map((k) => [label(k)]);
+  return def.ctrl ? [["Ctrl", ...(def.shift ? ["Maj"] : []), ...def.keys.map(label)]] : def.keys.map((k) => [label(k)]);
 }
 
 /** Évènement clavier réduit à ce qui compte pour la correspondance */
@@ -71,6 +74,7 @@ export interface KeyInput {
   key: string;
   ctrlKey?: boolean;
   metaKey?: boolean;
+  shiftKey?: boolean;
   altKey?: boolean;
   /** Le focus est dans un champ de saisie (input, textarea, select, contenu éditable) */
   inEditable?: boolean;
@@ -98,7 +102,14 @@ export function createShortcutMatcher(ids: readonly ShortcutId[], timeoutMs = SE
     }
 
     const single = defs.find(
-      (d) => d.keys.length === 1 && d.keys[0] === key && !!d.ctrl === ctrl && !input.altKey && (d.inInputs || !input.inEditable),
+      (d) =>
+        d.keys.length === 1 &&
+        d.keys[0] === key &&
+        !!d.ctrl === ctrl &&
+        // Maj ne compte que pour les combinaisons Ctrl (« ? » se tape déjà avec Maj)
+        (!d.ctrl || !!d.shift === !!input.shiftKey) &&
+        !input.altKey &&
+        (d.inInputs || !input.inEditable),
     );
     if (single) return single.id as ShortcutId;
 

@@ -18,6 +18,8 @@ pub async fn open_dashboard_tab(
     width: f64,
     height: f64,
 ) -> Result<(), String> {
+    // Une webview native se dessine par-dessus l'écran de verrouillage
+    crate::crypto::ensure_unlocked()?;
     let mut webviews = state
         .webviews
         .lock()
@@ -79,6 +81,10 @@ pub fn set_dashboard_tab_visible(
     label: String,
     visible: bool,
 ) -> Result<(), String> {
+    // Masquer reste toujours possible ; afficher est refusé pendant le verrouillage
+    if visible {
+        crate::crypto::ensure_unlocked()?;
+    }
     let webviews = state
         .webviews
         .lock()

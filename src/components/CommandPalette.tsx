@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, CornerDownLeft, TerminalSquare, Wifi, Zap, ArrowRight, Power, RotateCcw, Pencil, Keyboard } from "lucide-react";
+import { Search, CornerDownLeft, TerminalSquare, Wifi, Zap, ArrowRight, Power, RotateCcw, Pencil, Keyboard, Lock } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { useToast } from "../hooks/useToast";
 import { useShortcuts } from "../hooks/useShortcuts";
+import { useLockStore } from "../stores/useLockStore";
 import { fuzzyFilter } from "../utils/fuzzy";
 import { createShortcutMatcher } from "../utils/shortcuts";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -32,6 +33,8 @@ export function CommandPalette({ pages }: { pages: { to: string; label: string }
   const navigate = useNavigate();
   const { servers, groups, openTerminal, pingServer, wakeGroup, wakeServer, shutdownServer, rebootServer, setShortcutsHelpOpen } = useStore();
   const toast = useToast();
+  const lockEnabled = useLockStore((s) => !!s.status?.enabled);
+  const lockNow = useLockStore((s) => s.lockNow);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [index, setIndex] = useState(0);
@@ -56,6 +59,9 @@ export function CommandPalette({ pages }: { pages: { to: string; label: string }
   };
 
   const items: PaletteItem[] = useMemo(() => [
+    ...(lockEnabled
+      ? [{ id: "lock", label: "Verrouiller maintenant", hint: "Ctrl+Maj+L", icon: Lock, run: () => { lockNow().catch(() => {}); } }]
+      : []),
     ...pages.map((p) => ({ id: `page:${p.to}`, label: `Aller à ${p.label}`, hint: "page", icon: ArrowRight, run: () => navigate(p.to) })),
     ...servers.flatMap((s): PaletteItem[] => [
       {
@@ -98,7 +104,7 @@ export function CommandPalette({ pages }: { pages: { to: string; label: string }
       run: report(() => wakeGroup(g.id), `Wake-on-LAN envoyé au groupe ${g.name}`),
     })),
     { id: "help", label: "Afficher les raccourcis clavier", hint: "?", icon: Keyboard, run: () => setShortcutsHelpOpen(true) },
-  ], [pages, servers, groups]);
+  ], [pages, servers, groups, lockEnabled, lockNow]);
 
   const results = fuzzyFilter(items, query, (i) => `${i.label} ${i.hint}`, 10);
 

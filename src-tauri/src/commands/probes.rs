@@ -68,6 +68,7 @@ pub fn delete_probe(state: State<AppState>, probes: State<ProbeState>, db: State
 
 #[tauri::command]
 pub async fn run_probe_now(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<ProbeResult, String> {
+    crate::crypto::ensure_unlocked()?;
     let probe = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
         data.probes.iter().find(|p| p.id == id).cloned().ok_or("Sonde introuvable")?

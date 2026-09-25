@@ -166,6 +166,12 @@ fn jobs_for(schedule: &Schedule, data: &AppData) -> Vec<ServerJob> {
         .collect()
 }
 
+/// Verrouillée, un arrêt / redémarrage (mot de passe SSH requis) ne peut pas
+/// s'exécuter : la tâche est journalisée en échec. Un Wake-on-LAN, sans secret, part.
+pub fn blocked_by_lock(action: ScheduleAction, locked: bool) -> bool {
+    locked && action != ScheduleAction::Wake
+}
+
 /// Exécute une tâche sur toutes ses cibles et journalise chaque résultat.
 pub async fn run_schedule(app: &AppHandle, schedule: &Schedule) {
     let jobs = {
@@ -176,9 +182,11 @@ pub async fn run_schedule(app: &AppHandle, schedule: &Schedule) {
     let events = app.state::<EventLog>();
     let prefix = format!("Planifié ({})", schedule.name);
     log::info!("{} : {:?} sur {} serveur(s)", prefix, schedule.action, jobs.len());
+    let locked = crate::crypto::is_locked();
 
     for job in jobs {
         let outcome: Result<(), String> = match schedule.action {
+            action if blocked_by_lock(action, locked) => Err("application verrouillée".into()),
             ScheduleAction::Wake if job.mac.is_empty() => Err("adresse MAC non configurée".into()),
             ScheduleAction::Wake => send_magic_packet(&job.mac),
             ScheduleAction::Shutdown | ScheduleAction::Reboot => {
@@ -294,6 +302,14 @@ mod tests {
         s.enabled = false;
         assert!(!is_due(&s, at(23, 0, 10), None));
         assert!(!is_due(&schedule(vec![4], "25:00"), at(23, 0, 10), None));
+    }
+
+    #[test]
+    fn locked_app_blocks_shutdown_and_reboot_but_not_wake() {
+        assert!(blocked_by_lock(ScheduleAction::Shutdown, true));
+        assert!(blocked_by_lock(ScheduleAction::Reboot, true));
+        assert!(!blocked_by_lock(ScheduleAction::Wake, true));
+        assert!(!blocked_by_lock(ScheduleAction::Shutdown, false));
     }
 
     #[test]

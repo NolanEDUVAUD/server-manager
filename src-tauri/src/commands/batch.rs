@@ -79,6 +79,7 @@ pub fn run_batch(
     mode: BatchMode,
     stop_on_error: bool,
 ) -> Result<String, String> {
+    crate::crypto::ensure_unlocked()?;
     if script.trim().is_empty() || server_ids.is_empty() {
         return Err("Script et serveurs requis".into());
     }
@@ -95,6 +96,7 @@ pub fn run_batch(
 /// Réponse saisie pendant une exécution (ex. « N » à une question de dpkg)
 #[tauri::command]
 pub fn batch_send_input(inputs: State<BatchInputs>, run_id: String, server_id: String, text: String) -> Result<(), String> {
+    crate::crypto::ensure_unlocked()?;
     if text.len() > 4096 {
         return Err("Saisie trop longue".into());
     }
@@ -143,6 +145,7 @@ pub fn ansible_run(
     check: bool,
     limit: Option<String>,
 ) -> Result<String, String> {
+    crate::crypto::ensure_unlocked()?;
     let (t, dir) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         ansible_target(&data)?

@@ -111,6 +111,7 @@ Les raccourcis à une touche sont ignorés pendant la saisie dans un champ et da
 - Les secrets ne sont jamais renvoyés à l'interface (seulement « enregistré ») et ne sont déchiffrés qu'au moment de la connexion, puis effacés de la mémoire.
 - Les en-têtes d'authentification sont marqués sensibles et les redirections sont refusées pour les requêtes authentifiées. L'interface prévient si un secret passerait en HTTP ou sans vérification du certificat.
 - L'export JSON de la configuration ne contient aucun secret (à ressaisir après un import). Tags, dossiers, favoris et champs personnalisés y figurent : ce ne sont pas des secrets, l'interface le rappelle et avertit si un champ personnalisé ressemble à un mot de passe ou un jeton.
+- **Verrouillage** (optionnel, Paramètres → Sécurité) : PIN ou Windows Hello, verrouillage après inactivité ou avec la session Windows. Verrouillée, l'app efface la clé maître de la mémoire. Un **mot de passe maître** (Argon2id) peut chiffrer la clé dans le coffre : l'app démarre alors verrouillée et lui seul la déverrouille ; oublié, les secrets sont irrécupérables.
 - Clés d'hôte SSH vérifiées (mémorisées à la première connexion), commandes Tauri limitées à la fenêtre principale, CSP stricte.
 
 ## Développement

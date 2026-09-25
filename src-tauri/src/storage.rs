@@ -27,8 +27,9 @@ impl AppState {
         let data_path = data_dir.join("data.json");
         log::info!("Fichier de données : {:?}", data_path);
 
-        let mut data = load_app_data(&data_path);
-        migrate_to_master_key(&mut data, &data_path);
+        // La clé maître (coffre Windows, migration des anciens secrets, verrouillage
+        // au démarrage) est prise en charge ensuite par `lock::boot_app`
+        let data = load_app_data(&data_path);
 
         AppState {
             data: Mutex::new(data),
@@ -94,6 +95,7 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
             // Organisation
             tags: Vec::new(),
             folders: Vec::new(),
+            lock: crate::lock::LockConfig::default(),
         };
         // Sauvegarder immédiatement en format v2
         if let Ok(json) = serde_json::to_string_pretty(&data) {
@@ -105,19 +107,11 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
     crate::models::AppData::default()
 }
 
-/// Charge la clé maître et, si besoin, migre les secrets de l'ancienne clé dérivée
-/// (sel stocké à côté des données) vers la clé maître. data.json est sauvegardé
-/// avant toute modification ; en cas d'échec, les données restent en l'état.
-fn migrate_to_master_key(data: &mut crate::models::AppData, path: &std::path::Path) {
+/// Si besoin, migre les secrets de l'ancienne clé dérivée (sel stocké à côté des
+/// données) vers la clé maître lue dans le coffre. data.json est sauvegardé avant
+/// toute modification ; en cas d'échec, les données restent en l'état.
+pub(crate) fn migrate_to_master_key(data: &mut crate::models::AppData, path: &std::path::Path, master: &[u8; 32]) {
     use crate::crypto;
-    let master = match crate::keystore::load_or_create_master_key() {
-        Ok(k) => k,
-        Err(e) => {
-            log::warn!("{} — les secrets restent protégés par l'ancienne clé", e);
-            return;
-        }
-    };
-    crypto::set_master_key(master);
     if data.key_version >= crypto::KEY_VERSION_MASTER {
         return;
     }
@@ -130,14 +124,14 @@ fn migrate_to_master_key(data: &mut crate::models::AppData, path: &std::path::Pa
         }
     }
     let legacy = crypto::derive_key(&data.encryption_salt);
-    match crypto::reencrypt_all(data, &legacy, &master) {
+    match crypto::reencrypt_all(data, &legacy, master) {
         Ok(()) => {
             data.key_version = crypto::KEY_VERSION_MASTER;
             match serde_json::to_string_pretty(&*data).map(|json| std::fs::write(path, json)) {
                 Ok(Ok(())) => {
                     // La sauvegarde contient les secrets sous l'ancienne clé (déchiffrables avec le
                     // seul data.json) : on la supprime dès que le fichier migré est relu et vérifié.
-                    if verify_migrated(path, &master) {
+                    if verify_migrated(path, master) {
                         let _ = std::fs::remove_file(&backup);
                         log::info!("Secrets migrés vers la clé maître et vérifiés");
                     } else {

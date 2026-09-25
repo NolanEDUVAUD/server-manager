@@ -507,6 +507,30 @@
           "markdownDescription": "Enables the lab_power_plan command without any pre-configured scope."
         },
         {
+          "description": "Enables the lock_activity command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lock-activity",
+          "markdownDescription": "Enables the lock_activity command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lock_configure command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lock-configure",
+          "markdownDescription": "Enables the lock_configure command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lock_now command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lock-now",
+          "markdownDescription": "Enables the lock_now command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lock_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lock-status",
+          "markdownDescription": "Enables the lock_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the loki_hosts command without any pre-configured scope.",
           "type": "string",
           "const": "allow-loki-hosts",
@@ -523,6 +547,24 @@
           "type": "string",
           "const": "allow-loki-units",
           "markdownDescription": "Enables the loki_units command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the master_password_change command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-master-password-change",
+          "markdownDescription": "Enables the master_password_change command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the master_password_enable command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-master-password-enable",
+          "markdownDescription": "Enables the master_password_enable command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the master_password_remove command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-master-password-remove",
+          "markdownDescription": "Enables the master_password_remove command without any pre-configured scope."
         },
         {
           "description": "Enables the network_scan command without any pre-configured scope.",
@@ -829,6 +871,24 @@
           "type": "string",
           "const": "allow-toggle-server-in-group",
           "markdownDescription": "Enables the toggle_server_in_group command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the unlock_with_hello command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-unlock-with-hello",
+          "markdownDescription": "Enables the unlock_with_hello command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the unlock_with_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-unlock-with-password",
+          "markdownDescription": "Enables the unlock_with_password command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the unlock_with_pin command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-unlock-with-pin",
+          "markdownDescription": "Enables the unlock_with_pin command without any pre-configured scope."
         },
         {
           "description": "Enables the update_group command without any pre-configured scope.",
@@ -1209,6 +1269,30 @@
           "markdownDescription": "Denies the lab_power_plan command without any pre-configured scope."
         },
         {
+          "description": "Denies the lock_activity command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lock-activity",
+          "markdownDescription": "Denies the lock_activity command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lock_configure command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lock-configure",
+          "markdownDescription": "Denies the lock_configure command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lock_now command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lock-now",
+          "markdownDescription": "Denies the lock_now command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lock_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lock-status",
+          "markdownDescription": "Denies the lock_status command without any pre-configured scope."
+        },
+        {
           "description": "Denies the loki_hosts command without any pre-configured scope.",
           "type": "string",
           "const": "deny-loki-hosts",
@@ -1225,6 +1309,24 @@
           "type": "string",
           "const": "deny-loki-units",
           "markdownDescription": "Denies the loki_units command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the master_password_change command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-master-password-change",
+          "markdownDescription": "Denies the master_password_change command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the master_password_enable command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-master-password-enable",
+          "markdownDescription": "Denies the master_password_enable command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the master_password_remove command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-master-password-remove",
+          "markdownDescription": "Denies the master_password_remove command without any pre-configured scope."
         },
         {
           "description": "Denies the network_scan command without any pre-configured scope.",
@@ -1531,6 +1633,24 @@
           "type": "string",
           "const": "deny-toggle-server-in-group",
           "markdownDescription": "Denies the toggle_server_in_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the unlock_with_hello command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-unlock-with-hello",
+          "markdownDescription": "Denies the unlock_with_hello command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the unlock_with_password command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-unlock-with-password",
+          "markdownDescription": "Denies the unlock_with_password command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the unlock_with_pin command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-unlock-with-pin",
+          "markdownDescription": "Denies the unlock_with_pin command without any pre-configured scope."
         },
         {
           "description": "Denies the update_group command without any pre-configured scope.",

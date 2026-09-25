@@ -425,6 +425,11 @@ pub struct AppData {
     /// Dossiers d'affichage (un niveau), partagés par les serveurs et les services
     #[serde(default)]
     pub folders: Vec<crate::organisation::Folder>,
+    // ── Verrouillage de l'application (1.3) ──────────────────────────────
+    /// Méthode, hash du PIN et délais : hors d'`AppSettings`, jamais renvoyé tel
+    /// quel au frontend (vue `lock::LockStatus`) ni exporté
+    #[serde(default)]
+    pub lock: crate::lock::LockConfig,
 }
 
 fn legacy_key_version() -> u8 {
@@ -451,6 +456,7 @@ impl Default for AppData {
             // Organisation
             tags: Vec::new(),
             folders: Vec::new(),
+            lock: crate::lock::LockConfig::default(),
         }
     }
 }

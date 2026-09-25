@@ -283,7 +283,18 @@ pub fn send_push(app: &AppHandle, title: String, message: String, critical: bool
     let channels: Vec<_> = {
         let state = app.state::<AppState>();
         let Ok(data) = state.data.lock() else { return };
-        notify::PUSH_KINDS.iter().filter_map(|k| resolve(&data, *k).ok()).collect()
+        notify::PUSH_KINDS
+            .iter()
+            .filter_map(|k| match resolve(&data, *k) {
+                Ok(channel) => Some(channel),
+                // Verrouillée : le secret du canal (jeton, webhook) n'est pas déchiffrable
+                Err(e) if e == crate::crypto::LOCKED_MESSAGE => {
+                    log::info!("Notification {:?} non envoyée : application verrouillée", k);
+                    None
+                }
+                Err(_) => None,
+            })
+            .collect()
     };
     tauri::async_runtime::spawn(async move {
         for channel in channels {

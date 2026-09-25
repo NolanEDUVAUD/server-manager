@@ -67,12 +67,27 @@ x509-parser = "0.16"
 
 # Base locale de l'historique (SQLite compilé dans le binaire, sans DLL)
 rusqlite = { version = "0.40", default-features = false, features = ["bundled", "cache"] }
+# Verrouillage de l'application : Argon2id (RustCrypto, même génération que
+# aes-gcm 0.10 / sha2 0.10) pour le mot de passe maître et le hash du PIN
+argon2 = { version = "0.5", features = ["std", "zeroize"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
+# Windows Hello (UserConsentVerifier) et état de la session (WTS) : même version
+# que celle déjà tirée par Tauri, pour ne pas compiler deux fois la crate
+windows = { version = "0.61", features = ["Foundation", "Security_Credentials_UI", "Win32_Foundation", "Win32_System_RemoteDesktop", "Win32_System_WinRT"] }
+windows-future = "0.2"
 
 [dev-dependencies]
 wiremock = "0.6"
+
+# Argon2id (64 Mio) est très lent sans optimisation : tests et `tauri dev`
+# restent réactifs en optimisant ces deux crates même en profil dev
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
 
 [profile.release]
 opt-level = 3

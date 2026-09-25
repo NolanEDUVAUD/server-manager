@@ -58,6 +58,7 @@ fn check_import_size(len: usize) -> Result<(), String> {
 // ── Exporter la configuration en JSON (sans mots de passe) ────────────────
 #[tauri::command]
 pub fn export_config(state: State<AppState>) -> Result<String, String> {
+    crate::crypto::ensure_unlocked()?;
     let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
     let export_data = export_without_secrets(&data);
     serde_json::to_string_pretty(&export_data).map_err(|e| format!("Erreur de sérialisation: {}", e))
@@ -69,6 +70,10 @@ fn export_without_secrets(data: &AppData) -> AppData {
     // Copie sans aucun secret : mots de passe SSH, jetons Proxmox, secrets des
     // intégrations et des sondes (même chiffrés, ils ne quittent pas cette machine)
     let mut export_data = data.clone();
+    // Verrouillage (hash du PIN, méthode) : propre à cette machine, jamais exporté
+    export_data.lock = crate::lock::LockConfig::default();
+    // Verrouillage (hash du PIN, méthode) : propre à cette machine, jamais exporté
+    export_data.lock = crate::lock::LockConfig::default();
     for server in export_data.servers.iter_mut() {
         server.ssh_password = String::new();
     }
@@ -212,6 +217,7 @@ pub async fn export_full_config(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::storage::AppState>,
 ) -> Result<String, String> {
+    crate::crypto::ensure_unlocked()?;
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let exported_at = Utc::now().to_rfc3339();
     let default_filename = format!("spm-config-{}.json", &exported_at[..10]);
@@ -418,6 +424,23 @@ mod tests {
             "servers": [{"id":"1","name":"srv","ip":"1.1.1.1","mac_address":"AA:BB:CC:DD:EE:FF","ssh_user":"root","ssh_password":"","ssh_port":22,"shutdown_command":"poweroff","reboot_command":"reboot","os_type":"Linux","icon":null,"notes":null}],
             "groups": []
         }"#
+    }
+
+    #[test]
+    fn export_never_contains_the_lock_configuration() {
+        let data = AppData {
+            lock: crate::lock::LockConfig {
+                method: crate::lock::LockMethod::Pin,
+                pin_hash: "$argon2id$v=19$m=64,t=1,p=1$c2VsLWZhY3RpY2U$aGFzaC1mYWN0aWNl".into(),
+                idle_minutes: 5,
+                lock_on_session_lock: true,
+            },
+            ..AppData::default()
+        };
+        let json = serde_json::to_string(&export_without_secrets(&data)).unwrap();
+        assert!(!json.contains("argon2id"), "hash du PIN exporté");
+        let back: AppData = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.lock, crate::lock::LockConfig::default());
     }
 
     #[test]

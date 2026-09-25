@@ -24,7 +24,8 @@ describe("aide des raccourcis clavier", () => {
       const shown = [...row.querySelectorAll("kbd")].map((k) => k.textContent);
       expect(shown).toEqual(shortcutKeys(s).flat());
     }
-    expect(within(dialog).getByText("Ctrl")).toBeTruthy();
+    expect(within(dialog).getAllByText("Ctrl").length).toBeGreaterThan(0);
+    expect(within(dialog).getByText("Maj")).toBeTruthy();
   });
 
   it("se ferme avec Échap, et « ? » est ignoré pendant la saisie", () => {

@@ -28,6 +28,7 @@ pub async fn terminal_open(
     rows: u32,
     on_event: OutputChannel,
 ) -> Result<String, String> {
+    crate::crypto::ensure_unlocked()?;
     let (cols, rows) = validate_size(cols, rows)?;
     let (ip, port, user, password, timeout) = {
         let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
@@ -124,6 +125,7 @@ pub async fn terminal_write(
     session_id: String,
     data: String,
 ) -> Result<(), String> {
+    crate::crypto::ensure_unlocked()?;
     terminals.send(&session_id, TerminalInput::Data(data.into_bytes()))
 }
 
@@ -134,6 +136,7 @@ pub async fn terminal_resize(
     cols: u32,
     rows: u32,
 ) -> Result<(), String> {
+    crate::crypto::ensure_unlocked()?;
     let (cols, rows) = validate_size(cols, rows)?;
     terminals.send(&session_id, TerminalInput::Resize { cols, rows })
 }

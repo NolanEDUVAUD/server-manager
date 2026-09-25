@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { LockGate } from "./components/LockGate";
 import { Dashboard } from "./pages/Dashboard";
 import { Servers } from "./pages/Servers";
 import { Groups } from "./pages/Groups";
@@ -91,7 +92,10 @@ function AppContent() {
 export default function App() {
   return (
     <HashRouter>
-      <AppContent />
+      {/* Verrouillée, l'application n'est pas montée : seul l'écran de verrouillage l'est */}
+      <LockGate>
+        <AppContent />
+      </LockGate>
     </HashRouter>
   );
 }

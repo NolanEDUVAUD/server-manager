@@ -14,6 +14,7 @@ pub async fn wake_on_lan(
     events: State<'_, EventLog>,
     server_id: String,
 ) -> Result<String, String> {
+    crate::crypto::ensure_unlocked()?;
     let (mac, _ip, name) = {
         let data = state
             .data
@@ -55,6 +56,7 @@ pub async fn wake_group(
 
 /// Réveil d'un groupe, utilisable aussi depuis l'icône de zone de notification
 pub(crate) fn wake_group_inner(state: &AppState, events: &EventLog, group_id: &str) -> Result<Vec<String>, String> {
+    crate::crypto::ensure_unlocked()?;
     let servers_to_wake = {
         let data = state
             .data

@@ -152,7 +152,13 @@ pub fn resolve(data: &AppData, kind: IntegrationKind) -> Result<Resolved, String
         .filter(|i| i.enabled && (!i.url.is_empty() || !needs_url(kind)))
         .cloned()
         .ok_or_else(|| format!("Intégration {:?} non configurée ou désactivée (Paramètres → Intégrations)", kind))?;
-    let secret = crypto::decrypt(&config.secret, &crypto::data_key(data)?)?;
+    // Sans secret, pas besoin de la clé : un canal ntfy sans jeton reste utilisable
+    // pendant le verrouillage de l'app
+    let secret = if config.secret.is_empty() {
+        String::new()
+    } else {
+        crypto::decrypt(&config.secret, &*crypto::data_key(data)?)?
+    };
     Ok(Resolved { config, secret })
 }
 
@@ -226,6 +232,22 @@ mod tests {
         let view = IntegrationView::from(&list[0]);
         assert!(view.has_secret);
         assert!(!serde_json::to_string(&view).unwrap().contains(&list[0].secret));
+    }
+
+    #[test]
+    fn locked_app_resolves_only_channels_without_secret() {
+        // Coffre propre à ce thread de test (voir crypto::vault)
+        crypto::set_master_key(crypto::generate_key());
+        let mut data = AppData { key_version: crypto::KEY_VERSION_MASTER, ..AppData::default() };
+        let key = crypto::data_key(&data).unwrap();
+        apply_payload(&mut data.integrations, payload(Some("tok")), &key).unwrap();
+        assert_eq!(resolve(&data, IntegrationKind::Zabbix).unwrap().secret, "tok");
+
+        crypto::vault().lock();
+        assert_eq!(resolve(&data, IntegrationKind::Zabbix).err().as_deref(), Some(crypto::LOCKED_MESSAGE));
+        apply_payload(&mut data.integrations, payload(Some("")), &key).unwrap();
+        assert_eq!(resolve(&data, IntegrationKind::Zabbix).unwrap().secret, "");
+        crypto::vault().unlock(None);
     }
 
     #[test]

@@ -625,3 +625,32 @@ export interface AppUpdateProgress {
   downloaded: number;
   total: number | null;
 }
+
+// ─── Verrouillage de l'application (1.3) ────────────────────────────────────
+
+/** Windows Hello s'utilise toujours avec un PIN de secours */
+export type LockMethod = "None" | "Pin" | "Hello";
+
+/** Vue du verrouillage renvoyée par le backend : jamais de hash ni de secret */
+export interface LockStatus {
+  /** Au moins un moyen de déverrouiller : le verrouillage est actif */
+  enabled: boolean;
+  locked: boolean;
+  method: LockMethod;
+  has_pin: boolean;
+  master_password: boolean;
+  /** 0 = jamais */
+  idle_minutes: number;
+  lock_on_session_lock: boolean;
+  hello_available: boolean;
+  /** Détection du verrouillage de la session Windows (Windows uniquement) */
+  session_detection: boolean;
+  /** Attente imposée avant le prochain essai (ms) */
+  retry_after_ms: number;
+}
+
+export interface LockConfigPayload {
+  method: LockMethod;
+  idle_minutes: number;
+  lock_on_session_lock: boolean;
+}

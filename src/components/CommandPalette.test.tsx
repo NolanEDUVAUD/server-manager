@@ -3,7 +3,8 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { CommandPalette } from "./CommandPalette";
 import { useStore } from "../stores/useStore";
-import { Server } from "../types";
+import { useLockStore } from "../stores/useLockStore";
+import { LockStatus, Server } from "../types";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn().mockResolvedValue(undefined) }));
 
@@ -133,6 +134,24 @@ describe("CommandPalette", () => {
     expect(useStore.getState().wakeGroup).not.toHaveBeenCalled();
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Réveiller" })); });
     expect(useStore.getState().wakeGroup).toHaveBeenCalledWith("g");
+  });
+
+  it("propose « Verrouiller maintenant » seulement si un verrouillage est configuré", () => {
+    const lockNow = vi.fn().mockResolvedValue(undefined);
+    useLockStore.setState({ status: null, lockNow });
+    const { unmount } = renderPalette();
+    openPalette();
+    fireEvent.change(screen.getByLabelText("Recherche de commande"), { target: { value: "verrouiller" } });
+    expect(screen.queryByText("Verrouiller maintenant")).toBeNull();
+    unmount();
+
+    useLockStore.setState({ status: { enabled: true, locked: false } as LockStatus });
+    renderPalette();
+    openPalette();
+    const input = screen.getByLabelText("Recherche de commande");
+    fireEvent.change(input, { target: { value: "verrouiller" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(lockNow).toHaveBeenCalled();
   });
 
   it("ouvre l'aide des raccourcis clavier", () => {
