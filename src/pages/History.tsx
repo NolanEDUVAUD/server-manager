@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
-  WifiOff, Wifi, Zap, Power, RotateCcw, Boxes, AlertTriangle, History as HistoryIcon, Trash2,
+  WifiOff, Wifi, Zap, Power, RotateCcw, Boxes, AlertTriangle, History as HistoryIcon, Trash2, Container,
 } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { AppEvent, EventKind, ServerEventStats, OS_ICONS } from "../types";
@@ -15,6 +15,7 @@ const KIND_META: Record<EventKind, { label: string; icon: typeof Wifi; color: st
   Shutdown: { label: "Arrêt", icon: Power, color: "text-red-400" },
   Reboot: { label: "Redémarrage", icon: RotateCcw, color: "text-accent-info" },
   VmAction: { label: "Action VM", icon: Boxes, color: "text-accent-primary" },
+  Container: { label: "Docker", icon: Container, color: "text-accent-info" },
   Failure: { label: "Échec", icon: AlertTriangle, color: "text-accent-warning" },
 };
 

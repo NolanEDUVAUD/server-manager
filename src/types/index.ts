@@ -247,7 +247,7 @@ export interface TerminalSession {
 
 // ─── Historique des événements ──────────────────────────────────────────────
 
-export type EventKind = "Offline" | "Online" | "Wake" | "Shutdown" | "Reboot" | "VmAction" | "Failure";
+export type EventKind = "Offline" | "Online" | "Wake" | "Shutdown" | "Reboot" | "VmAction" | "Container" | "Failure";
 
 export interface AppEvent {
   id: string;
@@ -281,4 +281,23 @@ export interface Schedule {
   /** « HH:MM », heure locale */
   time: string;
   last_run: number | null;
+}
+
+// ─── Docker ─────────────────────────────────────────────────────────────────
+
+export interface DockerContainer {
+  id: string;
+  name: string;
+  image: string;
+  state: string;
+  status: string;
+  ports: string;
+  cpu_percent: number | null;
+  mem_percent: number | null;
+  mem_usage: string | null;
+}
+
+export interface DockerHost {
+  available: boolean;
+  containers: DockerContainer[];
 }

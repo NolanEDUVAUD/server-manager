@@ -17,6 +17,7 @@ pub enum EventKind {
     Shutdown,
     Reboot,
     VmAction,
+    Container,
     Failure,
 }
 

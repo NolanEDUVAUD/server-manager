@@ -9,6 +9,7 @@ import { Dashboards } from "./pages/Dashboards";
 import { Resources } from "./pages/Resources";
 import { History } from "./pages/History";
 import { Scheduler } from "./pages/Scheduler";
+import { Docker } from "./pages/Docker";
 import { Settings } from "./pages/Settings";
 import { useStore } from "./stores/useStore";
 import { usePing } from "./hooks/usePing";
@@ -52,6 +53,7 @@ function AppContent() {
         <Route path="/resources" element={<Resources />} />
         <Route path="/history" element={<History />} />
         <Route path="/scheduler" element={<Scheduler />} />
+        <Route path="/docker" element={<Docker />} />
         {/* Rendue en permanence par Layout, la route sert juste à l'activer */}
         <Route path="/console" element={null} />
         <Route path="/proxmox" element={<Proxmox />} />

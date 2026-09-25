@@ -1,4 +1,5 @@
 pub mod dashboards;
+pub mod docker;
 pub mod events;
 pub mod groups;
 pub mod metrics;

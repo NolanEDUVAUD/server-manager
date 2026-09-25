@@ -1,6 +1,7 @@
 mod commands;
 mod crypto;
 mod dashboard_state;
+mod docker;
 mod events;
 mod metrics;
 mod models;
@@ -9,7 +10,7 @@ mod scheduler;
 mod storage;
 mod terminal;
 
-use commands::{dashboards, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{dashboards, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -97,6 +98,10 @@ pub fn run() {
             schedules::save_schedule,
             schedules::delete_schedule,
             schedules::run_schedule_now,
+            // ── Docker ────────────────────────────────────────
+            docker_cmd::docker_list,
+            docker_cmd::docker_action,
+            docker_cmd::docker_logs,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,
