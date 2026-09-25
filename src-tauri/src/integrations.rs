@@ -156,6 +156,24 @@ pub fn resolve(data: &AppData, kind: IntegrationKind) -> Result<Resolved, String
     Ok(Resolved { config, secret })
 }
 
+/// Message d'erreur HTTP lisible : la cause racine plutôt que « error sending request »
+pub fn describe_http_error(e: &reqwest::Error) -> String {
+    if e.is_timeout() {
+        return "délai dépassé".into();
+    }
+    // Cause la plus profonde (ex. « Une connexion ... a été refusée » de l'OS)
+    let mut root: &dyn std::error::Error = e;
+    while let Some(next) = root.source() {
+        root = next;
+    }
+    let cause = root.to_string();
+    if e.is_connect() {
+        format!("connexion impossible ({})", cause)
+    } else {
+        cause
+    }
+}
+
 pub fn http_client(verify_tls: bool, timeout_secs: u64) -> Result<reqwest::Client, String> {
     reqwest::Client::builder()
         .danger_accept_invalid_certs(!verify_tls)

@@ -26,7 +26,7 @@ pub async fn check(kind: IntegrationKind, r: &Resolved) -> Result<String, String
                     .json(&json!({"jsonrpc": "2.0", "method": "apiinfo.version", "params": [], "id": 1}))
                     .send()
                     .await
-                    .map_err(|e| format!("Injoignable : {}", e))?,
+                    .map_err(|e| format!("Injoignable : {}", crate::integrations::describe_http_error(&e)))?,
             )
             .await?;
             let auth = json_ok(
@@ -48,7 +48,7 @@ pub async fn check(kind: IntegrationKind, r: &Resolved) -> Result<String, String
             if !c.username.is_empty() {
                 req = req.basic_auth(&c.username, Some(&r.secret));
             }
-            let resp = req.send().await.map_err(|e| format!("Injoignable : {}", e))?;
+            let resp = req.send().await.map_err(|e| format!("Injoignable : {}", crate::integrations::describe_http_error(&e)))?;
             let status = resp.status().as_u16();
             let text = resp.text().await.unwrap_or_default();
             if status == 200 { Ok("Loki prêt".into()) } else { Err(format!("HTTP {} — {}", status, text.trim())) }
@@ -59,7 +59,7 @@ pub async fn check(kind: IntegrationKind, r: &Resolved) -> Result<String, String
                     .json(&json!({"identity": c.username, "secret": r.secret}))
                     .send()
                     .await
-                    .map_err(|e| format!("Injoignable : {}", e))?,
+                    .map_err(|e| format!("Injoignable : {}", crate::integrations::describe_http_error(&e)))?,
             )
             .await?;
             body.get("token").map(|_| "Connexion à Nginx Proxy Manager réussie".to_string()).ok_or("Identifiants refusés".into())
@@ -70,7 +70,7 @@ pub async fn check(kind: IntegrationKind, r: &Resolved) -> Result<String, String
                     .bearer_auth(&r.secret)
                     .send()
                     .await
-                    .map_err(|e| format!("Injoignable : {}", e))?,
+                    .map_err(|e| format!("Injoignable : {}", crate::integrations::describe_http_error(&e)))?,
             )
             .await?;
             Ok(format!("TrueNAS {} ({})", info["version"].as_str().unwrap_or("?"), info["hostname"].as_str().unwrap_or("?")))
@@ -81,7 +81,7 @@ pub async fn check(kind: IntegrationKind, r: &Resolved) -> Result<String, String
                     .bearer_auth(&r.secret)
                     .send()
                     .await
-                    .map_err(|e| format!("Injoignable : {}", e))?,
+                    .map_err(|e| format!("Injoignable : {}", crate::integrations::describe_http_error(&e)))?,
             )
             .await?;
             Ok(body["message"].as_str().unwrap_or("Home Assistant joignable").to_string())
@@ -92,7 +92,7 @@ pub async fn check(kind: IntegrationKind, r: &Resolved) -> Result<String, String
                     .basic_auth(&c.username, Some(&r.secret))
                     .send()
                     .await
-                    .map_err(|e| format!("Injoignable : {}", e))?,
+                    .map_err(|e| format!("Injoignable : {}", crate::integrations::describe_http_error(&e)))?,
             )
             .await?;
             Ok(format!("OPNsense {}", body["product_version"].as_str().or(body["product"]["product_version"].as_str()).unwrap_or("joignable")))
@@ -103,7 +103,7 @@ pub async fn check(kind: IntegrationKind, r: &Resolved) -> Result<String, String
                     .basic_auth(&c.username, Some(&r.secret))
                     .send()
                     .await
-                    .map_err(|e| format!("Injoignable : {}", e))?,
+                    .map_err(|e| format!("Injoignable : {}", crate::integrations::describe_http_error(&e)))?,
             )
             .await?;
             Ok(format!("RouterOS {} ({})", body["version"].as_str().unwrap_or("?"), body["board-name"].as_str().unwrap_or("?")))
@@ -114,7 +114,7 @@ pub async fn check(kind: IntegrationKind, r: &Resolved) -> Result<String, String
                     .header("Authorization", format!("PBSAPIToken={}:{}", c.username, r.secret))
                     .send()
                     .await
-                    .map_err(|e| format!("Injoignable : {}", e))?,
+                    .map_err(|e| format!("Injoignable : {}", crate::integrations::describe_http_error(&e)))?,
             )
             .await?;
             Ok(format!("Proxmox Backup Server {}", body["data"]["version"].as_str().unwrap_or("?")))

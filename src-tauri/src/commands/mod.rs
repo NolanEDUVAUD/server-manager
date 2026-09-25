@@ -6,6 +6,7 @@ pub mod groups;
 pub mod integrations;
 pub mod metrics;
 pub mod ping;
+pub mod probes;
 pub mod schedules;
 pub mod proxmox;
 pub mod servers;

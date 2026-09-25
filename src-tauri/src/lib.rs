@@ -13,13 +13,14 @@ mod metrics;
 mod monitor;
 mod notify;
 mod models;
+mod probes;
 mod proxmox;
 mod scheduler;
 mod storage;
 mod terminal;
 mod tray;
 
-use commands::{alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -40,10 +41,12 @@ pub fn run() {
             app.manage(terminal::TerminalState::default());
             app.manage(events::EventLog::load(app.handle()));
             app.manage(alerts::AlertEngine::new(app.handle()));
+            app.manage(probes::ProbeState::default());
             // Boucle du planificateur (tâches WoL / arrêt programmées)
             scheduler::start(app.handle().clone());
             // Surveillance continue (ping + métriques), indépendante de la fenêtre
             monitor::start(app.handle().clone());
+            probes::start(app.handle().clone());
             // Icône de zone de notification ; la fenêtre, créée masquée, n'est
             // affichée que si l'utilisateur n'a pas demandé un démarrage minimisé
             tray::create(app.handle())?;
@@ -161,6 +164,12 @@ pub fn run() {
             alerts_cmd::save_alert_rule,
             alerts_cmd::delete_alert_rule,
             alerts_cmd::test_alert_channels,
+            // ── Sondes ──────────────────────────────────────────
+            probes_cmd::get_probes,
+            probes_cmd::get_probe_results,
+            probes_cmd::save_probe,
+            probes_cmd::delete_probe,
+            probes_cmd::run_probe_now,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,

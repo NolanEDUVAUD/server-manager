@@ -83,6 +83,11 @@
     "allow-get-alert-rules",
     "allow-save-alert-rule",
     "allow-delete-alert-rule",
-    "allow-test-alert-channels"
+    "allow-test-alert-channels",
+    "allow-get-probes",
+    "allow-get-probe-results",
+    "allow-save-probe",
+    "allow-delete-probe",
+    "allow-run-probe-now"
   ]
 }

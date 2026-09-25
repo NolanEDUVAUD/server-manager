@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-probes"
+description = "Enables the get_probes command without any pre-configured scope."
+commands.allow = ["get_probes"]
+
+[[permission]]
+identifier = "deny-get-probes"
+description = "Denies the get_probes command without any pre-configured scope."
+commands.deny = ["get_probes"]

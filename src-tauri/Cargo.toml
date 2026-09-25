@@ -58,6 +58,8 @@ chrono = { version = "0.4", features = ["serde"] }
 # Client HTTP pour l'intégration Proxmox VE
 reqwest = { version = "0.12", features = ["json"] }
 keyring = { version = "3", features = ["windows-native"] }
+tokio-native-tls = "0.3"
+x509-parser = "0.16"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

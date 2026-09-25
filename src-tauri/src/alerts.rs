@@ -69,6 +69,7 @@ pub fn default_rules() -> Vec<AlertRule> {
         rule("Disque presque plein", Condition::DiskAbove { percent: 90.0 }),
         rule("Surchauffe CPU", Condition::TempAbove { celsius: 85.0, minutes: 2 }),
         rule("Action échouée", Condition::ActionFailed),
+        rule("Service injoignable", Condition::ProbeDown { minutes: 2 }),
     ]
 }
 

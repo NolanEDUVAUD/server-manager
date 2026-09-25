@@ -362,3 +362,30 @@ export interface AlertRule {
   notify_push: boolean;
   cooldown_minutes: number;
 }
+
+// ─── Sondes de services ─────────────────────────────────────────────────────
+
+export type ProbeKind =
+  | { type: "Http"; url: string; expect_status: number | null; keyword: string | null }
+  | { type: "Tcp"; host: string; port: number }
+  | { type: "TlsExpiry"; host: string; port: number; warn_days: number };
+
+export interface Probe {
+  id: string;
+  name: string;
+  enabled: boolean;
+  kind: ProbeKind;
+  server_id: string | null;
+  interval_secs: number;
+  verify_tls: boolean;
+}
+
+export interface ProbeResult {
+  probe_id: string;
+  ok: boolean;
+  latency_ms: number | null;
+  detail: string;
+  checked_at: number;
+  cert_days_left: number | null;
+  uptime_percent: number;
+}
