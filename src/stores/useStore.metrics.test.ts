@@ -12,6 +12,8 @@ const metrics: ServerMetrics = {
   uptime_secs: 60,
   load_avg: [0.1, 0.2, 0.3],
   disks: [],
+  temperatures: [],
+  cpu_temp_celsius: null,
 };
 
 describe("metrics store", () => {

@@ -204,6 +204,12 @@ export interface DiskUsage {
   used_bytes: number;
 }
 
+export interface TempSensor {
+  chip: string;
+  label: string;
+  celsius: number;
+}
+
 export interface ServerMetrics {
   cpu_percent: number;
   mem_total_bytes: number;
@@ -211,6 +217,8 @@ export interface ServerMetrics {
   uptime_secs: number;
   load_avg: [number, number, number];
   disks: DiskUsage[];
+  temperatures: TempSensor[];
+  cpu_temp_celsius: number | null;
 }
 
 /** Point d'historique en mémoire (CPU et RAM en %) */

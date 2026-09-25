@@ -41,7 +41,10 @@ pub async fn get_server_metrics(
         .await
         .and_then(|result| parse_metrics(&result.output));
     match &metrics {
-        Ok(m) => log::debug!("Métriques {} : CPU {:.1} %, {} disque(s)", ip, m.cpu_percent, m.disks.len()),
+        Ok(m) => log::debug!(
+            "Métriques {} : CPU {:.1} %, {} disque(s), {} sonde(s), CPU {:?} °C",
+            ip, m.cpu_percent, m.disks.len(), m.temperatures.len(), m.cpu_temp_celsius
+        ),
         Err(e) => log::warn!("Collecte des métriques échouée pour {} : {}", ip, e),
     }
     metrics

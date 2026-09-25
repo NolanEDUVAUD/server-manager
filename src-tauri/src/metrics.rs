@@ -11,6 +11,13 @@ pub struct DiskUsage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TempSensor {
+    pub chip: String,
+    pub label: String,
+    pub celsius: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ServerMetrics {
     pub cpu_percent: f64,
     pub mem_total_bytes: u64,
@@ -18,6 +25,9 @@ pub struct ServerMetrics {
     pub uptime_secs: u64,
     pub load_avg: [f64; 3],
     pub disks: Vec<DiskUsage>,
+    pub temperatures: Vec<TempSensor>,
+    /// Sonde la plus chaude du processeur (coretemp / k10temp…), si le serveur en expose une
+    pub cpu_temp_celsius: Option<f64>,
 }
 
 /// Commande unique exécutée par SSH à chaque collecte. Les deux lectures de
@@ -26,7 +36,10 @@ pub struct ServerMetrics {
 /// (montage réseau injoignable…) ne doit pas faire échouer toute la collecte.
 pub const METRICS_COMMAND: &str = "export LC_ALL=C; head -1 /proc/stat; sleep 1; head -1 /proc/stat; \
 echo '--MEM--'; cat /proc/meminfo; echo '--UP--'; cat /proc/uptime; \
-echo '--LOAD--'; cat /proc/loadavg; echo '--DF--'; df -P -k -T 2>/dev/null; true";
+echo '--LOAD--'; cat /proc/loadavg; echo '--DF--'; df -P -k -T 2>/dev/null; echo '--TEMP--'; for f in /sys/class/hwmon/hwmon*/temp*_input; do [ -r \"$f\" ] || continue; d=${f%/*}; echo \"$(cat $d/name 2>/dev/null)|$(cat ${f%_input}_label 2>/dev/null)|$(cat $f 2>/dev/null)\"; done; true";
+
+/// Puces de température du processeur (Intel, AMD, Raspberry Pi…)
+const CPU_TEMP_CHIPS: &[&str] = &["coretemp", "k10temp", "zenpower", "cpu_thermal"];
 
 /// Systèmes de fichiers « réels » affichés ; tout le reste (tmpfs, overlay,
 /// vfat de l'EFI, squashfs des snaps…) est ignoré.
@@ -38,9 +51,55 @@ pub fn parse_metrics(output: &str) -> Result<ServerMetrics, String> {
     let (mem_total_bytes, mem_used_bytes) = parse_mem(section(output, Some("--MEM--"), "--UP--")?)?;
     let uptime_secs = parse_uptime(section(output, Some("--UP--"), "--LOAD--")?)?;
     let load_avg = parse_load(section(output, Some("--LOAD--"), "--DF--")?)?;
-    let disks = parse_df(section(output, Some("--DF--"), "")?);
+    // La section des températures est absente sur les anciennes sorties : elle est facultative
+    let tail = section(output, Some("--DF--"), "")?;
+    let (df_text, temp_text) = tail.split_once("--TEMP--").unwrap_or((tail, ""));
+    let disks = parse_df(df_text);
+    let temperatures = parse_temps(temp_text);
+    let cpu_temp_celsius = cpu_temperature(&temperatures);
 
-    Ok(ServerMetrics { cpu_percent, mem_total_bytes, mem_used_bytes, uptime_secs, load_avg, disks })
+    Ok(ServerMetrics {
+        cpu_percent,
+        mem_total_bytes,
+        mem_used_bytes,
+        uptime_secs,
+        load_avg,
+        disks,
+        temperatures,
+        cpu_temp_celsius,
+    })
+}
+
+/// Lignes `puce|libellé|millidegrés` produites par la boucle sur /sys/class/hwmon.
+fn parse_temps(text: &str) -> Vec<TempSensor> {
+    text.lines()
+        .filter_map(|line| {
+            let mut parts = line.trim().splitn(3, '|');
+            let chip = parts.next()?.trim();
+            let label = parts.next()?.trim();
+            let milli: f64 = parts.next()?.trim().parse().ok()?;
+            let celsius = milli / 1000.0;
+            // 0 °C ou valeurs aberrantes : capteur non câblé. Aucun composant ne survit
+            // à 125 °C (arrêt thermique vers 100-105 °C) ; dell_smm renvoie par exemple
+            // 126 °C pour une sonde absente
+            if chip.is_empty() || celsius <= 0.0 || celsius >= 125.0 {
+                return None;
+            }
+            Some(TempSensor {
+                chip: chip.to_string(),
+                label: if label.is_empty() { chip.to_string() } else { label.to_string() },
+                celsius,
+            })
+        })
+        .collect()
+}
+
+pub fn cpu_temperature(sensors: &[TempSensor]) -> Option<f64> {
+    sensors
+        .iter()
+        .filter(|t| CPU_TEMP_CHIPS.contains(&t.chip.as_str()))
+        .map(|t| t.celsius)
+        .fold(None, |max, c| Some(max.map_or(c, |m: f64| m.max(c))))
 }
 
 /// Extrait le texte entre deux marqueurs (`end` vide = jusqu'à la fin).
@@ -219,6 +278,14 @@ tmpfs                tmpfs        1630000      1500   1628500       1% /run
 /dev/sdb1            xfs        900000000 100000000 800000000      12% /mnt/data
 /dev/sda2            vfat          523248      5000    518248       1% /boot/efi
 overlay              overlay    100000000  40000000  60000000      40% /var/lib/docker/overlay2/abc/merged
+--TEMP--
+coretemp|Package id 0|52000
+coretemp|Core 0|49000
+coretemp|Core 1|55500
+nvme|Composite|41850
+acpitz||27800
+acpitz||0
+dell_smm|Other|126000
 ";
 
     const ZFS_OUTPUT: &str = "cpu  100 0 100 800 0 0 0 0 0 0
@@ -284,6 +351,29 @@ tank/media             zfs       1500000000 500000000 1000000000      34% /mnt/t
         assert_eq!(tank.used_bytes, (500_000_000 + 128) * 1024);
         assert_eq!(tank.total_bytes, (500_000_000 + 128 + 1_000_000_000) * 1024);
         assert_eq!(m.disks[0].mount, "/");
+    }
+
+    #[test]
+    fn temperatures_parsed_and_cpu_temp_from_cpu_chip() {
+        let m = parse_metrics(EXT4_OUTPUT).unwrap();
+        // Température CPU = la plus chaude des sondes du processeur
+        assert_eq!(m.cpu_temp_celsius, Some(55.5));
+        let names: Vec<String> = m.temperatures.iter().map(|t| format!("{}/{}", t.chip, t.label)).collect();
+        // Sonde à 0 °C ignorée (capteur absent), libellé vide remplacé par le nom de la puce
+        assert_eq!(names, vec!["coretemp/Package id 0", "coretemp/Core 0", "coretemp/Core 1", "nvme/Composite", "acpitz/acpitz"]);
+        assert_eq!(m.temperatures[3].celsius, 41.85);
+    }
+
+    #[test]
+    fn no_temperature_section_means_no_sensors() {
+        let m = parse_metrics(ZFS_OUTPUT).unwrap();
+        assert!(m.temperatures.is_empty());
+        assert_eq!(m.cpu_temp_celsius, None);
+    }
+
+    #[test]
+    fn cpu_temp_absent_without_cpu_chip() {
+        assert_eq!(cpu_temperature(&[TempSensor { chip: "nvme".into(), label: "Composite".into(), celsius: 40.0 }]), None);
     }
 
     #[test]

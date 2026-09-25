@@ -1,4 +1,4 @@
-import { Loader2, WifiOff, AlertTriangle, Ban } from "lucide-react";
+import { Loader2, WifiOff, AlertTriangle, Ban, Thermometer } from "lucide-react";
 import { Server, OS_ICONS, ServerMetrics, MetricsSample, ServerStatus } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { ServerIconDisplay } from "./IconPicker";
@@ -19,6 +19,51 @@ function levelColor(percent: number): string {
   if (percent >= 90) return "bg-accent-error";
   if (percent >= 70) return "bg-accent-warning";
   return "bg-accent-success";
+}
+
+/** Couleur d'une température : normale < 70 °C, chaude < 85 °C, critique au-delà. */
+function tempColor(celsius: number): string {
+  if (celsius >= 85) return "text-accent-error";
+  if (celsius >= 70) return "text-accent-warning";
+  return "text-accent-success";
+}
+
+/**
+ * Températures : CPU mis en avant, puis la sonde la plus chaude de chaque autre
+ * puce (NVMe, carte mère…) pour rester lisible même avec 16 cœurs.
+ */
+function Temperatures({ metrics }: { metrics: ServerMetrics }) {
+  const others = new Map<string, number>();
+  for (const t of metrics.temperatures) {
+    if (["coretemp", "k10temp", "zenpower", "cpu_thermal"].includes(t.chip)) continue;
+    others.set(t.chip, Math.max(others.get(t.chip) ?? 0, t.celsius));
+  }
+  if (metrics.cpu_temp_celsius === null && others.size === 0) return null;
+
+  return (
+    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-xs">
+      <Thermometer size={13} className="text-text-muted shrink-0" />
+      {metrics.cpu_temp_celsius !== null && (
+        <span className="text-text-secondary">
+          CPU <span className={cn("font-medium tabular-nums", tempColor(metrics.cpu_temp_celsius))}>
+            {metrics.cpu_temp_celsius.toFixed(0)} °C
+          </span>
+        </span>
+      )}
+      {[...others].map(([chip, celsius]) => (
+        <span
+          key={chip}
+          className="text-text-muted"
+          title={metrics.temperatures
+            .filter((t) => t.chip === chip)
+            .map((t) => `${t.label} : ${t.celsius.toFixed(1)} °C`)
+            .join("\n")}
+        >
+          {chip} <span className={cn("tabular-nums", tempColor(celsius))}>{celsius.toFixed(0)} °C</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function UsageBar({ label, percent, detail }: { label: string; percent: number; detail: string }) {
@@ -95,6 +140,8 @@ export function ResourceCard({ server, status, supported, metrics, error, histor
             detail={`${formatBytes(d.used_bytes)} / ${formatBytes(d.total_bytes)}`}
           />
         ))}
+
+        <Temperatures metrics={metrics} />
 
         <div className="grid grid-cols-2 gap-3 pt-1">
           <div>
