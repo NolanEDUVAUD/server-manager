@@ -12,9 +12,16 @@ use crate::{
     storage::AppState,
 };
 
-/// Phrases à recopier pour lancer une exécution réelle (vérifiées côté Rust aussi)
-pub const CONFIRM_SHUTDOWN: &str = "ÉTEINDRE LE LAB";
-pub const CONFIRM_STARTUP: &str = "DÉMARRER LE LAB";
+/// Phrases à recopier pour lancer une exécution réelle, une par langue de l'interface
+/// (vérifiées côté Rust aussi)
+pub const CONFIRM_SHUTDOWN: [&str; 2] = ["ÉTEINDRE LE LAB", "SHUT DOWN THE LAB"];
+pub const CONFIRM_STARTUP: [&str; 2] = ["DÉMARRER LE LAB", "START THE LAB"];
+
+/// La phrase recopiée correspond-elle à l'action demandée (dans l'une des langues) ?
+pub fn confirmation_matches(startup: bool, confirm: &str) -> bool {
+    let expected = if startup { &CONFIRM_STARTUP } else { &CONFIRM_SHUTDOWN };
+    expected.contains(&confirm.trim())
+}
 
 #[derive(Default)]
 pub struct LabPowerState {
@@ -118,8 +125,8 @@ pub fn lab_power_cancel(lab: State<LabPowerState>) {
 #[tauri::command]
 pub async fn lab_power_execute(app: AppHandle, startup: bool, confirm: String) -> Result<(), String> {
     crate::crypto::ensure_unlocked()?;
-    let expected = if startup { CONFIRM_STARTUP } else { CONFIRM_SHUTDOWN };
-    if confirm.trim() != expected {
+    if !confirmation_matches(startup, &confirm) {
+        let expected = if startup { CONFIRM_STARTUP[0] } else { CONFIRM_SHUTDOWN[0] };
         return Err(format!("Confirmation incorrecte : recopie « {} »", expected));
     }
     let lab = app.state::<LabPowerState>();
@@ -230,6 +237,17 @@ async fn run_action(app: &AppHandle, machines: &[Machine], action: &Action) -> R
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn confirmation_phrase_in_either_language_and_never_crossed() {
+        assert!(super::confirmation_matches(false, "ÉTEINDRE LE LAB"));
+        assert!(super::confirmation_matches(false, "  SHUT DOWN THE LAB "));
+        assert!(super::confirmation_matches(true, "START THE LAB"));
+        // La phrase d'arrêt ne lance pas un démarrage, et inversement
+        assert!(!super::confirmation_matches(true, "SHUT DOWN THE LAB"));
+        assert!(!super::confirmation_matches(false, "DÉMARRER LE LAB"));
+        assert!(!super::confirmation_matches(false, "éteindre le lab"));
+    }
+
     use super::*;
 
     #[test]

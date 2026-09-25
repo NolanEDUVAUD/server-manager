@@ -15,6 +15,8 @@ export const labPower: Dict["labPower"] = {
   },
   executeTitle: "Real run",
   executeHint: "To really run the sequence, type",
+  phraseShutdown: "SHUT DOWN THE LAB",
+  phraseStartup: "START THE LAB",
   confirmAria: "Confirmation phrase",
   cancelAfterStep: "Cancel after the current step",
   execute: "Run",

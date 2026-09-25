@@ -13,8 +13,10 @@ export const labPower = {
     startGuests: "Démarrage de {guests}",
   },
   executeTitle: "Exécution réelle",
-  /** Suivi de la phrase de confirmation (toujours en français : vérifiée par le backend) */
+  /** Suivi de la phrase de confirmation, elle-même traduite (le backend accepte chaque langue) */
   executeHint: "Pour lancer vraiment la séquence, recopie",
+  phraseShutdown: "ÉTEINDRE LE LAB",
+  phraseStartup: "DÉMARRER LE LAB",
   confirmAria: "Phrase de confirmation",
   cancelAfterStep: "Annuler après l'étape en cours",
   execute: "Exécuter",

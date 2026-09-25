@@ -8,8 +8,7 @@ import { cn } from "../utils";
 import { useT } from "../i18n";
 
 // Phrases de confirmation vérifiées telles quelles par le backend (lab_power.rs) : jamais traduites
-const PHRASE = { shutdown: "ÉTEINDRE LE LAB", startup: "DÉMARRER LE LAB" } as const;
-type Mode = keyof typeof PHRASE;
+type Mode = "shutdown" | "startup";
 
 export function LabPower() {
   const { t } = useT();
@@ -21,6 +20,8 @@ export function LabPower() {
   const [confirm, setConfirm] = useState("");
   const [progress, setProgress] = useState<Record<number, LabProgress>>({});
   const [running, setRunning] = useState(false);
+  // Phrase à recopier, dans la langue de l'interface (le backend accepte chaque langue)
+  const phrase = mode === "startup" ? t("labPower.phraseStartup") : t("labPower.phraseShutdown");
 
   useEffect(() => {
     const un = listen<LabProgress>("lab-power-progress", (e) => setProgress((p) => ({ ...p, [e.payload.step]: e.payload })));
@@ -122,21 +123,21 @@ export function LabPower() {
             <div className="bg-bg-tertiary border border-red-500/30 rounded-win p-4 space-y-3">
               <p className="text-sm text-text-primary">{t("labPower.executeTitle")}</p>
               <p className="text-xs text-text-secondary">
-                {t("labPower.executeHint")} <code className="text-red-400">{PHRASE[mode]}</code>.
+                {t("labPower.executeHint")} <code className="text-red-400">{phrase}</code>.
               </p>
               <div className="flex gap-2">
                 <input
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   disabled={running}
-                  placeholder={PHRASE[mode]}
+                  placeholder={phrase}
                   className="flex-1 bg-bg-input border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-red-400"
                   aria-label={t("labPower.confirmAria")}
                 />
                 {running ? (
                   <button onClick={() => invoke("lab_power_cancel")} className="px-4 py-2 rounded-win border border-border-primary text-sm text-text-secondary hover:bg-bg-hover">{t("labPower.cancelAfterStep")}</button>
                 ) : (
-                  <button onClick={execute} disabled={confirm.trim() !== PHRASE[mode]} className="flex items-center gap-2 px-4 py-2 rounded-win bg-red-600 hover:bg-red-500 text-white text-sm disabled:opacity-40">
+                  <button onClick={execute} disabled={confirm.trim() !== phrase} className="flex items-center gap-2 px-4 py-2 rounded-win bg-red-600 hover:bg-red-500 text-white text-sm disabled:opacity-40">
                     <Play size={14} /> {t("labPower.execute")}
                   </button>
                 )}
