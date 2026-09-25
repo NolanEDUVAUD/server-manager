@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkCustomFields, isValidColor, looksSensitive, MAX_CUSTOM_FIELDS, nameError, plural, readableTextColor } from "./organisation";
+import { checkCustomFields, isValidColor, looksSensitive, MAX_CUSTOM_FIELDS, nameError, readableTextColor } from "./organisation";
 
 describe("organisation — validation miroir", () => {
   it("couleurs #rrggbb", () => {
@@ -48,11 +48,5 @@ describe("organisation — validation miroir", () => {
     for (const k of ["Emplacement", "Numéro de série", "Passerelle", "Utilisateur", "Garantie"]) {
       expect(looksSensitive(k), k).toBe(false);
     }
-  });
-
-  it("pluriel", () => {
-    expect(plural(1, "serveur")).toBe("1 serveur");
-    expect(plural(0, "service")).toBe("0 service");
-    expect(plural(3, "serveur")).toBe("3 serveurs");
   });
 });

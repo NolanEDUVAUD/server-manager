@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 // @vitest-environment node
 /**
  * Garde-fou i18n : aucun texte visible écrit en dur dans les composants. Le code des
@@ -6,11 +7,14 @@
  * messages passés directement aux toasts doivent passer par `t()`.
  */
 import { describe, it, expect } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
 import ts from "typescript";
 
-const SRC = join(__dirname, "..");
+/** Sources de tous les composants (chargées par Vite, sans accès au système de fichiers) */
+const SOURCES = import.meta.glob(["../**/*.tsx", "!../**/*.test.tsx", "!../i18n/**", "!../test/**"], {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
 
 /** Attributs JSX dont la valeur est lue ou entendue par l'utilisateur */
 const VISIBLE_ATTRIBUTES = new Set(["title", "placeholder", "aria-label", "alt", "label", "message", "confirmLabel", "cancelLabel", "description"]);
@@ -25,15 +29,11 @@ const UNIVERSAL = new Set([
   "SSH", "WoL", "CPU", "RAM", "Docker", "Proxmox", "Ansible", "Loki", "ntfy", "Discord", "Telegram",
   "Windows Hello", "PIN", "IP", "MAC", "URL", "TLS", "HTTP", "HTTPS", "TCP", "JSON", "API", "VM", "CT",
   "Server Manager", "Power Control", "Server Power Manager", "Ctrl", "K", "Off", "Reboot", "OK",
+  "Wake-on-LAN", "HTTP(S)", "AES-256-GCM", "Tauri v2 + React 18 + Rust", "CPU · 30 min", "RAM · 30 min",
+  // Exemples de saisie, commandes et valeurs techniques affichés tels quels
+  "PVE1", "https://192.168.1.10:8006", "root@pam!server-manager", "AA:BB:CC:DD:EE:FF", "root", "sudo",
+  "df -h uptime", "Ctrl+C", "cron", "data.version", "Zabbix", "docker compose up -d",
 ]);
-
-function tsxFiles(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) return name === "i18n" || name === "test" ? [] : tsxFiles(path);
-    return path.endsWith(".tsx") && !path.endsWith(".test.tsx") ? [path] : [];
-  });
-}
 
 /** Contient au moins deux lettres consécutives et n'est pas un texte universel */
 function isTranslatable(text: string): boolean {
@@ -41,12 +41,12 @@ function isTranslatable(text: string): boolean {
   return /\p{L}{2,}/u.test(t) && !UNIVERSAL.has(t);
 }
 
-function findHardcoded(file: string): string[] {
-  const source = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+function findHardcoded(file: string, code: string): string[] {
+  const source = ts.createSourceFile(file, code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const found: string[] = [];
   const report = (node: ts.Node, text: string) => {
     const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
-    found.push(`${relative(SRC, file)}:${line + 1} « ${text.replace(/\s+/g, " ").trim()} »`);
+    found.push(`${file.replace(/^\.\.\//, "")}:${line + 1} « ${text.replace(/\s+/g, " ").trim()} »`);
   };
   const visit = (node: ts.Node) => {
     if (ts.isJsxText(node) && isTranslatable(node.text)) report(node, node.text);
@@ -67,7 +67,9 @@ function findHardcoded(file: string): string[] {
 
 describe("i18n", () => {
   it("aucun texte visible n'est écrit en dur dans les composants", () => {
-    const hardcoded = tsxFiles(SRC).flatMap(findHardcoded);
+    const files = Object.entries(SOURCES);
+    expect(files.length).toBeGreaterThan(50);
+    const hardcoded = files.flatMap(([file, code]) => findHardcoded(file, code));
     expect(hardcoded, hardcoded.join("\n")).toEqual([]);
   });
 });

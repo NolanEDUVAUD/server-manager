@@ -1,4 +1,5 @@
 import { AlertTriangle, X } from "lucide-react";
+import { useT } from "../i18n";
 import { useShortcuts } from "../hooks/useShortcuts";
 
 interface ConfirmDialogProps {
@@ -18,14 +19,15 @@ interface ConfirmDialogProps {
 export function ConfirmDialog({
   title,
   message,
-  confirmLabel = "Confirmer",
-  cancelLabel = "Annuler",
+  confirmLabel,
+  cancelLabel,
   dangerous = false,
   children,
   confirmDisabled = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useT();
   // Échap = Annuler (raccourci « close » de la table des raccourcis)
   useShortcuts({ close: onCancel });
   return (
@@ -63,7 +65,7 @@ export function ConfirmDialog({
                        text-text-secondary hover:text-text-primary hover:bg-bg-hover
                        transition-all duration-150"
           >
-            {cancelLabel}
+            {cancelLabel ?? t("common.cancel")}
           </button>
           <button
             onClick={onConfirm}
@@ -74,7 +76,7 @@ export function ConfirmDialog({
                 : "bg-accent-primary hover:bg-accent-secondary text-white"
               }`}
           >
-            {confirmLabel}
+            {confirmLabel ?? t("common.confirm")}
           </button>
         </div>
       </div>

@@ -27,6 +27,7 @@ export const common: Dict["common"] = {
   unknown: "Unknown",
   errorPrefix: "Error: {message}",
   copied: "Copied to clipboard",
+  unknownError: "Unknown error",
   servers: { one: "{count} server", other: "{count} servers" },
   days: { one: "{count} day", other: "{count} days" },
 };

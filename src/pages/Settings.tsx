@@ -18,24 +18,27 @@ import { SshKeysSettings } from '../components/SshKeysSettings';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
 import { useAppUpdate } from '../stores/useAppUpdate';
+import { useT } from '../i18n';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
 type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'config' | 'about';
 
-const SECTIONS: { id: Section; label: string }[] = [
-  { id: 'general',    label: 'Général' },
-  { id: 'appearance', label: 'Apparence' },
-  { id: 'network',    label: 'Réseau' },
-  { id: 'history',    label: 'Historique' },
-  { id: 'security',   label: 'Sécurité' },
-  { id: 'integrations', label: 'Intégrations' },
-  { id: 'sshkeys',    label: 'Clés SSH' },
-  { id: 'config',     label: 'Configuration' },
-  { id: 'about',      label: 'À propos' },
+// Libellés traduits à l'affichage (settingsPage.sections.<id>)
+const SECTIONS: { id: Section }[] = [
+  { id: 'general' },
+  { id: 'appearance' },
+  { id: 'network' },
+  { id: 'history' },
+  { id: 'security' },
+  { id: 'integrations' },
+  { id: 'sshkeys' },
+  { id: 'config' },
+  { id: 'about' },
 ];
 
 // ── Composant principal ────────────────────────────────────────────────────────
 export function Settings() {
+  const { t } = useT();
   const [active, setActive] = useState<Section>('general');
   const { toasts, removeToast } = useToast();
 
@@ -54,7 +57,7 @@ export function Settings() {
                 : 'border-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary'
             ].join(' ')}
           >
-            {s.label}
+            {t(`settingsPage.sections.${s.id}`)}
           </button>
         ))}
       </nav>
@@ -170,6 +173,7 @@ function SliderRow({ label, value, min, max, step, display, onChange }: {
 
 // ── Section : Général ──────────────────────────────────────────────────────────
 function SectionGeneral() {
+  const { t } = useT();
   const { settings, updateGeneral } = useStore();
   const [autostart, setAutostart] = useState<boolean | null>(null);
   const { success, error } = useToast();
@@ -191,7 +195,7 @@ function SectionGeneral() {
       } else {
         await updateGeneral({ [field]: value });
       }
-      success('Sauvegardé');
+      success(t("settingsPage.saved"));
     } catch (e) {
       error(String(e));
     }
@@ -199,30 +203,30 @@ function SectionGeneral() {
 
   return (
     <div className="space-y-6 max-w-lg">
-      <h2 className="text-text-primary font-medium text-base">Général</h2>
+      <h2 className="text-text-primary font-medium text-base">{t("settingsPage.sections.general")}</h2>
       <LanguageSelect />
       <div className="bg-bg-tertiary rounded-win p-4 card">
         <ToggleRow
-          label="Démarrer minimisé"
-          description="Démarre directement dans la zone de notification"
+          label={t("settingsPage.general.startMinimized")}
+          description={t("settingsPage.general.startMinimizedHelp")}
           checked={settings.general.start_minimized}
           onChange={v => handleToggle('start_minimized', v)}
         />
         <ToggleRow
-          label="Démarrage automatique"
-          description="Lance l'application au démarrage de Windows"
+          label={t("settingsPage.general.autoStart")}
+          description={t("settingsPage.general.autoStartHelp")}
           checked={autostart ?? settings.general.auto_start}
           onChange={v => handleToggle('auto_start', v)}
         />
         <ToggleRow
-          label="Notifications système"
-          description="Affiche des notifications OS pour les événements importants"
+          label={t("settingsPage.general.notifications")}
+          description={t("settingsPage.general.notificationsHelp")}
           checked={settings.general.notifications}
           onChange={v => handleToggle('notifications', v)}
         />
         <ToggleRow
-          label="Fermer dans la zone de notification"
-          description="La croix réduit l'app près de l'horloge : planificateur, collecte et alertes continuent"
+          label={t("settingsPage.general.closeToTray")}
+          description={t("settingsPage.general.closeToTrayHelp")}
           checked={settings.general.close_to_tray}
           onChange={v => handleToggle('close_to_tray', v)}
         />
@@ -230,8 +234,8 @@ function SectionGeneral() {
 
       <AppUpdateSettings />
 
-      <h2 className="text-text-primary font-medium text-base">Modules</h2>
-      <p className="text-xs text-text-secondary -mt-4">Masque les onglets que tu n'utilises pas. Rien n'est supprimé.</p>
+      <h2 className="text-text-primary font-medium text-base">{t("settingsPage.general.modules")}</h2>
+      <p className="text-xs text-text-secondary -mt-4">{t("settingsPage.general.modulesHelp")}</p>
       <div className="bg-bg-tertiary rounded-win p-4 card">
         {MODULES.map(m => (
           <ToggleRow
@@ -256,6 +260,7 @@ function SectionGeneral() {
 
 // ── Section : Apparence ────────────────────────────────────────────────────────
 function SectionAppearance() {
+  const { t } = useT();
   const { settings, updateAppearance, allThemes, saveCustomTheme, deleteCustomTheme } = useStore();
   const app = settings.appearance;
   const { success, error } = useToast();
@@ -272,11 +277,11 @@ function SectionAppearance() {
 
   return (
     <div className="space-y-6 max-w-lg">
-      <h2 className="text-text-primary font-medium text-base">Apparence</h2>
+      <h2 className="text-text-primary font-medium text-base">{t("settingsPage.sections.appearance")}</h2>
 
       {/* Luminosité */}
       <SliderRow
-        label="Luminosité"
+        label={t("settingsPage.appearance.brightness")}
         value={app.brightness}
         min={0.6}
         max={1.2}
@@ -287,7 +292,7 @@ function SectionAppearance() {
 
       {/* Taille de police */}
       <SliderRow
-        label="Taille de police"
+        label={t("settingsPage.appearance.fontSize")}
         value={app.font_size}
         min={12}
         max={18}
@@ -298,7 +303,7 @@ function SectionAppearance() {
 
       {/* Densité de l'interface */}
       <div className="space-y-2">
-        <p className="text-text-primary text-sm">Densité</p>
+        <p className="text-text-primary text-sm">{t("settingsPage.appearance.density")}</p>
         <div className="flex gap-2">
           {(['Compact', 'Normal', 'Comfortable'] as const).map(d => (
             <button
@@ -311,7 +316,7 @@ function SectionAppearance() {
                   : 'bg-bg-active text-text-secondary hover:bg-bg-hover'
               ].join(' ')}
             >
-              {d === 'Compact' ? 'Compact' : d === 'Normal' ? 'Normal' : 'Aéré'}
+              {d === 'Compact' ? t("settingsPage.appearance.densityCompact") : d === 'Normal' ? t("settingsPage.appearance.densityNormal") : t("settingsPage.appearance.densityComfortable")}
             </button>
           ))}
         </div>
@@ -319,7 +324,7 @@ function SectionAppearance() {
 
       {/* Sélecteur de thème */}
       <div className="space-y-3">
-        <p className="text-text-primary text-sm">Thème</p>
+        <p className="text-text-primary text-sm">{t("settingsPage.appearance.theme")}</p>
         <div className="grid grid-cols-3 gap-2">
           {allThemes.map(theme => (
             <ThemeCard
@@ -330,7 +335,7 @@ function SectionAppearance() {
               onDuplicate={() => setEditingTheme({
                 ...theme,
                 id: `${theme.id}-copy`,
-                name: `${theme.name} (copie)`,
+                name: t("settingsPage.appearance.themeCopy", { name: theme.name }),
                 builtin: false,
               })}
               onDelete={theme.builtin ? undefined : () => deleteCustomTheme(theme.id)}
@@ -342,11 +347,11 @@ function SectionAppearance() {
         {editingTheme && (
           <ThemeEditor
             initial={editingTheme}
-            onSave={async t => {
-              await saveCustomTheme(t);
-              await handleChange({ active_theme: t.id });
+            onSave={async saved => {
+              await saveCustomTheme(saved);
+              await handleChange({ active_theme: saved.id });
               setEditingTheme(null);
-              success('Thème sauvegardé');
+              success(t("settingsPage.appearance.themeSaved"));
             }}
             onCancel={() => {
               // Restaurer le thème courant si la prévisualisation a modifié les variables CSS
@@ -363,6 +368,7 @@ function SectionAppearance() {
 
 // ── Section : Réseau ───────────────────────────────────────────────────────────
 function SectionNetwork() {
+  const { t } = useT();
   const { settings, updateNetwork } = useStore();
   const [net, setNet] = useState(settings.network);
   const { success, error } = useToast();
@@ -370,7 +376,7 @@ function SectionNetwork() {
   const handleSave = async () => {
     try {
       await updateNetwork(net);
-      success('Paramètres réseau sauvegardés');
+      success(t("settingsPage.network.saved"));
     } catch (e) {
       error(String(e));
     }
@@ -378,10 +384,10 @@ function SectionNetwork() {
 
   return (
     <div className="space-y-6 max-w-lg">
-      <h2 className="text-text-primary font-medium text-base">Réseau</h2>
+      <h2 className="text-text-primary font-medium text-base">{t("settingsPage.sections.network")}</h2>
       <div className="space-y-4">
         <InputRow
-          label="Intervalle de ping (secondes)"
+          label={t("settingsPage.network.pingInterval")}
           type="number"
           min={5}
           max={3600}
@@ -389,7 +395,7 @@ function SectionNetwork() {
           onChange={v => setNet(n => ({ ...n, ping_interval_secs: Number(v) }))}
         />
         <InputRow
-          label="Timeout ping (ms)"
+          label={t("settingsPage.network.pingTimeout")}
           type="number"
           min={500}
           max={30000}
@@ -397,7 +403,7 @@ function SectionNetwork() {
           onChange={v => setNet(n => ({ ...n, ping_timeout_ms: Number(v) }))}
         />
         <InputRow
-          label="Timeout SSH (secondes)"
+          label={t("settingsPage.network.sshTimeout")}
           type="number"
           min={5}
           max={120}
@@ -405,7 +411,7 @@ function SectionNetwork() {
           onChange={v => setNet(n => ({ ...n, ssh_timeout_secs: Number(v) }))}
         />
         <InputRow
-          label="Intervalle de rafraîchissement Proxmox (secondes)"
+          label={t("settingsPage.network.proxmoxInterval")}
           type="number"
           min={5}
           max={300}
@@ -413,7 +419,7 @@ function SectionNetwork() {
           onChange={v => setNet(n => ({ ...n, proxmox_poll_interval_secs: Number(v) }))}
         />
         <InputRow
-          label="Timeout API Proxmox (secondes)"
+          label={t("settingsPage.network.proxmoxTimeout")}
           type="number"
           min={2}
           max={60}
@@ -421,13 +427,13 @@ function SectionNetwork() {
           onChange={v => setNet(n => ({ ...n, proxmox_timeout_secs: Number(v) }))}
         />
         <ToggleRow
-          label="Monitoring des ressources"
-          description="Collecte CPU / RAM / disques des serveurs en ligne via SSH"
+          label={t("settingsPage.network.metrics")}
+          description={t("settingsPage.network.metricsHelp")}
           checked={net.metrics_enabled}
           onChange={v => setNet(n => ({ ...n, metrics_enabled: v }))}
         />
         <InputRow
-          label="Intervalle du monitoring (secondes)"
+          label={t("settingsPage.network.metricsInterval")}
           type="number"
           min={5}
           max={300}
@@ -439,7 +445,7 @@ function SectionNetwork() {
         onClick={handleSave}
         className="px-4 py-2 text-sm bg-accent-primary text-white rounded-win hover:bg-accent-secondary transition-colors duration-150"
       >
-        Sauvegarder
+        {t("common.save")}
       </button>
     </div>
   );
@@ -447,6 +453,7 @@ function SectionNetwork() {
 
 // ── Section : Configuration (Export / Import / Reset) ─────────────────────────
 function SectionConfig() {
+  const { t } = useT();
   const { exportFullConfig, importFullConfig, applyImportConfig, resetSettings, pendingImport } = useStore();
   const { success, error } = useToast();
   const [dataPath, setDataPath] = useState('');
@@ -461,7 +468,7 @@ function SectionConfig() {
   const handleExport = async () => {
     try {
       const path = await exportFullConfig();
-      success(`Exporté : ${path}`);
+      success(t("settingsPage.config.exported", { path }));
     } catch (e) {
       // Ne pas afficher d'erreur si l'utilisateur a annulé la boîte de dialogue
       if (!String(e).includes('annulé')) error(String(e));
@@ -479,7 +486,7 @@ function SectionConfig() {
   const handleApplyImport = async (mode: 'merge' | 'replace') => {
     try {
       await applyImportConfig(mode);
-      success('Configuration importée');
+      success(t("settingsPage.config.imported"));
     } catch (e) {
       error(String(e));
     }
@@ -487,7 +494,7 @@ function SectionConfig() {
 
   return (
     <div className="space-y-6 max-w-lg">
-      <h2 className="text-text-primary font-medium text-base">Configuration</h2>
+      <h2 className="text-text-primary font-medium text-base">{t("settingsPage.sections.config")}</h2>
 
       {/* Boutons Export / Import */}
       <div className="space-y-3">
@@ -497,29 +504,29 @@ function SectionConfig() {
             className="flex items-center gap-2 px-3 py-2 text-sm bg-bg-active text-text-primary
                        rounded-win hover:bg-bg-hover transition-colors duration-150"
           >
-            <Download size={14} /> Exporter la configuration
+            <Download size={14} /> {t("settingsPage.config.export")}
           </button>
           <button
             onClick={handleImport}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-bg-active text-text-primary
                        rounded-win hover:bg-bg-hover transition-colors duration-150"
           >
-            <Upload size={14} /> Importer une configuration
+            <Upload size={14} /> {t("settingsPage.config.import")}
           </button>
         </div>
 
         {/* Récapitulatif de l'import en attente */}
         {pendingImport && (
           <div className="bg-bg-tertiary rounded-win p-4 space-y-3 text-sm card border border-border-primary">
-            <p className="text-text-primary font-medium">Récapitulatif de l'import</p>
+            <p className="text-text-primary font-medium">{t("settingsPage.config.summaryTitle")}</p>
             <div className="text-text-secondary space-y-1 text-xs">
-              <p>Version : <span className="text-text-primary">{pendingImport.config_version}</span></p>
-              <p>Serveurs : <span className="text-text-primary">{pendingImport.servers_count}</span></p>
-              <p>Groupes : <span className="text-text-primary">{pendingImport.groups_count}</span></p>
-              <p>Tags et dossiers : <span className="text-text-primary">{pendingImport.tags_count ?? 0} / {pendingImport.folders_count ?? 0}</span></p>
-              <p>Paramètres : <span className="text-text-primary">{pendingImport.settings_present ? 'inclus' : 'non inclus'}</span></p>
+              <p>{t("settingsPage.config.version")} <span className="text-text-primary">{pendingImport.config_version}</span></p>
+              <p>{t("settingsPage.config.servers")} <span className="text-text-primary">{pendingImport.servers_count}</span></p>
+              <p>{t("settingsPage.config.groups")} <span className="text-text-primary">{pendingImport.groups_count}</span></p>
+              <p>{t("settingsPage.config.tagsFolders")} <span className="text-text-primary">{pendingImport.tags_count ?? 0} / {pendingImport.folders_count ?? 0}</span></p>
+              <p>{t("settingsPage.config.settings")} <span className="text-text-primary">{pendingImport.settings_present ? t("settingsPage.config.included") : t("settingsPage.config.notIncluded")}</span></p>
               {pendingImport.exported_at && (
-                <p>Exporté le : <span className="text-text-primary">{pendingImport.exported_at}</span></p>
+                <p>{t("settingsPage.config.exportedAt")} <span className="text-text-primary">{pendingImport.exported_at}</span></p>
               )}
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -528,21 +535,21 @@ function SectionConfig() {
                 onClick={() => handleApplyImport('merge')}
                 className="px-3 py-1.5 text-xs bg-accent-primary text-white rounded-win hover:bg-accent-secondary transition-colors duration-150"
               >
-                Fusion
+                {t("settingsPage.config.merge")}
               </button>
               {/* Remplacement : confirmation requise */}
               <button
                 onClick={() => setShowConfirmReplace(true)}
                 className="px-3 py-1.5 text-xs bg-bg-active text-accent-error rounded-win hover:bg-bg-hover transition-colors duration-150"
               >
-                Remplacement
+                {t("settingsPage.config.replace")}
               </button>
               {/* Ignorer : abandonne l'import sans rien appliquer */}
               <button
                 onClick={() => useStore.setState({ pendingImport: null })}
                 className="px-3 py-1.5 text-xs text-text-muted hover:text-text-primary transition-colors duration-150"
               >
-                Ignorer
+                {t("settingsPage.config.ignore")}
               </button>
             </div>
           </div>
@@ -553,15 +560,15 @@ function SectionConfig() {
 
       {/* Chemin du fichier de données */}
       <div className="space-y-1">
-        <p className="text-text-secondary text-xs">Fichier de données</p>
+        <p className="text-text-secondary text-xs">{t("settingsPage.config.dataFile")}</p>
         <div className="flex gap-2 items-center">
           <code className="text-text-muted text-xs bg-bg-input px-2 py-1.5 rounded flex-1 truncate font-mono">
-            {dataPath || 'Chargement...'}
+            {dataPath || t("common.loading")}
           </code>
           <button
             onClick={() => navigator.clipboard.writeText(dataPath)}
             className="p-1.5 rounded bg-bg-active hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors duration-150"
-            title="Copier"
+            title={t("settingsPage.config.copy")}
           >
             <Copy size={12} />
           </button>
@@ -575,27 +582,27 @@ function SectionConfig() {
           className="px-3 py-2 text-sm text-accent-error bg-bg-active rounded-win
                      hover:bg-bg-hover transition-colors duration-150"
         >
-          Réinitialiser les paramètres
+          {t("settingsPage.config.reset")}
         </button>
       </div>
 
       {/* Dialogs de confirmation */}
       {showConfirmReset && (
         <ConfirmDialog
-          title="Réinitialiser les paramètres"
-          message="Les paramètres d'apparence, de réseau et généraux seront remis aux valeurs par défaut. Les serveurs et groupes ne sont pas affectés."
+          title={t("settingsPage.config.reset")}
+          message={t("settingsPage.config.resetMessage")}
           onConfirm={async () => {
             await resetSettings();
             setShowConfirmReset(false);
-            success('Paramètres réinitialisés');
+            success(t("settingsPage.config.resetDone"));
           }}
           onCancel={() => setShowConfirmReset(false)}
         />
       )}
       {showConfirmReplace && (
         <ConfirmDialog
-          title="Remplacer la configuration"
-          message="Toute la configuration actuelle (serveurs, groupes, paramètres, tags et dossiers) sera remplacée. Cette action est irréversible."
+          title={t("settingsPage.config.replaceTitle")}
+          message={t("settingsPage.config.replaceMessage")}
           dangerous
           onConfirm={async () => {
             await handleApplyImport('replace');
@@ -610,6 +617,7 @@ function SectionConfig() {
 
 // ── Section : À propos ─────────────────────────────────────────────────────────
 function SectionAbout() {
+  const { t } = useT();
   const { info, loadInfo } = useAppUpdate();
   useEffect(() => {
     if (!info) loadInfo();
@@ -617,23 +625,23 @@ function SectionAbout() {
 
   return (
     <div className="space-y-4 max-w-lg">
-      <h2 className="text-text-primary font-medium text-base">À propos</h2>
+      <h2 className="text-text-primary font-medium text-base">{t("settingsPage.sections.about")}</h2>
       <div className="bg-bg-tertiary rounded-win p-4 space-y-2 text-sm card">
         <div className="flex justify-between py-1 border-b border-border-secondary">
-          <span className="text-text-secondary">Version</span>
+          <span className="text-text-secondary">{t("settingsPage.about.version")}</span>
           <span className="text-text-primary">{info?.current_version ?? '…'}</span>
         </div>
         <div className="flex justify-between py-1 border-b border-border-secondary">
-          <span className="text-text-secondary">Framework</span>
+          <span className="text-text-secondary">{t("settingsPage.about.framework")}</span>
           <span className="text-text-primary">Tauri v2 + React 18 + Rust</span>
         </div>
         <div className="flex justify-between py-1 border-b border-border-secondary">
-          <span className="text-text-secondary">Chiffrement</span>
+          <span className="text-text-secondary">{t("settingsPage.about.encryption")}</span>
           <span className="text-text-primary">AES-256-GCM</span>
         </div>
         <div className="flex justify-between py-1">
-          <span className="text-text-secondary">Stockage</span>
-          <span className="text-text-primary">JSON local (AppData)</span>
+          <span className="text-text-secondary">{t("settingsPage.about.storage")}</span>
+          <span className="text-text-primary">{t("settingsPage.about.storageValue")}</span>
         </div>
       </div>
     </div>

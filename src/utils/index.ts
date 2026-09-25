@@ -1,3 +1,4 @@
+import { currentLocale, t } from "../i18n";
 // ── Validation ─────────────────────────────────────────────────────────────
 
 export function isValidIP(ip: string): boolean {
@@ -29,7 +30,7 @@ export function formatLatency(ms: number | null | undefined): string {
 }
 
 export function formatDate(ts: number): string {
-  return new Date(ts).toLocaleTimeString("fr-FR", {
+  return new Date(ts).toLocaleTimeString(currentLocale(), {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -39,21 +40,21 @@ export function formatDate(ts: number): string {
 export function formatBytes(bytes: number): string {
   const gb = bytes / 1024 / 1024 / 1024;
   if (gb < 1) {
-    return `${Math.round(bytes / 1024 / 1024)} Mo`;
+    return t("format.mb", { value: Math.round(bytes / 1024 / 1024) });
   }
   if (gb >= 1024) {
-    return `${(gb / 1024).toFixed(1)} To`;
+    return t("format.tb", { value: (gb / 1024).toFixed(1) });
   }
-  return `${gb.toFixed(1)} Go`;
+  return t("format.gb", { value: gb.toFixed(1) });
 }
 
 export function formatUptime(secs: number): string {
   const days = Math.floor(secs / 86400);
   const hours = Math.floor((secs % 86400) / 3600);
   const minutes = Math.floor((secs % 3600) / 60);
-  if (days > 0) return `${days} j ${hours} h`;
-  if (hours > 0) return `${hours} h ${minutes} min`;
-  return `${minutes} min`;
+  if (days > 0) return t("format.days", { days, hours });
+  if (hours > 0) return t("format.hours", { hours, minutes });
+  return t("format.minutes", { minutes });
 }
 
 // ── Historique de métriques ───────────────────────────────────────────────

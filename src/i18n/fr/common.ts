@@ -26,6 +26,7 @@ export const common = {
   unknown: "Inconnu",
   errorPrefix: "Erreur : {message}",
   copied: "Copié dans le presse-papiers",
+  unknownError: "Erreur inconnue",
   servers: { one: "{count} serveur", other: "{count} serveurs" },
   days: { one: "{count} jour", other: "{count} jours" },
 };

@@ -9,6 +9,7 @@ import { cn } from "../utils";
 import { ServerIconDisplay } from "./IconPicker";
 import { FavoriteButton, TagList } from "./TagChip";
 import { DeployKeyDialog } from "./DeployKeyDialog";
+import { useT } from "../i18n";
 
 interface ServerCardProps {
   server: Server;
@@ -19,6 +20,7 @@ interface ServerCardProps {
 
 export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardProps) {
   const { statuses, wakeServer, shutdownServer, rebootServer, pingServer, openTerminal, tags, toggleFavorite } = useStore();
+  const { t } = useT();
   const navigate = useNavigate();
   const status = statuses[server.id];
 
@@ -74,9 +76,9 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => runAction("ping", () => pingServer(server.id), "Ping OK")}
+              onClick={() => runAction("ping", () => pingServer(server.id), t("servers.pingOk"))}
               className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-              title="Rafraîchir le statut"
+              title={t("servers.refreshStatus")}
             >
               {loading === "ping" ? (
                 <Loader2 size={13} className="animate-spin" />
@@ -90,29 +92,29 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
                 navigate("/console");
               }}
               className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-              title="Ouvrir une console SSH"
+              title={t("servers.openConsole")}
             >
               <TerminalSquare size={13} />
             </button>
             <button
               onClick={() => setDeploying(true)}
               className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-              title="Déployer la clé SSH"
-              aria-label={`Déployer la clé SSH sur ${server.name}`}
+              title={t("servers.deployKey")}
+              aria-label={t("servers.deployKeyOn", { name: server.name })}
             >
               <KeyRound size={13} />
             </button>
             <button
               onClick={() => onEdit(server)}
               className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-              title="Modifier"
+              title={t("common.edit")}
             >
               <Pencil size={13} />
             </button>
             <button
               onClick={() => onDelete(server)}
               className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all"
-              title="Supprimer"
+              title={t("common.delete")}
             >
               <Trash2 size={13} />
             </button>
@@ -133,7 +135,7 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
               runAction(
                 "wol",
                 () => wakeServer(server.id),
-                `Magic packet envoyé à ${server.name}`
+                t("servers.magicPacketSent", { name: server.name })
               )
             }
             disabled={!!loading}
@@ -159,14 +161,14 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
                        border border-red-500/30 bg-red-500/5 text-red-400
                        hover:bg-red-500/15 hover:border-red-500/50
                        text-xs font-medium transition-all disabled:opacity-50"
-            title="Éteindre"
+            title={t("servers.shutdown")}
           >
             {loading === "shutdown" ? (
               <Loader2 size={12} className="animate-spin" />
             ) : (
               <Power size={12} />
             )}
-            Éteindre
+            {t("servers.shutdown")}
           </button>
 
           {/* Reboot */}
@@ -177,7 +179,7 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
                        border border-border-primary bg-bg-secondary text-text-secondary
                        hover:bg-bg-hover hover:text-text-primary
                        text-xs font-medium transition-all disabled:opacity-50"
-            title="Redémarrer"
+            title={t("servers.reboot")}
           >
             {loading === "reboot" ? (
               <Loader2 size={12} className="animate-spin" />
@@ -197,16 +199,16 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
       {/* Dialogs de confirmation */}
       {confirmAction === "shutdown" && (
         <ConfirmDialog
-          title={`Éteindre ${server.name}`}
-          message={`Cette action va éteindre le serveur via SSH.\nCommande : ${server.shutdown_command}`}
-          confirmLabel="Éteindre"
+          title={t("servers.shutdownTitle", { name: server.name })}
+          message={t("servers.cardShutdownMessage", { command: server.shutdown_command })}
+          confirmLabel={t("servers.shutdown")}
           dangerous
           onConfirm={() => {
             setConfirmAction(null);
             runAction(
               "shutdown",
               () => shutdownServer(server.id),
-              `Commande d'arrêt envoyée à ${server.name}`
+              t("servers.shutdownCommandSent", { name: server.name })
             );
           }}
           onCancel={() => setConfirmAction(null)}
@@ -215,15 +217,15 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
       {deploying && <DeployKeyDialog server={server} onClose={() => setDeploying(false)} onMessage={onMessage} />}
       {confirmAction === "reboot" && (
         <ConfirmDialog
-          title={`Redémarrer ${server.name}`}
-          message={`Cette action va redémarrer le serveur via SSH.\nCommande : ${server.reboot_command}`}
-          confirmLabel="Redémarrer"
+          title={t("servers.rebootTitle", { name: server.name })}
+          message={t("servers.cardRebootMessage", { command: server.reboot_command })}
+          confirmLabel={t("servers.reboot")}
           onConfirm={() => {
             setConfirmAction(null);
             runAction(
               "reboot",
               () => rebootServer(server.id),
-              `Commande de redémarrage envoyée à ${server.name}`
+              t("servers.rebootCommandSent", { name: server.name })
             );
           }}
           onCancel={() => setConfirmAction(null)}

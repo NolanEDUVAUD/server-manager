@@ -5,6 +5,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { useStore } from "../stores/useStore";
 import { DeployReport, Server, SshKeyView } from "../types";
 import { authMethodOf, deployBlockedReason, deployWarning } from "../utils/sshAuth";
+import { useT } from "../i18n";
 
 interface DeployKeyDialogProps {
   server: Server;
@@ -18,7 +19,7 @@ type Step =
   | { kind: "switch"; report: DeployReport }
   | { kind: "failed"; report: DeployReport };
 
-const methodLabel = { Password: "le mot de passe enregistré", Key: "la clé de l'app actuelle", Agent: "l'agent SSH" } as const;
+const methodLabelKey = { Password: "sshAuth.deploy.via.password", Key: "sshAuth.deploy.via.key", Agent: "sshAuth.deploy.via.agent" } as const;
 
 /**
  * « Déployer la clé » : ajoute la clé publique choisie à ~/.ssh/authorized_keys du serveur (via sa
@@ -26,6 +27,7 @@ const methodLabel = { Password: "le mot de passe enregistré", Key: "la clé de 
  * serveur sur cette clé et d'effacer son mot de passe enregistré.
  */
 export function DeployKeyDialog({ server, onClose, onMessage }: DeployKeyDialogProps) {
+  const { t } = useT();
   const [keys, setKeys] = useState<SshKeyView[] | null>(null);
   const [loadError, setLoadError] = useState("");
   const [keyId, setKeyId] = useState<string>(server.ssh_key_id ?? "");
@@ -61,7 +63,7 @@ export function DeployKeyDialog({ server, onClose, onMessage }: DeployKeyDialogP
     try {
       const updated = await invoke<Server>("ssh_key_use_for_server", { serverId: server.id, keyId: key.id, clearPassword });
       useStore.setState((s) => ({ servers: s.servers.map((x) => (x.id === updated.id ? updated : x)) }));
-      onMessage(`${server.name} utilise maintenant la clé « ${key.name} »`, "success");
+      onMessage(t("sshAuth.deploy.switched", { name: server.name, key: key.name }), "success");
     } catch (e) {
       onMessage(String(e), "error");
     }
@@ -69,12 +71,12 @@ export function DeployKeyDialog({ server, onClose, onMessage }: DeployKeyDialogP
   }
 
   if (blocked) {
-    return <ConfirmDialog title={`Déployer une clé sur ${server.name}`} message={blocked} confirmLabel="Fermer" onConfirm={onClose} onCancel={onClose} />;
+    return <ConfirmDialog title={t("sshAuth.deploy.title", { name: server.name })} message={blocked} confirmLabel={t("sshAuth.deploy.close")} onConfirm={onClose} onCancel={onClose} />;
   }
 
   if (step.kind === "running") {
     return (
-      <ConfirmDialog title={`Déploiement sur ${server.name}`} message="Ajout de la clé puis vérification de la connexion par clé…" confirmDisabled confirmLabel="Patiente…" onConfirm={() => {}} onCancel={() => {}}>
+      <ConfirmDialog title={t("sshAuth.deploy.runningTitle", { name: server.name })} message={t("sshAuth.deploy.running")} confirmDisabled confirmLabel={t("sshAuth.deploy.wait")} onConfirm={() => {}} onCancel={() => {}}>
         <Loader2 size={16} className="animate-spin text-accent-primary" />
       </ConfirmDialog>
     );
@@ -82,22 +84,22 @@ export function DeployKeyDialog({ server, onClose, onMessage }: DeployKeyDialogP
 
   if (step.kind === "switch" && key) {
     const already = authMethodOf(server) === "Key" && server.ssh_key_id === key.id;
-    const added = step.report.added ? "La clé a été ajoutée" : "La clé était déjà présente";
+    const added = step.report.added ? t("sshAuth.deploy.added") : t("sshAuth.deploy.alreadyPresent");
     if (already) {
-      return <ConfirmDialog title="Clé déployée" message={`${added} et la connexion par clé fonctionne.`} confirmLabel="Fermer" onConfirm={() => { onMessage("Connexion par clé vérifiée", "success"); onClose(); }} onCancel={onClose} />;
+      return <ConfirmDialog title={t("sshAuth.deploy.doneTitle")} message={t("sshAuth.deploy.doneMessage", { added })} confirmLabel={t("sshAuth.deploy.close")} onConfirm={() => { onMessage(t("sshAuth.deploy.verified"), "success"); onClose(); }} onCancel={onClose} />;
     }
     return (
       <ConfirmDialog
-        title={`Utiliser la clé pour ${server.name} ?`}
-        message={`${added} dans ~/.ssh/authorized_keys de ${server.ssh_user}@${server.ip} et la connexion par clé fonctionne.\n\nBasculer ${server.name} sur la clé « ${key.name} » pour toutes les connexions de l'app ?`}
-        confirmLabel="Utiliser la clé"
-        cancelLabel="Garder la méthode actuelle"
+        title={t("sshAuth.deploy.switchTitle", { name: server.name })}
+        message={t("sshAuth.deploy.switchMessage", { added, target: `${server.ssh_user}@${server.ip}`, name: server.name, key: key.name })}
+        confirmLabel={t("sshAuth.deploy.useKey")}
+        cancelLabel={t("sshAuth.deploy.keepMethod")}
         onConfirm={useKey}
-        onCancel={() => { onMessage(`Clé déployée sur ${server.name}`, "success"); onClose(); }}
+        onCancel={() => { onMessage(t("sshAuth.deploy.deployedOn", { name: server.name }), "success"); onClose(); }}
       >
         <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
           <input type="checkbox" checked={clearPassword} onChange={(e) => setClearPassword(e.target.checked)} className="accent-accent-primary" />
-          Effacer le mot de passe enregistré pour ce serveur
+          {t("sshAuth.clearPassword")}
         </label>
       </ConfirmDialog>
     );
@@ -106,9 +108,9 @@ export function DeployKeyDialog({ server, onClose, onMessage }: DeployKeyDialogP
   if (step.kind === "failed") {
     return (
       <ConfirmDialog
-        title="Connexion par clé refusée"
-        message={`${step.report.added ? "La clé a été ajoutée" : "La clé était déjà présente"}, mais la connexion par clé a échoué : ${step.report.detail ?? "raison inconnue"}.\n\nVérifie les droits de ~/.ssh (700) et d'authorized_keys (600), et que PubkeyAuthentication est actif dans sshd. Le serveur garde sa méthode actuelle.`}
-        confirmLabel="Fermer"
+        title={t("sshAuth.deploy.failedTitle")}
+        message={t("sshAuth.deploy.failedMessage", { added: step.report.added ? t("sshAuth.deploy.added") : t("sshAuth.deploy.alreadyPresent"), detail: step.report.detail ?? t("sshAuth.deploy.unknownReason") })}
+        confirmLabel={t("sshAuth.deploy.close")}
         onConfirm={onClose}
         onCancel={onClose}
       />
@@ -117,23 +119,27 @@ export function DeployKeyDialog({ server, onClose, onMessage }: DeployKeyDialogP
 
   const warning = deployWarning(server.os_type);
   const message = keys === null
-    ? loadError || "Chargement des clés…"
+    ? loadError || t("sshAuth.loadingKeys")
     : keys.length === 0
-      ? "Aucune clé SSH enregistrée : génère ou importe une clé dans Paramètres → Clés SSH."
-      : `La clé publique choisie sera ajoutée à ~/.ssh/authorized_keys de ${server.ssh_user}@${server.ip}, en se connectant avec ${methodLabel[authMethodOf(server)]}${server.jump_host_id ? " (via l'hôte de rebond)" : ""}.\n~/.ssh (700) et authorized_keys (600) sont créés s'ils n'existent pas ; la ligne n'est jamais ajoutée deux fois. La connexion par clé est ensuite vérifiée.${warning ? `\n\n${warning}` : ""}`;
+      ? t("sshAuth.deploy.noKeys")
+      : t("sshAuth.deploy.explain", {
+          target: `${server.ssh_user}@${server.ip}`,
+          via: t(methodLabelKey[authMethodOf(server)]),
+          jump: server.jump_host_id ? t("sshAuth.deploy.viaJump") : "",
+        }) + (warning ? `\n\n${warning}` : "");
 
   return (
     <ConfirmDialog
-      title={`Déployer une clé sur ${server.name}`}
+      title={t("sshAuth.deploy.title", { name: server.name })}
       message={message}
-      confirmLabel="Déployer la clé"
+      confirmLabel={t("sshAuth.deploy.confirm")}
       confirmDisabled={!key}
       onConfirm={deploy}
       onCancel={onClose}
     >
       {keys && keys.length > 0 && (
         <label className="block text-xs text-text-secondary">
-          Clé à déployer
+          {t("sshAuth.deploy.keyToDeploy")}
           <select
             className="mt-1 w-full bg-bg-secondary border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent-primary"
             value={keyId}

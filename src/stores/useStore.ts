@@ -42,7 +42,7 @@ import {
   ONE_HALF_DARK,
 } from "../utils/theme";
 import { appendSample, mergeSamples } from "../utils";
-import { setLanguage } from "../i18n";
+import { setLanguage, t } from "../i18n";
 
 /** 120 points × 15 s = 30 min d'historique par serveur */
 export const METRICS_HISTORY_MAX = 120;
@@ -588,7 +588,7 @@ export const useStore = create<AppStore>((set, get) => ({
       // l'historique déjà collecté reste visible.
       set((s) => {
         const { [serverId]: _stale, ...metrics } = s.metrics;
-        return { metrics, metricsErrors: { ...s.metricsErrors, [serverId]: error ?? "Erreur inconnue" } };
+        return { metrics, metricsErrors: { ...s.metricsErrors, [serverId]: error ?? t("common.unknownError") } };
       });
       return;
     }

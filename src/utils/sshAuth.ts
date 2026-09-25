@@ -1,11 +1,13 @@
 /** Authentification SSH par clé (1.2) : règles d'affichage et de validation côté interface.
  *  Le backend revalide tout (méthode, clé existante, rebond sans boucle ni second niveau). */
 import { AuthMethod, KeyFileInfo, OsType, Server, SshKeyView } from "../types";
+import { t, TKey } from "../i18n";
 
-export const AUTH_METHODS: { value: AuthMethod; label: string; hint: string }[] = [
-  { value: "Password", label: "Mot de passe", hint: "Mot de passe enregistré, chiffré par la clé maître." },
-  { value: "Key", label: "Clé de l'app", hint: "Clé SSH gérée dans Paramètres → Clés SSH (la clé privée reste chiffrée dans l'app)." },
-  { value: "Agent", label: "Agent SSH", hint: "Clés chargées dans l'agent OpenSSH de Windows (ssh-add) ou dans Pageant." },
+/** Méthodes proposées ; libellés traduits à l'affichage */
+export const AUTH_METHODS: { value: AuthMethod; labelKey: TKey; hintKey: TKey }[] = [
+  { value: "Password", labelKey: "sshAuth.methods.password", hintKey: "sshAuth.methods.passwordHint" },
+  { value: "Key", labelKey: "sshAuth.methods.key", hintKey: "sshAuth.methods.keyHint" },
+  { value: "Agent", labelKey: "sshAuth.methods.agent", hintKey: "sshAuth.methods.agentHint" },
 ];
 
 export function authMethodOf(server?: Pick<Server, "auth_method"> | null): AuthMethod {
@@ -15,9 +17,9 @@ export function authMethodOf(server?: Pick<Server, "auth_method"> | null): AuthM
 /** Problème à signaler pour la méthode choisie (null si tout va bien) */
 export function authWarning(method: AuthMethod, keys: SshKeyView[], keyId: string | null | undefined): string | null {
   if (method !== "Key") return null;
-  if (keys.length === 0) return "Aucune clé SSH enregistrée : crée ou importe une clé dans Paramètres → Clés SSH.";
-  if (!keyId) return "Choisis la clé à utiliser.";
-  if (!keys.some((k) => k.id === keyId)) return "La clé choisie a été supprimée : choisis-en une autre.";
+  if (keys.length === 0) return t("sshAuth.warnNoKeys");
+  if (!keyId) return t("sshAuth.warnChooseKey");
+  if (!keys.some((k) => k.id === keyId)) return t("sshAuth.warnKeyDeleted");
   return null;
 }
 
@@ -35,31 +37,31 @@ export function jumpDependents(servers: Server[], serverId: string | undefined):
 /** Même règle que le backend : l'emplacement des clés autorisées diffère sur ces OS */
 export function deployBlockedReason(os: OsType): string | null {
   if (os === "Windows") {
-    return "Déploiement automatique impossible sur Windows : OpenSSH y lit C:\\ProgramData\\ssh\\administrators_authorized_keys pour les administrateurs. Copie la clé publique (Paramètres → Clés SSH) et ajoute-la à la main.";
+    return t("sshAuth.blockedWindows");
   }
   if (os === "ESXi") {
-    return "Déploiement automatique impossible sur ESXi : les clés se trouvent dans /etc/ssh/keys-<utilisateur>/authorized_keys. Ajoute la clé publique depuis l'interface ESXi.";
+    return t("sshAuth.blockedEsxi");
   }
   return null;
 }
 
 export function deployWarning(os: OsType): string | null {
   return os === "TrueNAS"
-    ? "Sur TrueNAS, le middleware peut régénérer authorized_keys : ajoute aussi la clé dans Identifiants → Utilisateurs pour qu'elle soit conservée."
+    ? t("sshAuth.truenasWarning")
     : null;
 }
 
 /** Résumé court de l'authentification d'un serveur */
 export function authSummary(server: Server, keys: SshKeyView[], servers: Server[]): string {
   const method = authMethodOf(server);
-  let text = "Mot de passe";
-  if (method === "Agent") text = "Agent SSH";
+  let text = t("sshAuth.methods.password");
+  if (method === "Agent") text = t("sshAuth.methods.agent");
   if (method === "Key") {
     const k = keys.find((x) => x.id === server.ssh_key_id);
-    text = k ? `Clé « ${k.name} »` : "Clé supprimée";
+    text = k ? t("sshAuth.summaryKey", { name: k.name }) : t("sshAuth.summaryKeyDeleted");
   }
   const jump = server.jump_host_id ? servers.find((s) => s.id === server.jump_host_id) : undefined;
-  return jump ? `${text} · via ${jump.name}` : text;
+  return jump ? t("sshAuth.summaryVia", { text, jump: jump.name }) : text;
 }
 
 /** Serveurs qui s'authentifient avec cette clé (sa suppression est alors refusée) */

@@ -78,8 +78,3 @@ export function checkCustomFields(fields: CustomField[]): CustomFieldsCheck {
 export function isBlankField(f: CustomField): boolean {
   return !f.key.trim() && !f.value.trim();
 }
-
-/** « 1 serveur », « 3 serveurs » */
-export function plural(n: number, singular: string, pluralForm = `${singular}s`): string {
-  return `${n} ${n > 1 ? pluralForm : singular}`;
-}

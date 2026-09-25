@@ -15,6 +15,7 @@ import { useShortcuts } from "../hooks/useShortcuts";
 import { filterItems, groupByFolder, serverFilterable } from "../utils/filters";
 import { cn } from "../utils";
 import { DeployKeyDialog } from "../components/DeployKeyDialog";
+import { useT } from "../i18n";
 
 type PowerAction = "shutdown" | "reboot";
 
@@ -24,6 +25,7 @@ export function Servers() {
     addServer, updateServer, deleteServer, wakeServer, shutdownServer, rebootServer, toggleFavorite,
   } = useStore();
   const toast = useToast();
+  const { t } = useT();
   const location = useLocation();
   const navigate = useNavigate();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -75,7 +77,7 @@ export function Servers() {
   async function handleAdd(payload: ServerPayload) {
     try {
       await addServer(payload);
-      toast.success(`Serveur "${payload.name}" ajouté`);
+      toast.success(t("servers.added", { name: payload.name }));
       setShowAddForm(false);
     } catch (e) {
       toast.error(String(e));
@@ -87,7 +89,7 @@ export function Servers() {
     if (!editingServer) return;
     try {
       await updateServer(editingServer.id, payload);
-      toast.success(`Serveur "${payload.name}" mis à jour`);
+      toast.success(t("servers.updated", { name: payload.name }));
       setEditingServer(null);
     } catch (e) {
       toast.error(String(e));
@@ -99,7 +101,7 @@ export function Servers() {
     if (!deletingServer) return;
     try {
       await deleteServer(deletingServer.id);
-      toast.success(`Serveur "${deletingServer.name}" supprimé`);
+      toast.success(t("servers.deleted", { name: deletingServer.name }));
     } catch (e) {
       toast.error(String(e));
     } finally {
@@ -144,7 +146,7 @@ export function Servers() {
           {/* Actions */}
           <div className="flex items-center gap-1.5 shrink-0">
             <button
-              onClick={() => runAction(server.id, "wol", () => wakeServer(server.id), `WoL envoyé à ${server.name}`)}
+              onClick={() => runAction(server.id, "wol", () => wakeServer(server.id), t("servers.wolSent", { name: server.name }))}
               disabled={!!loading}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 transition-all disabled:opacity-50"
               title="Wake-on-LAN"
@@ -156,7 +158,7 @@ export function Servers() {
               onClick={() => setConfirmPower({ server, action: "shutdown" })}
               disabled={!!loading}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
-              title="Éteindre"
+              title={t("servers.shutdown")}
             >
               {loading === "shutdown" ? <Loader2 size={11} className="animate-spin" /> : <Power size={11} />}
               Off
@@ -165,7 +167,7 @@ export function Servers() {
               onClick={() => setConfirmPower({ server, action: "reboot" })}
               disabled={!!loading}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50"
-              title="Redémarrer"
+              title={t("servers.reboot")}
             >
               {loading === "reboot" ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
               Reboot
@@ -174,22 +176,22 @@ export function Servers() {
             <button
               onClick={() => setDeployingServer(server)}
               className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-              title="Déployer la clé SSH"
-              aria-label={`Déployer la clé SSH sur ${server.name}`}
+              title={t("servers.deployKey")}
+              aria-label={t("servers.deployKeyOn", { name: server.name })}
             >
               <KeyRound size={13} />
             </button>
             <button
               onClick={() => setEditingServer(server)}
               className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-              title="Modifier"
+              title={t("common.edit")}
             >
               <Pencil size={13} />
             </button>
             <button
               onClick={() => setDeletingServer(server)}
               className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all"
-              title="Supprimer"
+              title={t("common.delete")}
             >
               <Trash2 size={13} />
             </button>
@@ -200,12 +202,12 @@ export function Servers() {
         {fields.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2 pl-[4.25rem]">
             {fields.slice(0, 4).map((cf) => (
-              <span key={cf.key} className="text-[11px] text-text-secondary bg-bg-secondary rounded px-1.5 py-0.5 max-w-[16rem] truncate" title={`${cf.key} : ${cf.value}`}>
-                <span className="text-text-muted">{cf.key} :</span> {cf.value}
+              <span key={cf.key} className="text-[11px] text-text-secondary bg-bg-secondary rounded px-1.5 py-0.5 max-w-[16rem] truncate" title={t("servers.fieldTitle", { key: cf.key, value: cf.value })}>
+                <span className="text-text-muted">{t("servers.fieldLabel", { key: cf.key })}</span> {cf.value}
               </span>
             ))}
             {fields.length > 4 && (
-              <span className="text-[11px] text-text-muted" title={fields.slice(4).map((cf) => `${cf.key} : ${cf.value}`).join("\n")}>+{fields.length - 4}</span>
+              <span className="text-[11px] text-text-muted" title={fields.slice(4).map((cf) => t("servers.fieldTitle", { key: cf.key, value: cf.value })).join("\n")}>+{fields.length - 4}</span>
             )}
           </div>
         )}
@@ -223,15 +225,15 @@ export function Servers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Serveurs</h1>
-          <p className="text-sm text-text-secondary mt-0.5">{servers.length} serveur{servers.length > 1 ? "s" : ""} configuré{servers.length > 1 ? "s" : ""}</p>
+          <h1 className="text-xl font-bold text-text-primary">{t("servers.title")}</h1>
+          <p className="text-sm text-text-secondary mt-0.5">{t("servers.configured", { count: servers.length })}</p>
         </div>
         <button
           onClick={() => setShowAddForm(true)}
           className="flex items-center gap-2 px-4 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
         >
           <Plus size={14} />
-          Ajouter
+          {t("servers.add")}
         </button>
       </div>
 
@@ -240,7 +242,7 @@ export function Servers() {
         <FilterBar
           scope="servers"
           searchRef={searchRef}
-          placeholder="Nom, IP, OS, notes, champ personnalisé, tag…"
+          placeholder={t("servers.searchPlaceholder")}
           shown={filtered.length}
           total={servers.length}
           onOrganise={() => setOrganising(true)}
@@ -253,13 +255,13 @@ export function Servers() {
           <div className="p-4 rounded-full bg-bg-tertiary border border-border-primary mb-4">
             <Server size={32} className="text-text-secondary" />
           </div>
-          <h3 className="text-text-primary font-semibold mb-2">Aucun serveur</h3>
-          <p className="text-text-secondary text-sm mb-4">Ajoutez votre premier serveur</p>
+          <h3 className="text-text-primary font-semibold mb-2">{t("servers.emptyTitle")}</h3>
+          <p className="text-text-secondary text-sm mb-4">{t("servers.emptyHint")}</p>
           <button
             onClick={() => setShowAddForm(true)}
             className="px-5 py-2.5 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all"
           >
-            Ajouter un serveur
+            {t("servers.addFirst")}
           </button>
         </div>
       ) : filtered.length === 0 ? (
@@ -281,7 +283,7 @@ export function Servers() {
                   >
                     {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
                     {folder ? <FolderIcon size={13} /> : <Inbox size={13} />}
-                    {folder?.name ?? "Sans dossier"}
+                    {folder?.name ?? t("servers.noFolder")}
                     <span className="text-text-muted">({items.length})</span>
                   </button>
                 )}
@@ -296,9 +298,9 @@ export function Servers() {
       {editingServer && <ServerForm initial={editingServer} onSubmit={handleEdit} onCancel={() => setEditingServer(null)} />}
       {deletingServer && (
         <ConfirmDialog
-          title={`Supprimer ${deletingServer.name}`}
-          message="Cette action est irréversible. Le serveur sera retiré de tous les groupes."
-          confirmLabel="Supprimer"
+          title={t("servers.deleteTitle", { name: deletingServer.name })}
+          message={t("servers.deleteMessage")}
+          confirmLabel={t("common.delete")}
           dangerous
           onConfirm={handleDelete}
           onCancel={() => setDeletingServer(null)}
@@ -306,20 +308,20 @@ export function Servers() {
       )}
       {confirmPower && (
         <ConfirmDialog
-          title={`${confirmPower.action === "shutdown" ? "Éteindre" : "Redémarrer"} ${confirmPower.server.name}`}
+          title={t(confirmPower.action === "shutdown" ? "servers.shutdownTitle" : "servers.rebootTitle", { name: confirmPower.server.name })}
           message={
             confirmPower.action === "shutdown"
-              ? `${confirmPower.server.name} (${confirmPower.server.ip}) va être éteint via SSH.\nCommande : ${confirmPower.server.shutdown_command}`
-              : `${confirmPower.server.name} (${confirmPower.server.ip}) va redémarrer via SSH.\nCommande : ${confirmPower.server.reboot_command}`
+              ? t("servers.shutdownMessage", { name: confirmPower.server.name, ip: confirmPower.server.ip, command: confirmPower.server.shutdown_command })
+              : t("servers.rebootMessage", { name: confirmPower.server.name, ip: confirmPower.server.ip, command: confirmPower.server.reboot_command })
           }
-          confirmLabel={confirmPower.action === "shutdown" ? "Éteindre" : "Redémarrer"}
+          confirmLabel={confirmPower.action === "shutdown" ? t("servers.shutdown") : t("servers.reboot")}
           dangerous
           onCancel={() => setConfirmPower(null)}
           onConfirm={() => {
             const { server, action } = confirmPower;
             setConfirmPower(null);
-            if (action === "shutdown") runAction(server.id, "shutdown", () => shutdownServer(server.id), `Arrêt envoyé à ${server.name}`);
-            else runAction(server.id, "reboot", () => rebootServer(server.id), `Reboot envoyé à ${server.name}`);
+            if (action === "shutdown") runAction(server.id, "shutdown", () => shutdownServer(server.id), t("servers.shutdownSent", { name: server.name }));
+            else runAction(server.id, "reboot", () => rebootServer(server.id), t("servers.rebootSent", { name: server.name }));
           }}
         />
       )}

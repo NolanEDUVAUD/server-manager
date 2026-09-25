@@ -15,6 +15,7 @@ import { dashboard } from "./dashboard";
 import { docker } from "./docker";
 import { events } from "./events";
 import { filters } from "./filters";
+import { format } from "./format";
 import { groups } from "./groups";
 import { iconPicker } from "./iconPicker";
 import { integrations } from "./integrations";
@@ -33,9 +34,14 @@ import { proxmox } from "./proxmox";
 import { resources } from "./resources";
 import { retention } from "./retention";
 import { scheduler } from "./scheduler";
+import { serverForm } from "./serverForm";
+import { servers } from "./servers";
 import { services } from "./services";
 import { settings } from "./settings";
+import { settingsPage } from "./settingsPage";
 import { shortcuts } from "./shortcuts";
+import { sshAuth } from "./sshAuth";
+import { sshKeys } from "./sshKeys";
 import { themes } from "./themes";
 import { updates } from "./updates";
 import { webTabs } from "./webTabs";
@@ -53,6 +59,7 @@ export const fr = {
   docker,
   events,
   filters,
+  format,
   groups,
   iconPicker,
   integrations,
@@ -71,9 +78,14 @@ export const fr = {
   resources,
   retention,
   scheduler,
+  serverForm,
+  servers,
   services,
   settings,
+  settingsPage,
   shortcuts,
+  sshAuth,
+  sshKeys,
   themes,
   updates,
   webTabs,

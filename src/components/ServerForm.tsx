@@ -17,6 +17,7 @@ import { checkCustomFields, isBlankField } from "../utils/organisation";
 import { AuthFieldsValue, ServerAuthFields } from "./ServerAuthFields";
 import { authMethodOf, authWarning } from "../utils/sshAuth";
 import { useStore } from "../stores/useStore";
+import { useT } from "../i18n";
 
 interface ServerFormProps {
   initial?: ServerType;
@@ -43,6 +44,7 @@ const OS_REBOOT_DEFAULTS: Record<OsType, string> = {
 };
 
 export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormProps) {
+  const { t } = useT();
   const [form, setForm] = useState<ServerPayload>({
     name: initial?.name ?? prefill?.name ?? "",
     ip: initial?.ip ?? prefill?.ip ?? "",
@@ -109,9 +111,9 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
     setMacHint("");
     try {
       const r = await invoke<{ mac: string | null; virtual_nic: string | null }>("detect_mac", { ip: form.ip });
-      if (!r.mac) setMacHint("Aucune réponse : l'appareil est éteint ou sur un autre réseau.");
-      else if (r.virtual_nic) setMacHint(`Carte virtuelle (${r.virtual_nic}) : le Wake-on-LAN est inutile, c'est Proxmox qui la démarre.`);
-      else { set("mac_address", r.mac); setMacHint("MAC détectée."); }
+      if (!r.mac) setMacHint(t("serverForm.macNoReply"));
+      else if (r.virtual_nic) setMacHint(t("serverForm.macVirtual", { nic: r.virtual_nic }));
+      else { set("mac_address", r.mac); setMacHint(t("serverForm.macDetected")); }
     } catch (e) {
       setMacHint(String(e));
     } finally {
@@ -121,18 +123,18 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = "Le nom est requis";
-    if (!isValidIP(form.ip)) errs.ip = "Adresse IP invalide (ex: 192.168.1.10)";
+    if (!form.name.trim()) errs.name = t("serverForm.errors.name");
+    if (!isValidIP(form.ip)) errs.ip = t("serverForm.errors.ip");
     if (form.mac_address && !isValidMAC(form.mac_address)) {
-      errs.mac_address = "Format MAC invalide (ex: AA:BB:CC:DD:EE:FF)";
+      errs.mac_address = t("serverForm.errors.mac");
     }
-    if (!form.ssh_user.trim()) errs.ssh_user = "Utilisateur SSH requis";
-    if (isPassword && !initial && !form.ssh_password) errs.ssh_password = "Mot de passe requis pour un nouveau serveur";
+    if (!form.ssh_user.trim()) errs.ssh_user = t("serverForm.errors.sshUser");
+    if (isPassword && !initial && !form.ssh_password) errs.ssh_password = t("serverForm.errors.password");
     const authProblem = authWarning(auth.auth_method, keys ?? [], auth.ssh_key_id);
     if (authProblem) errs.auth = authProblem;
-    if (form.ssh_port < 1 || form.ssh_port > 65535) errs.ssh_port = "Port invalide (1–65535)";
+    if (form.ssh_port < 1 || form.ssh_port > 65535) errs.ssh_port = t("serverForm.errors.port");
     const fields = checkCustomFields(form.custom_fields ?? []);
-    if (fields.global || fields.rows.some(Boolean)) errs.custom_fields = "Corrige les champs personnalisés";
+    if (fields.global || fields.rows.some(Boolean)) errs.custom_fields = t("serverForm.errors.customFields");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -168,7 +170,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
               <Server size={18} className="text-accent-primary" />
             </div>
             <h2 className="text-text-primary font-semibold">
-              {initial ? "Modifier le serveur" : "Ajouter un serveur"}
+              {initial ? t("serverForm.titleEdit") : t("serverForm.titleAdd")}
             </h2>
           </div>
           <button onClick={onCancel} className="text-text-secondary hover:text-text-primary transition-colors">
@@ -179,19 +181,19 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Nom */}
           <div>
-            <label className={labelClass}>Nom *</label>
+            <label className={labelClass}>{t("serverForm.name")}</label>
             <input
               className={inputClass}
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
-              placeholder="Proxmox Master1"
+              placeholder={t("serverForm.namePlaceholder")}
             />
             {errors.name && <p className={errorClass}>{errors.name}</p>}
           </div>
 
           {/* Icône */}
           <div className="form-row">
-            <label className="text-text-secondary text-xs block mb-1">Icône</label>
+            <label className="text-text-secondary text-xs block mb-1">{t("serverForm.icon")}</label>
             <IconPicker
               serverId={form.name || 'new'}
               value={form.icon || null}
@@ -202,7 +204,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
           {/* IP + MAC */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass}>Adresse IP *</label>
+              <label className={labelClass}>{t("serverForm.ip")}</label>
               <input
                 className={inputClass}
                 value={form.ip}
@@ -212,7 +214,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
               {errors.ip && <p className={errorClass}>{errors.ip}</p>}
             </div>
             <div>
-              <label className={labelClass}>Adresse MAC (WoL)</label>
+              <label className={labelClass}>{t("serverForm.mac")}</label>
               <div className="flex gap-1.5">
                 <input
                   className={inputClass}
@@ -225,9 +227,9 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
                   onClick={detectMac}
                   disabled={!isValidIP(form.ip) || detecting}
                   className="shrink-0 px-2.5 text-xs rounded-win border border-border-primary text-text-secondary hover:text-accent-primary hover:border-accent-primary/40 disabled:opacity-40"
-                  title="Lire la MAC dans la table ARP (même réseau local)"
+                  title={t("serverForm.detectMacTitle")}
                 >
-                  {detecting ? "…" : "Détecter"}
+                  {detecting ? "…" : t("serverForm.detect")}
                 </button>
               </div>
               {errors.mac_address && <p className={errorClass}>{errors.mac_address}</p>}
@@ -237,7 +239,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
 
           {/* OS Type */}
           <div>
-            <label className={labelClass}>Type d'OS</label>
+            <label className={labelClass}>{t("serverForm.osType")}</label>
             <div className="flex gap-2 flex-wrap">
               {OS_TYPES.map((os) => (
                 <button
@@ -260,7 +262,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
           {/* SSH */}
           <div className={isPassword ? "grid grid-cols-[1fr_1fr_auto] gap-3" : "grid grid-cols-[1fr_auto] gap-3"}>
             <div>
-              <label className={labelClass}>Utilisateur SSH *</label>
+              <label className={labelClass}>{t("serverForm.sshUser")}</label>
               <input
                 className={inputClass}
                 value={form.ssh_user}
@@ -272,14 +274,14 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
             {isPassword && (
             <div className="relative">
               <label className={labelClass}>
-                Mot de passe SSH{initial ? " (laisser vide = inchangé)" : " *"}
+                {initial ? t("serverForm.sshPasswordEdit") : t("serverForm.sshPasswordNew")}
               </label>
               <input
                 className={`${inputClass} pr-9`}
                 type={showPassword ? "text" : "password"}
                 value={form.ssh_password}
                 onChange={(e) => set("ssh_password", e.target.value)}
-                placeholder={initial ? "••••••••" : "mot de passe"}
+                placeholder={initial ? "••••••••" : t("serverForm.passwordPlaceholder")}
                 autoComplete="new-password"
               />
               <button
@@ -293,7 +295,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
             </div>
             )}
             <div>
-              <label className={labelClass}>Port SSH</label>
+              <label className={labelClass}>{t("serverForm.sshPort")}</label>
               <input
                 className={`${inputClass} w-20`}
                 type="number"
@@ -323,7 +325,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
           {/* Commandes */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass}>Commande d'arrêt</label>
+              <label className={labelClass}>{t("serverForm.shutdownCommand")}</label>
               <input
                 className={inputClass}
                 value={form.shutdown_command ?? ""}
@@ -332,7 +334,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
               />
             </div>
             <div>
-              <label className={labelClass}>Commande de redémarrage</label>
+              <label className={labelClass}>{t("serverForm.rebootCommand")}</label>
               <input
                 className={inputClass}
                 value={form.reboot_command ?? ""}
@@ -344,12 +346,12 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
 
           {/* Notes */}
           <div>
-            <label className={labelClass}>Notes (optionnel)</label>
+            <label className={labelClass}>{t("serverForm.notes")}</label>
             <textarea
               className={`${inputClass} resize-none h-20`}
               value={form.notes ?? ""}
               onChange={(e) => set("notes", e.target.value)}
-              placeholder="Notes libres sur ce serveur..."
+              placeholder={t("serverForm.notesPlaceholder")}
             />
           </div>
 
@@ -367,14 +369,14 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
               onClick={onCancel}
               className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all"
             >
-              Annuler
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="px-5 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all disabled:opacity-50"
             >
-              {submitting ? "Enregistrement…" : initial ? "Mettre à jour" : "Ajouter"}
+              {submitting ? t("serverForm.submitting") : initial ? t("serverForm.update") : t("serverForm.add")}
             </button>
           </div>
         </form>
@@ -388,6 +390,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
  * réinstallé (nouvelle clé d'hôte). La prochaine connexion mémorisera la nouvelle.
  */
 function HostKeyReset({ serverId }: { serverId: string }) {
+  const { t } = useT();
   const [state, setState] = useState<"idle" | "done" | "none" | "error">("idle");
   const [error, setError] = useState("");
 
@@ -404,14 +407,14 @@ function HostKeyReset({ serverId }: { serverId: string }) {
   return (
     <div className="flex items-center justify-between gap-3 text-xs rounded-win border border-border-primary px-3 py-2">
       <span className="text-text-muted">
-        {state === "done" && "Empreinte oubliée : la prochaine connexion mémorisera la nouvelle clé."}
-        {state === "none" && "Aucune empreinte mémorisée pour ce serveur."}
+        {state === "done" && t("serverForm.hostKey.forgotten")}
+        {state === "none" && t("serverForm.hostKey.none")}
         {state === "error" && <span className="text-red-400">{error}</span>}
-        {state === "idle" && "Empreinte SSH mémorisée à la première connexion (protection contre l'usurpation)."}
+        {state === "idle" && t("serverForm.hostKey.idle")}
       </span>
       {state === "idle" && (
         <button type="button" onClick={reset} className="shrink-0 text-accent-primary hover:underline">
-          Réinitialiser
+          {t("serverForm.hostKey.reset")}
         </button>
       )}
     </div>
