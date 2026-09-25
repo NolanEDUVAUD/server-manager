@@ -405,3 +405,17 @@ export interface ClusterHealth {
   ha: string[];
   warnings: string[];
 }
+
+// ─── Sauvegardes Proxmox ────────────────────────────────────────────────────
+
+export interface BackupReport {
+  jobs: {
+    id: string; enabled: boolean; schedule: string; schedule_text: string; storage: string;
+    storage_available: boolean; next_run: number | null; all_guests: boolean; vmids: number[];
+  }[];
+  guests: { vmid: number; name: string; node: string; kind: string; covered: boolean; last_backup: number | null; last_backup_size: number | null }[];
+  tasks: { node: string; vmid: string | null; start: number; end: number | null; status: string; ok: boolean }[];
+  backup_storages: Record<string, string[]>;
+  unreadable_storages: string[];
+  warnings: string[];
+}

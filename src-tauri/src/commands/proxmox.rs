@@ -264,3 +264,38 @@ pub async fn proxmox_cluster_health(
     };
     client.cluster_health().await
 }
+
+#[tauri::command]
+pub async fn proxmox_backup_report(
+    state: State<'_, AppState>,
+    connection_id: String,
+) -> Result<crate::proxmox::backups::BackupReport, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    client.backup_report().await
+}
+
+#[tauri::command]
+pub async fn proxmox_backup_now(
+    state: State<'_, AppState>,
+    events: State<'_, EventLog>,
+    connection_id: String,
+    node: String,
+    vmid: u32,
+    name: String,
+    storage: String,
+) -> Result<String, String> {
+    let client = {
+        let data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
+        build_client(&data, &connection_id)?
+    };
+    let target = format!("{} ({})", name, vmid);
+    let result = client.backup_now(&node, vmid, &storage).await;
+    match &result {
+        Ok(_) => events.record(EventKind::VmAction, None, &target, format!("Sauvegarde lancée vers {}", storage)),
+        Err(e) => events.record(EventKind::Failure, None, &target, format!("Sauvegarde échouée : {}", e)),
+    }
+    result
+}

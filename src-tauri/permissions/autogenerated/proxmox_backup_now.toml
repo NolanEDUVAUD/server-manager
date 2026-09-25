@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-backup-now"
+description = "Enables the proxmox_backup_now command without any pre-configured scope."
+commands.allow = ["proxmox_backup_now"]
+
+[[permission]]
+identifier = "deny-proxmox-backup-now"
+description = "Denies the proxmox_backup_now command without any pre-configured scope."
+commands.deny = ["proxmox_backup_now"]

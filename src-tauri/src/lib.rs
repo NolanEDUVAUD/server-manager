@@ -172,6 +172,9 @@ pub fn run() {
             probes_cmd::run_probe_now,
             // ── Proxmox avancé ──────────────────────────────────
             proxmox_cmd::proxmox_cluster_health,
+            // ── Proxmox avancé ──────────────────────────────────
+            proxmox_cmd::proxmox_backup_report,
+            proxmox_cmd::proxmox_backup_now,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,

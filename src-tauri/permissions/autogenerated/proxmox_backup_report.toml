@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-backup-report"
+description = "Enables the proxmox_backup_report command without any pre-configured scope."
+commands.allow = ["proxmox_backup_report"]
+
+[[permission]]
+identifier = "deny-proxmox-backup-report"
+description = "Denies the proxmox_backup_report command without any pre-configured scope."
+commands.deny = ["proxmox_backup_report"]

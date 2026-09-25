@@ -47,6 +47,20 @@ struct RawSnapshot {
     snaptime: Option<u64>,
 }
 
+/// Erreur HTTP de Proxmox avec son message (ex. « Permission check failed »)
+async fn check_status(resp: reqwest::Response) -> Result<reqwest::Response, String> {
+    if resp.status().is_success() {
+        return Ok(resp);
+    }
+    let status = resp.status();
+    let body = resp.text().await.unwrap_or_default();
+    let detail = serde_json::from_str::<serde_json::Value>(&body)
+        .ok()
+        .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(str::to_string))
+        .unwrap_or_else(|| status.canonical_reason().unwrap_or("").to_string());
+    Err(format!("Proxmox a renvoyé une erreur {} : {}", status.as_u16(), detail.trim()))
+}
+
 impl ProxmoxClient {
     pub fn new(
         api_url: &str,
@@ -85,9 +99,7 @@ impl ProxmoxClient {
             .send()
             .await
             .map_err(|e| format!("Connexion à Proxmox échouée: {}", e))?;
-        let resp = resp
-            .error_for_status()
-            .map_err(|e| format!("Proxmox a renvoyé une erreur: {}", e))?;
+        let resp = check_status(resp).await?;
         resp.json::<ApiResponse<T>>()
             .await
             .map(|r| r.data)
@@ -103,9 +115,7 @@ impl ProxmoxClient {
             .send()
             .await
             .map_err(|e| format!("Connexion à Proxmox échouée: {}", e))?;
-        let resp = resp
-            .error_for_status()
-            .map_err(|e| format!("Proxmox a renvoyé une erreur: {}", e))?;
+        let resp = check_status(resp).await?;
         resp.json::<ApiResponse<String>>()
             .await
             .map(|r| r.data)
@@ -136,6 +146,56 @@ impl ProxmoxClient {
         }))
         .await;
         Ok(super::health::build(&status, &resources, &ha, &disks))
+    }
+
+    /// Rapport de sauvegarde : jobs, couverture, archives lisibles, tâches vzdump récentes
+    pub async fn backup_report(&self) -> Result<super::backups::BackupReport, String> {
+        use serde_json::Value;
+        let jobs = self.get_value("/cluster/backup").await?;
+        let not_backed_up = self.get_value("/cluster/backup-info/not-backed-up").await.unwrap_or(Value::Null);
+        let tasks = self.get_value("/cluster/tasks").await.unwrap_or(Value::Null);
+        let resources = self.get_value("/cluster/resources").await?;
+
+        let mut readable = Vec::new();
+        let mut unreadable = std::collections::BTreeSet::new();
+        for r in resources.as_array().cloned().unwrap_or_default() {
+            let is_backup = r["type"] == "storage"
+                && r["content"].as_str().unwrap_or("").split(',').any(|c| c == "backup");
+            if !is_backup {
+                continue;
+            }
+            let (node, storage) = (r["node"].as_str().unwrap_or("").to_string(), r["storage"].as_str().unwrap_or("").to_string());
+            if r["status"] == "available" {
+                readable.push((node, storage));
+            } else {
+                unreadable.insert(storage);
+            }
+        }
+        let archives = futures::future::join_all(readable.iter().map(|(node, storage)| async move {
+            self.get_value(&format!("/nodes/{}/storage/{}/content?content=backup", node, storage))
+                .await
+                .unwrap_or(Value::Null)
+        }))
+        .await;
+
+        Ok(super::backups::analyze(super::backups::Inputs {
+            jobs: &jobs,
+            not_backed_up: &not_backed_up,
+            tasks: &tasks,
+            resources: &resources,
+            archives: &archives,
+            unreadable_storages: unreadable.into_iter().collect(),
+        }))
+    }
+
+    /// Lance une sauvegarde immédiate d'un invité ; renvoie l'UPID de la tâche
+    pub async fn backup_now(&self, node: &str, vmid: u32, storage: &str) -> Result<String, String> {
+        let vmid = vmid.to_string();
+        self.post_form(
+            &format!("/nodes/{}/vzdump", node),
+            &[("vmid", vmid.as_str()), ("storage", storage), ("mode", "snapshot"), ("compress", "zstd")],
+        )
+        .await
     }
 
     pub async fn list_nodes(&self) -> Result<Vec<ProxmoxNode>, String> {
