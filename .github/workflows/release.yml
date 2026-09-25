@@ -61,16 +61,21 @@ jobs:
           fi
 
       - name: Préparer la clé publique de mise à jour
+        id: updater
         shell: bash
         run: |
           # Même règle que l'application : lignes « # » et blancs ignorés. La CLI Tauri
           # relit ce fichier (voir tauri.release.conf.json) et attend un base64 sans blanc.
           key="$( (grep -v '^[[:space:]]*#' src-tauri/updater-pubkey.txt || true) | tr -d '[:space:]')"
           if [[ -z "$key" ]]; then
-            echo "::error::src-tauri/updater-pubkey.txt est vide : ajoute la clé publique de signature (voir le README)"
-            exit 1
+            # Sans clé publique, l'application livrée n'active pas les mises à jour : on
+            # publie des installateurs normaux, sans .sig ni latest.json
+            echo "::warning::src-tauri/updater-pubkey.txt est vide : release sans mise à jour automatique (voir le README)"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           printf '%s' "$key" > src-tauri/updater-pubkey.txt
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Notes de version
         id: notes
@@ -116,9 +121,9 @@ jobs:
           releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           prerelease: false
-          includeUpdaterJson: true
+          includeUpdaterJson: ${{ steps.updater.outputs.enabled == 'true' }}
           updaterJsonPreferNsis: true
-          args: --config src-tauri/tauri.release.conf.json
+          args: ${{ steps.updater.outputs.enabled == 'true' && '--config src-tauri/tauri.release.conf.json' || '' }}
 
       - name: Joindre SHA256SUMS.txt
         shell: pwsh
