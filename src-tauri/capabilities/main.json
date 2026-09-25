@@ -99,6 +99,9 @@
     "allow-lab-power-execute",
     "allow-lab-power-cancel",
     "allow-detect-mac",
-    "allow-network-scan"
+    "allow-network-scan",
+    "allow-get-snippets",
+    "allow-save-snippet",
+    "allow-delete-snippet"
   ]
 }

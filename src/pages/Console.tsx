@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Plus, X, TerminalSquare, RotateCw } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { TerminalView } from "../components/TerminalView";
+import { SnippetMenu } from "../components/SnippetMenu";
 import { OS_ICONS, TerminalStatus } from "../types";
 import { cn } from "../utils";
 
@@ -133,10 +134,12 @@ export function Console() {
           )}
         </div>
 
+        <div className="ml-auto" />
+        <SnippetMenu sessionId={active?.status === "open" ? active.sessionId : undefined} />
         {active?.status === "closed" && (
           <button
             onClick={() => reconnectTerminal(active.key)}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-win bg-accent-primary text-white hover:bg-accent-secondary transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-win bg-accent-primary text-white hover:bg-accent-secondary transition-colors shrink-0"
           >
             <RotateCw size={12} />
             Reconnecter

@@ -255,6 +255,12 @@
           "markdownDescription": "Enables the delete_server command without any pre-configured scope."
         },
         {
+          "description": "Enables the delete_snippet command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-snippet",
+          "markdownDescription": "Enables the delete_snippet command without any pre-configured scope."
+        },
+        {
           "description": "Enables the detect_mac command without any pre-configured scope.",
           "type": "string",
           "const": "allow-detect-mac",
@@ -373,6 +379,12 @@
           "type": "string",
           "const": "allow-get-settings",
           "markdownDescription": "Enables the get_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_snippets command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-snippets",
+          "markdownDescription": "Enables the get_snippets command without any pre-configured scope."
         },
         {
           "description": "Enables the import_config command without any pre-configured scope.",
@@ -585,6 +597,12 @@
           "markdownDescription": "Enables the save_schedule command without any pre-configured scope."
         },
         {
+          "description": "Enables the save_snippet command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-snippet",
+          "markdownDescription": "Enables the save_snippet command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_autostart command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-autostart",
@@ -783,6 +801,12 @@
           "markdownDescription": "Denies the delete_server command without any pre-configured scope."
         },
         {
+          "description": "Denies the delete_snippet command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-snippet",
+          "markdownDescription": "Denies the delete_snippet command without any pre-configured scope."
+        },
+        {
           "description": "Denies the detect_mac command without any pre-configured scope.",
           "type": "string",
           "const": "deny-detect-mac",
@@ -901,6 +925,12 @@
           "type": "string",
           "const": "deny-get-settings",
           "markdownDescription": "Denies the get_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_snippets command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-snippets",
+          "markdownDescription": "Denies the get_snippets command without any pre-configured scope."
         },
         {
           "description": "Denies the import_config command without any pre-configured scope.",
@@ -1111,6 +1141,12 @@
           "type": "string",
           "const": "deny-save-schedule",
           "markdownDescription": "Denies the save_schedule command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_snippet command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-snippet",
+          "markdownDescription": "Denies the save_snippet command without any pre-configured scope."
         },
         {
           "description": "Denies the set_autostart command without any pre-configured scope.",

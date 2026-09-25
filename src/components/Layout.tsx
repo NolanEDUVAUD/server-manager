@@ -3,6 +3,7 @@ import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop,
 import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
 import { Console } from "../pages/Console";
+import { CommandPalette } from "./CommandPalette";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -99,6 +100,7 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
+      <CommandPalette pages={NAV_ITEMS} />
       <main className="flex-1 min-w-0 relative overflow-hidden">
         <div className={cn("h-full overflow-y-auto", onConsole && "hidden")}>{children}</div>
         {/* Console montée en permanence : les terminaux et leurs sessions SSH

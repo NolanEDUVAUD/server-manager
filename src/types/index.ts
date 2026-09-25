@@ -455,3 +455,7 @@ export interface NetworkDevice {
   virtual_nic: string | null;
   known_server: string | null;
 }
+
+// ─── Commandes mémorisées ───────────────────────────────────────────────────
+
+export interface Snippet { id: string; name: string; command: string }
