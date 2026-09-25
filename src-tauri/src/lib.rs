@@ -114,3 +114,47 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");
 }
+
+#[cfg(test)]
+mod acl_tests {
+    use std::collections::BTreeSet;
+
+    /// Noms des commandes enregistrées dans `generate_handler!`
+    fn handler_commands() -> BTreeSet<String> {
+        let src = include_str!("lib.rs");
+        let block = src.split("generate_handler![").nth(1).unwrap().split("])").next().unwrap();
+        block
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.starts_with("//") && l.contains("::"))
+            .map(|l| l.trim_end_matches(',').rsplit("::").next().unwrap().to_string())
+            .collect()
+    }
+
+    /// Une commande oubliée dans build.rs ou dans la capability serait refusée par l'ACL
+    /// (« not allowed ») : les trois listes doivent rester identiques.
+    #[test]
+    fn every_command_is_declared_in_manifest_and_capability() {
+        let handlers = handler_commands();
+
+        let build = include_str!("../build.rs");
+        let manifest: BTreeSet<String> = build
+            .split(".commands(&[").nth(1).unwrap().split("])").next().unwrap()
+            .split('"').skip(1).step_by(2).map(str::to_string).collect();
+        assert_eq!(handlers, manifest, "build.rs (app_manifest) ≠ generate_handler!");
+
+        let cap: serde_json::Value = serde_json::from_str(include_str!("../capabilities/main.json")).unwrap();
+        let allowed: BTreeSet<String> = cap["permissions"].as_array().unwrap().iter()
+            .filter_map(|p| p.as_str()?.strip_prefix("allow-").map(|c| c.replace('-', "_")))
+            .collect();
+        assert_eq!(handlers, allowed, "capabilities/main.json ≠ generate_handler!");
+    }
+
+    /// La capability ne doit jamais s'ouvrir aux origines distantes (onglets web)
+    #[test]
+    fn capability_is_local_only() {
+        let cap: serde_json::Value = serde_json::from_str(include_str!("../capabilities/main.json")).unwrap();
+        assert!(cap.get("remote").is_none());
+        assert_eq!(cap["webviews"], serde_json::json!(["main"]));
+    }
+}
