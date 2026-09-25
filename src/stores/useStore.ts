@@ -23,6 +23,7 @@ import {
   MetricsSample,
   AppEvent,
   Schedule,
+  ScheduleSaveReport,
   TerminalSession,
   ServerMetrics,
 } from "../types";
@@ -125,8 +126,9 @@ interface AppStore {
   // ── Planificateur ──────────────────────────────────────────────────────
   schedules: Schedule[];
   loadSchedules: () => Promise<void>;
-  saveSchedule: (schedule: Schedule) => Promise<Schedule>;
-  deleteSchedule: (id: string) => Promise<void>;
+  saveSchedule: (schedule: Schedule) => Promise<ScheduleSaveReport>;
+  /** Renvoie les erreurs de nettoyage des crontabs (vide si tout va bien) */
+  deleteSchedule: (id: string) => Promise<string[]>;
   runScheduleNow: (id: string) => Promise<void>;
 
   // ── Console SSH ────────────────────────────────────────────────────────
@@ -578,18 +580,20 @@ export const useStore = create<AppStore>((set, get) => ({
   },
 
   saveSchedule: async (schedule) => {
-    const saved = await invoke<Schedule>("save_schedule", { schedule });
+    const report = await invoke<ScheduleSaveReport>("save_schedule", { schedule });
+    const saved = report.schedule;
     set((s) => ({
       schedules: s.schedules.some((x) => x.id === saved.id)
         ? s.schedules.map((x) => (x.id === saved.id ? saved : x))
         : [...s.schedules, saved],
     }));
-    return saved;
+    return report;
   },
 
   deleteSchedule: async (id) => {
-    await invoke("delete_schedule", { id });
+    const errors = await invoke<string[]>("delete_schedule", { id });
     set((s) => ({ schedules: s.schedules.filter((x) => x.id !== id) }));
+    return errors;
   },
 
   runScheduleNow: async (id) => {

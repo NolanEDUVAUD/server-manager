@@ -269,18 +269,36 @@ export interface ServerEventStats {
 
 export type ScheduleAction = "Wake" | "Shutdown" | "Reboot";
 
+/** App : exécutée par l'app tant qu'elle tourne · Cron : installée dans le crontab du serveur */
+export type ScheduleMode = "App" | "Cron";
+
 export interface Schedule {
   /** Vide pour une nouvelle tâche (généré côté Rust) */
   id: string;
   name: string;
   enabled: boolean;
   action: ScheduleAction;
+  mode: ScheduleMode;
   target: { kind: "Server" | "Group"; id: string };
   /** 0 = lundi … 6 = dimanche */
   days: number[];
   /** « HH:MM », heure locale */
   time: string;
   last_run: number | null;
+}
+
+export interface ScheduleSaveReport {
+  schedule: Schedule;
+  /** Serveurs dont le crontab n'a pas pu être mis à jour */
+  cron_errors: string[];
+}
+
+export interface CronEntry {
+  source: string;
+  schedule: string;
+  user: string | null;
+  command: string;
+  managed_id: string | null;
 }
 
 // ─── Docker ─────────────────────────────────────────────────────────────────

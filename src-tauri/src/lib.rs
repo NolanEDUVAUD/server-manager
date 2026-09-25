@@ -1,4 +1,5 @@
 mod commands;
+mod cron;
 mod crypto;
 mod dashboard_state;
 mod docker;
@@ -98,6 +99,8 @@ pub fn run() {
             schedules::save_schedule,
             schedules::delete_schedule,
             schedules::run_schedule_now,
+            schedules::cron_list,
+            schedules::cron_remove_managed,
             // ── Docker ────────────────────────────────────────
             docker_cmd::docker_list,
             docker_cmd::docker_action,

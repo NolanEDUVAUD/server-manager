@@ -4,6 +4,7 @@ import { Plus, Zap, Power, RotateCcw, Play, Pencil, Trash2, CalendarClock, Info 
 import { useStore } from "../stores/useStore";
 import { Schedule, ScheduleAction } from "../types";
 import { ScheduleForm } from "../components/ScheduleForm";
+import { ServerCrons } from "../components/ServerCrons";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
@@ -26,7 +27,7 @@ export function Scheduler() {
     schedules, servers, groups, loadSchedules, saveSchedule, deleteSchedule, runScheduleNow,
     settings,
   } = useStore();
-  const { toasts, removeToast, success, error } = useToast();
+  const { toasts, removeToast, success, error, warning } = useToast();
   const [editing, setEditing] = useState<Schedule | null | "new">(null);
   const [deleting, setDeleting] = useState<Schedule | null>(null);
   const [running, setRunning] = useState<Schedule | null>(null);
@@ -47,9 +48,14 @@ export function Scheduler() {
     return servers.find((x) => x.id === s.target.id)?.name ?? "Serveur supprimé";
   }
 
+  /** Signale les serveurs dont le crontab n'a pas pu être mis à jour */
+  function reportCron(errors: string[]) {
+    if (errors.length > 0) warning(`Crontab non synchronisé — ${errors.join(" · ")}`);
+  }
+
   async function toggle(s: Schedule) {
     try {
-      await saveSchedule({ ...s, enabled: !s.enabled });
+      reportCron((await saveSchedule({ ...s, enabled: !s.enabled })).cron_errors);
     } catch (e) {
       error(String(e));
     }
@@ -110,10 +116,13 @@ export function Scheduler() {
                   <p className="text-sm text-text-primary truncate">
                     <span className="font-medium">{s.name}</span>
                     <span className="text-text-secondary"> · {meta.label} {targetName(s)}</span>
+                    {s.mode === "Cron" && (
+                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-accent-info/15 text-accent-info align-middle">cron</span>
+                    )}
                   </p>
                   <p className="text-xs text-text-muted">
                     {formatDays(s.days)} à {s.time}
-                    {s.enabled && <> · prochaine : {formatNext(nextRun(s, now))}</>}
+                    {s.enabled && <> · prochaine : {formatNext(nextRun(s, now))}{s.mode === "Cron" && " (heure du serveur)"}</>}
                   </p>
                 </div>
                 <button
@@ -140,6 +149,8 @@ export function Scheduler() {
         </div>
       )}
 
+      <ServerCrons onError={error} onSuccess={success} />
+
       {editing && (
         <ScheduleForm
           initial={editing === "new" ? undefined : editing}
@@ -147,9 +158,14 @@ export function Scheduler() {
           groups={groups}
           onCancel={() => setEditing(null)}
           onSubmit={async (schedule) => {
-            await saveSchedule(schedule);
+            const report = await saveSchedule(schedule);
             setEditing(null);
-            success(`Tâche « ${schedule.name} » enregistrée`);
+            success(
+              schedule.mode === "Cron" && report.cron_errors.length === 0
+                ? `Tâche « ${schedule.name} » enregistrée et installée en cron`
+                : `Tâche « ${schedule.name} » enregistrée`
+            );
+            reportCron(report.cron_errors);
           }}
         />
       )}
@@ -164,7 +180,7 @@ export function Scheduler() {
           onConfirm={() => {
             const s = deleting;
             setDeleting(null);
-            deleteSchedule(s.id).catch((e) => error(String(e)));
+            deleteSchedule(s.id).then(reportCron).catch((e) => error(String(e)));
           }}
         />
       )}

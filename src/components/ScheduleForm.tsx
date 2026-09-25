@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, CalendarClock } from "lucide-react";
-import { Group, Schedule, ScheduleAction, Server } from "../types";
+import { Group, Schedule, ScheduleAction, ScheduleMode, Server } from "../types";
 import { DAY_LABELS } from "../utils/schedule";
 import { cn } from "../utils";
 
@@ -38,6 +38,9 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
   const [time, setTime] = useState(initial?.time ?? "23:00");
   const [days, setDays] = useState<number[]>(initial?.days ?? [0, 1, 2, 3, 4]);
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
+  const [mode, setMode] = useState<ScheduleMode>(initial?.mode ?? "App");
+  // Un Wake-on-LAN ne peut pas tourner en cron sur une machine éteinte
+  const effectiveMode: ScheduleMode = action === "Wake" ? "App" : mode;
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,6 +61,7 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
         name: name.trim(),
         enabled,
         action,
+        mode: effectiveMode,
         target: { kind, id },
         days,
         time,
@@ -147,6 +151,40 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">Exécution</label>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                ["App", "Par l'app", "Tant que l'app est ouverte"],
+                ["Cron", "Sur le serveur (cron)", "Même app fermée · Linux"],
+              ] as const).map(([value, label, hint]) => (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={value === "Cron" && action === "Wake"}
+                  onClick={() => setMode(value)}
+                  className={cn(
+                    "text-left px-3 py-2 rounded-win border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+                    effectiveMode === value
+                      ? "bg-accent-primary/15 border-accent-primary/50"
+                      : "border-border-primary hover:bg-bg-hover"
+                  )}
+                >
+                  <span className="block text-sm text-text-primary">{label}</span>
+                  <span className="block text-[11px] text-text-muted">{hint}</span>
+                </button>
+              ))}
+            </div>
+            {action === "Wake" && (
+              <p className="text-[11px] text-text-muted mt-1.5">Le réveil est envoyé par l'app : un serveur éteint ne peut pas exécuter de cron.</p>
+            )}
+            {effectiveMode === "Cron" && (
+              <p className="text-[11px] text-text-muted mt-1.5">
+                Heure du serveur. La commande d'arrêt du serveur est utilisée ; avec <code>sudo</code>, il faut un sudo sans mot de passe.
+              </p>
+            )}
           </div>
 
           <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">

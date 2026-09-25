@@ -17,6 +17,14 @@ pub enum ScheduleAction {
     Reboot,
 }
 
+/// Où la tâche s'exécute : dans l'app (tant qu'elle tourne) ou en cron sur le serveur
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub enum ScheduleMode {
+    #[default]
+    App,
+    Cron,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TargetKind {
     Server,
@@ -35,6 +43,8 @@ pub struct Schedule {
     pub name: String,
     pub enabled: bool,
     pub action: ScheduleAction,
+    #[serde(default)]
+    pub mode: ScheduleMode,
     pub target: ScheduleTarget,
     /// Jours d'exécution, 0 = lundi … 6 = dimanche
     pub days: Vec<u8>,
@@ -56,7 +66,8 @@ pub fn parse_time(time: &str) -> Option<NaiveTime> {
 
 /// La tâche doit-elle s'exécuter maintenant ? (`now` et `last_run` en heure locale)
 pub fn is_due(schedule: &Schedule, now: NaiveDateTime, last_run: Option<NaiveDateTime>) -> bool {
-    if !schedule.enabled {
+    // Une tâche cron est exécutée par le serveur lui-même
+    if !schedule.enabled || schedule.mode == ScheduleMode::Cron {
         return false;
     }
     let Some(time) = parse_time(&schedule.time) else { return false };
@@ -87,7 +98,33 @@ pub fn validate(schedule: &Schedule, data: &AppData) -> Result<(), String> {
     if !exists {
         return Err("La cible de la tâche n'existe plus".into());
     }
+    if schedule.mode == ScheduleMode::Cron {
+        if schedule.action == ScheduleAction::Wake {
+            return Err("Un Wake-on-LAN ne peut pas être un cron : le serveur est éteint à ce moment-là".into());
+        }
+        let incompatible = target_server_ids(schedule, data).into_iter().filter_map(|id| {
+            data.servers.iter().find(|s| s.id == id).filter(|s| {
+                matches!(s.os_type, crate::models::OsType::Windows | crate::models::OsType::ESXi)
+            })
+        }).map(|s| s.name.clone()).collect::<Vec<_>>();
+        if !incompatible.is_empty() {
+            return Err(format!("Cron indisponible pour : {}", incompatible.join(", ")));
+        }
+    }
     Ok(())
+}
+
+/// Identifiants des serveurs visés par une tâche (un serveur, ou les membres du groupe)
+pub fn target_server_ids(schedule: &Schedule, data: &AppData) -> Vec<String> {
+    match schedule.target.kind {
+        TargetKind::Server => vec![schedule.target.id.clone()],
+        TargetKind::Group => data
+            .groups
+            .iter()
+            .find(|g| g.id == schedule.target.id)
+            .map(|g| g.server_ids.clone())
+            .unwrap_or_default(),
+    }
 }
 
 fn to_local(ms: i64) -> Option<NaiveDateTime> {
@@ -111,16 +148,8 @@ struct ServerJob {
 }
 
 fn jobs_for(schedule: &Schedule, data: &AppData) -> Vec<ServerJob> {
-    let ids: Vec<String> = match schedule.target.kind {
-        TargetKind::Server => vec![schedule.target.id.clone()],
-        TargetKind::Group => data
-            .groups
-            .iter()
-            .find(|g| g.id == schedule.target.id)
-            .map(|g| g.server_ids.clone())
-            .unwrap_or_default(),
-    };
-    ids.iter()
+    target_server_ids(schedule, data)
+        .iter()
         .filter_map(|id| data.servers.iter().find(|s| &s.id == id))
         .map(|s| ServerJob {
             id: s.id.clone(),
@@ -224,6 +253,7 @@ mod tests {
             name: "Nuit".into(),
             enabled: true,
             action: ScheduleAction::Shutdown,
+            mode: ScheduleMode::App,
             target: ScheduleTarget { kind: TargetKind::Server, id: "srv".into() },
             days,
             time: time.into(),
@@ -267,6 +297,13 @@ mod tests {
     }
 
     #[test]
+    fn cron_schedules_are_left_to_the_server() {
+        let mut s = schedule(vec![4], "23:00");
+        s.mode = ScheduleMode::Cron;
+        assert!(!is_due(&s, at(23, 0, 10), None));
+    }
+
+    #[test]
     fn validate_rejects_bad_input() {
         let mut data = AppData::default();
         let s = schedule(vec![4], "23:00");
@@ -286,5 +323,12 @@ mod tests {
         let mut bad_time = ok.clone();
         bad_time.time = "7h".into();
         assert!(validate(&bad_time, &data).is_err());
+
+        let mut cron_ok = ok.clone();
+        cron_ok.mode = ScheduleMode::Cron;
+        assert!(validate(&cron_ok, &data).is_ok());
+        let mut cron_wake = cron_ok.clone();
+        cron_wake.action = ScheduleAction::Wake;
+        assert!(validate(&cron_wake, &data).unwrap_err().contains("Wake"));
     }
 }
