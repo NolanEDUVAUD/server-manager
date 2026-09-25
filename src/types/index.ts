@@ -249,7 +249,7 @@ export interface TerminalSession {
 
 // ─── Historique des événements ──────────────────────────────────────────────
 
-export type EventKind = "Offline" | "Online" | "Wake" | "Shutdown" | "Reboot" | "VmAction" | "Container" | "Failure";
+export type EventKind = "Offline" | "Online" | "Wake" | "Shutdown" | "Reboot" | "VmAction" | "Container" | "Failure" | "Alert";
 
 export interface AppEvent {
   id: string;
@@ -337,4 +337,28 @@ export interface IntegrationView {
   has_secret: boolean;
   verify_tls: boolean;
   extra: Record<string, string>;
+}
+
+// ─── Alertes ────────────────────────────────────────────────────────────────
+
+export type AlertCondition =
+  | { type: "Offline"; minutes: number }
+  | { type: "CpuAbove"; percent: number; minutes: number }
+  | { type: "RamAbove"; percent: number; minutes: number }
+  | { type: "DiskAbove"; percent: number }
+  | { type: "TempAbove"; celsius: number; minutes: number }
+  | { type: "ActionFailed" }
+  | { type: "ProbeDown"; minutes: number };
+
+export type AlertTarget = { kind: "All" } | { kind: "Server"; id: string } | { kind: "Group"; id: string };
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  condition: AlertCondition;
+  target: AlertTarget;
+  notify_desktop: boolean;
+  notify_push: boolean;
+  cooldown_minutes: number;
 }

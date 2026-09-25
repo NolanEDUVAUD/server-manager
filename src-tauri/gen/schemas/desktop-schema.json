@@ -219,6 +219,12 @@
           "markdownDescription": "Enables the cron_remove_managed command without any pre-configured scope."
         },
         {
+          "description": "Enables the delete_alert_rule command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-alert-rule",
+          "markdownDescription": "Enables the delete_alert_rule command without any pre-configured scope."
+        },
+        {
           "description": "Enables the delete_custom_theme command without any pre-configured scope.",
           "type": "string",
           "const": "allow-delete-custom-theme",
@@ -277,6 +283,12 @@
           "type": "string",
           "const": "allow-forget-host-key",
           "markdownDescription": "Enables the forget_host_key command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_alert_rules command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-alert-rules",
+          "markdownDescription": "Enables the get_alert_rules command without any pre-configured scope."
         },
         {
           "description": "Enables the get_autostart command without any pre-configured scope.",
@@ -453,6 +465,12 @@
           "markdownDescription": "Enables the run_schedule_now command without any pre-configured scope."
         },
         {
+          "description": "Enables the save_alert_rule command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-alert-rule",
+          "markdownDescription": "Enables the save_alert_rule command without any pre-configured scope."
+        },
+        {
           "description": "Enables the save_custom_theme command without any pre-configured scope.",
           "type": "string",
           "const": "allow-save-custom-theme",
@@ -529,6 +547,12 @@
           "type": "string",
           "const": "allow-terminal-write",
           "markdownDescription": "Enables the terminal_write command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the test_alert_channels command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-test-alert-channels",
+          "markdownDescription": "Enables the test_alert_channels command without any pre-configured scope."
         },
         {
           "description": "Enables the test_integration command without any pre-configured scope.",
@@ -627,6 +651,12 @@
           "markdownDescription": "Denies the cron_remove_managed command without any pre-configured scope."
         },
         {
+          "description": "Denies the delete_alert_rule command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-alert-rule",
+          "markdownDescription": "Denies the delete_alert_rule command without any pre-configured scope."
+        },
+        {
           "description": "Denies the delete_custom_theme command without any pre-configured scope.",
           "type": "string",
           "const": "deny-delete-custom-theme",
@@ -685,6 +715,12 @@
           "type": "string",
           "const": "deny-forget-host-key",
           "markdownDescription": "Denies the forget_host_key command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_alert_rules command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-alert-rules",
+          "markdownDescription": "Denies the get_alert_rules command without any pre-configured scope."
         },
         {
           "description": "Denies the get_autostart command without any pre-configured scope.",
@@ -861,6 +897,12 @@
           "markdownDescription": "Denies the run_schedule_now command without any pre-configured scope."
         },
         {
+          "description": "Denies the save_alert_rule command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-alert-rule",
+          "markdownDescription": "Denies the save_alert_rule command without any pre-configured scope."
+        },
+        {
           "description": "Denies the save_custom_theme command without any pre-configured scope.",
           "type": "string",
           "const": "deny-save-custom-theme",
@@ -937,6 +979,12 @@
           "type": "string",
           "const": "deny-terminal-write",
           "markdownDescription": "Denies the terminal_write command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the test_alert_channels command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-test-alert-channels",
+          "markdownDescription": "Denies the test_alert_channels command without any pre-configured scope."
         },
         {
           "description": "Denies the test_integration command without any pre-configured scope.",

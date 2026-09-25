@@ -1,3 +1,4 @@
+mod alerts;
 mod commands;
 mod cron;
 mod crypto;
@@ -9,6 +10,7 @@ mod integrations;
 mod keystore;
 mod known_hosts;
 mod metrics;
+mod monitor;
 mod notify;
 mod models;
 mod proxmox;
@@ -17,7 +19,7 @@ mod storage;
 mod terminal;
 mod tray;
 
-use commands::{tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -37,8 +39,11 @@ pub fn run() {
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
             app.manage(events::EventLog::load(app.handle()));
+            app.manage(alerts::AlertEngine::new(app.handle()));
             // Boucle du planificateur (tâches WoL / arrêt programmées)
             scheduler::start(app.handle().clone());
+            // Surveillance continue (ping + métriques), indépendante de la fenêtre
+            monitor::start(app.handle().clone());
             // Icône de zone de notification ; la fenêtre, créée masquée, n'est
             // affichée que si l'utilisateur n'a pas demandé un démarrage minimisé
             tray::create(app.handle())?;
@@ -151,6 +156,11 @@ pub fn run() {
             integrations_cmd::test_integration,
             // ── Zone de notification ────────────────────────────
             tray_cmd::update_tray_status,
+            // ── Alertes ─────────────────────────────────────────
+            alerts_cmd::get_alert_rules,
+            alerts_cmd::save_alert_rule,
+            alerts_cmd::delete_alert_rule,
+            alerts_cmd::test_alert_channels,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,

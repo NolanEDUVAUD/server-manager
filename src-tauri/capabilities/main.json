@@ -79,6 +79,10 @@
     "allow-get-integrations",
     "allow-save-integration",
     "allow-test-integration",
-    "allow-update-tray-status"
+    "allow-update-tray-status",
+    "allow-get-alert-rules",
+    "allow-save-alert-rule",
+    "allow-delete-alert-rule",
+    "allow-test-alert-channels"
   ]
 }

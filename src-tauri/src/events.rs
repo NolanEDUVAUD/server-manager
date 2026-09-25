@@ -22,6 +22,7 @@ pub enum EventKind {
     VmAction,
     Container,
     Failure,
+    Alert,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -193,10 +194,18 @@ impl EventLog {
         }
         drop(store);
         let _ = self.app.emit("event-recorded", &event);
+        if event.kind == EventKind::Failure {
+            if let Some(alerts) = self.app.try_state::<crate::alerts::AlertEngine>() {
+                alerts.on_failure(event.server_id.as_deref(), &event.target, &event.message);
+            }
+        }
     }
 
     /// Transmet un résultat de ping ; enregistre un événement en cas de changement d'état.
     pub fn observe_ping(&self, server_id: &str, target: &str, online: bool) {
+        if let Some(alerts) = self.app.try_state::<crate::alerts::AlertEngine>() {
+            alerts.on_ping(server_id, online);
+        }
         let kind = match self.store.lock() {
             Ok(mut store) => store.observe(server_id, online),
             Err(_) => None,

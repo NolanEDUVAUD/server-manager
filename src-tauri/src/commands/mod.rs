@@ -1,3 +1,4 @@
+pub mod alerts;
 pub mod dashboards;
 pub mod docker;
 pub mod events;

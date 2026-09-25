@@ -115,6 +115,8 @@ interface AppStore {
   metricsErrors: Record<string, string>;
   metricsHistory: Record<string, MetricsSample[]>;
   fetchMetrics: (serverId: string) => Promise<void>;
+  /** Résultat de collecte (reçu du backend ou d'une collecte manuelle) */
+  applyMetrics: (serverId: string, metrics: ServerMetrics | null, error: string | null) => void;
 
   // ── Historique des événements ──────────────────────────────────────────
   /** Du plus récent au plus ancien */
@@ -532,31 +534,38 @@ export const useStore = create<AppStore>((set, get) => ({
   // ── Monitoring des ressources ──────────────────────────────────────────
   fetchMetrics: async (serverId) => {
     try {
-      const m = await invoke<ServerMetrics>("get_server_metrics", { serverId });
-      const sample: MetricsSample = {
-        t: Date.now(),
-        cpu: m.cpu_percent,
-        mem: m.mem_total_bytes > 0 ? (m.mem_used_bytes * 100) / m.mem_total_bytes : 0,
-      };
-      set((s) => {
-        const { [serverId]: _cleared, ...metricsErrors } = s.metricsErrors;
-        return {
-          metrics: { ...s.metrics, [serverId]: m },
-          metricsErrors,
-          metricsHistory: {
-            ...s.metricsHistory,
-            [serverId]: appendSample(s.metricsHistory[serverId], sample, METRICS_HISTORY_MAX),
-          },
-        };
-      });
+      get().applyMetrics(serverId, await invoke<ServerMetrics>("get_server_metrics", { serverId }), null);
     } catch (e) {
+      get().applyMetrics(serverId, null, String(e));
+    }
+  },
+
+  applyMetrics: (serverId, m, error) => {
+    if (!m) {
       // On retire les valeurs périmées pour ne pas les afficher comme actuelles ;
       // l'historique déjà collecté reste visible.
       set((s) => {
         const { [serverId]: _stale, ...metrics } = s.metrics;
-        return { metrics, metricsErrors: { ...s.metricsErrors, [serverId]: String(e) } };
+        return { metrics, metricsErrors: { ...s.metricsErrors, [serverId]: error ?? "Erreur inconnue" } };
       });
+      return;
     }
+    const sample: MetricsSample = {
+      t: Date.now(),
+      cpu: m.cpu_percent,
+      mem: m.mem_total_bytes > 0 ? (m.mem_used_bytes * 100) / m.mem_total_bytes : 0,
+    };
+    set((s) => {
+      const { [serverId]: _cleared, ...metricsErrors } = s.metricsErrors;
+      return {
+        metrics: { ...s.metrics, [serverId]: m },
+        metricsErrors,
+        metricsHistory: {
+          ...s.metricsHistory,
+          [serverId]: appendSample(s.metricsHistory[serverId], sample, METRICS_HISTORY_MAX),
+        },
+      };
+    });
   },
 
   // ── Historique des événements ──────────────────────────────────────────

@@ -5,11 +5,6 @@ use crate::integrations::{http_client, IntegrationKind, Resolved};
 
 pub const PUSH_KINDS: [IntegrationKind; 3] = [IntegrationKind::Ntfy, IntegrationKind::Discord, IntegrationKind::Telegram];
 
-/// Priorité ntfy (1-5) selon la gravité
-pub fn ntfy_priority(critical: bool) -> &'static str {
-    if critical { "5" } else { "3" }
-}
-
 pub async fn send(resolved: &Resolved, title: &str, message: &str, critical: bool) -> Result<(), String> {
     let cfg = &resolved.config;
     let client = http_client(cfg.verify_tls, 10)?;
@@ -19,13 +14,14 @@ pub async fn send(resolved: &Resolved, title: &str, message: &str, critical: boo
             if topic.is_empty() {
                 return Err("ntfy : topic manquant".into());
             }
-            let mut req = client
-                .post(format!("{}/{}", cfg.url, topic))
-                // Titre en en-tête HTTP : ntfy n'accepte que de l'ASCII ici, on le translittère
-                .header("Title", ascii_header(title))
-                .header("Priority", ntfy_priority(critical))
-                .header("Tags", if critical { "rotating_light" } else { "information_source" })
-                .body(message.to_string());
+            // Publication JSON (et non par en-têtes HTTP) : titre en UTF-8 intact
+            let mut req = client.post(&cfg.url).json(&json!({
+                "topic": topic,
+                "title": title,
+                "message": message,
+                "priority": if critical { 5 } else { 3 },
+                "tags": [if critical { "rotating_light" } else { "information_source" }],
+            }));
             if !resolved.secret.is_empty() {
                 req = req.bearer_auth(&resolved.secret);
             }
@@ -62,35 +58,5 @@ pub async fn send(resolved: &Resolved, title: &str, message: &str, critical: boo
         let status = resp.status().as_u16();
         let body = resp.text().await.unwrap_or_default();
         Err(format!("{:?} : HTTP {} — {}", cfg.kind, status, body.chars().take(200).collect::<String>()))
-    }
-}
-
-/// En-tête HTTP ASCII : accents retirés, autres caractères remplacés
-pub fn ascii_header(value: &str) -> String {
-    value
-        .chars()
-        .map(|c| match c {
-            'à' | 'â' | 'ä' => 'a',
-            'é' | 'è' | 'ê' | 'ë' => 'e',
-            'î' | 'ï' => 'i',
-            'ô' | 'ö' => 'o',
-            'ù' | 'û' | 'ü' => 'u',
-            'ç' => 'c',
-            'É' | 'È' => 'E',
-            c if c.is_ascii() && !c.is_ascii_control() => c,
-            _ => '?',
-        })
-        .collect()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn header_is_ascii() {
-        assert_eq!(ascii_header("Serveur « truenas » hors ligne — échec"), "Serveur ? truenas ? hors ligne ? echec");
-        assert!(ascii_header("é\n").is_ascii());
-        assert!(!ascii_header("a\nb").contains('\n'));
     }
 }

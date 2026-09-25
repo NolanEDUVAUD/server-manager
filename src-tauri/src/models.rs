@@ -304,6 +304,9 @@ pub struct AppData {
     pub schedules: Vec<crate::scheduler::Schedule>,
     #[serde(default)]
     pub integrations: Vec<crate::integrations::Integration>,
+    /// Règles d'alerte ; absentes d'un ancien fichier = règles par défaut
+    #[serde(default = "crate::alerts::default_rules")]
+    pub alert_rules: Vec<crate::alerts::AlertRule>,
     /// Schéma de la clé de chiffrement des secrets (voir crypto::KEY_VERSION_MASTER)
     #[serde(default = "legacy_key_version")]
     pub key_version: u8,
@@ -324,6 +327,7 @@ impl Default for AppData {
             schedules: Vec::new(),
             key_version: 1,
             integrations: Vec::new(),
+            alert_rules: crate::alerts::default_rules(),
         }
     }
 }

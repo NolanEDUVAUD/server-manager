@@ -1,69 +1,49 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useMetrics } from "./useMetrics";
+import { useMetrics, supportsMetrics } from "./useMetrics";
 import { useStore } from "../stores/useStore";
 import { Server } from "../types";
 
+// Capture du gestionnaire enregistré via listen() pour simuler les événements du backend
+let handler: ((e: { payload: unknown }) => void) | null = null;
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn((_name: string, cb: (e: { payload: unknown }) => void) => {
+    handler = cb;
+    return Promise.resolve(() => {});
+  }),
+}));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
-function server(id: string, os_type: Server["os_type"]): Server {
-  return {
-    id, name: id, ip: "10.0.0.1", mac_address: "", ssh_user: "root", ssh_password: "",
-    ssh_port: 22, shutdown_command: "", reboot_command: "", os_type,
-  };
-}
-
-const online = { online: true, latency_ms: 1, last_checked: 0 };
-
-function setNetwork(patch: Partial<ReturnType<typeof useStore.getState>["settings"]["network"]>) {
-  const settings = useStore.getState().settings;
-  useStore.setState({ settings: { ...settings, network: { ...settings.network, ...patch } } });
-}
+const metrics = {
+  cpu_percent: 12, mem_total_bytes: 100, mem_used_bytes: 25, uptime_secs: 1,
+  load_avg: [0, 0, 0] as [number, number, number], disks: [], temperatures: [], cpu_temp_celsius: null,
+};
 
 describe("useMetrics", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-    useStore.setState({
-      servers: [server("lin", "Linux"), server("win", "Windows"), server("off", "TrueNAS")],
-      statuses: { lin: online, win: online, off: { ...online, online: false } },
-    });
-    setNetwork({ metrics_enabled: true, metrics_interval_secs: 15 });
+    handler = null;
+    useStore.setState({ metrics: {}, metricsErrors: {}, metricsHistory: {} });
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("ne collecte que les serveurs en ligne et compatibles", async () => {
-    const fetchMetrics = vi.fn().mockResolvedValue(undefined);
-    useStore.setState({ fetchMetrics });
-
+  it("range les métriques reçues du backend", () => {
     renderHook(() => useMetrics());
-    await vi.advanceTimersByTimeAsync(3000);
+    handler!({ payload: { server_id: "s", metrics, error: null } });
 
-    expect(fetchMetrics).toHaveBeenCalledTimes(1);
-    expect(fetchMetrics).toHaveBeenCalledWith("lin");
+    expect(useStore.getState().metrics.s).toEqual(metrics);
+    expect(useStore.getState().metricsHistory.s[0].mem).toBe(25);
   });
 
-  it("ne relance pas une collecte encore en cours", async () => {
-    // Collecte qui ne se termine jamais : simule un serveur qui ne répond pas
-    const fetchMetrics = vi.fn().mockReturnValue(new Promise(() => {}));
-    useStore.setState({ fetchMetrics });
-
+  it("mémorise l'erreur d'une collecte en échec", () => {
     renderHook(() => useMetrics());
-    await vi.advanceTimersByTimeAsync(3000 + 15000 * 2);
+    handler!({ payload: { server_id: "s", metrics: null, error: "Timeout" } });
 
-    expect(fetchMetrics).toHaveBeenCalledTimes(1);
+    expect(useStore.getState().metricsErrors.s).toBe("Timeout");
   });
 
-  it("ne fait rien si le monitoring est désactivé", async () => {
-    const fetchMetrics = vi.fn().mockResolvedValue(undefined);
-    useStore.setState({ fetchMetrics });
-    setNetwork({ metrics_enabled: false });
-
-    renderHook(() => useMetrics());
-    await vi.advanceTimersByTimeAsync(60000);
-
-    expect(fetchMetrics).not.toHaveBeenCalled();
+  it("exclut Windows et ESXi", () => {
+    const srv = (os_type: Server["os_type"]) => ({ os_type } as Server);
+    expect(supportsMetrics(srv("Linux"))).toBe(true);
+    expect(supportsMetrics(srv("Windows"))).toBe(false);
+    expect(supportsMetrics(srv("ESXi"))).toBe(false);
   });
 });

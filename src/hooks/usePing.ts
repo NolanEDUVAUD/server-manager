@@ -1,29 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { useStore } from "../stores/useStore";
+import { PingResult } from "../types";
 
 /**
- * Hook qui lance le ping automatique de tous les serveurs
- * à l'intervalle défini dans les paramètres.
+ * Statuts des serveurs : le ping périodique tourne côté Rust (monitor.rs) pour
+ * rester fiable fenêtre masquée ; ce hook reçoit ses résultats (« ping-results »)
+ * et déclenche un ping immédiat au démarrage pour un affichage sans attente.
  */
 export function usePing() {
-  const { settings, pingAll, servers } = useStore();
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   useEffect(() => {
-    if (servers.length === 0) return;
-
-    // Ping immédiat au montage
+    const { pingAll, updateStatus } = useStore.getState();
     pingAll().catch(console.error);
-
-    // Puis à intervalle régulier
-    const ms = (settings.network.ping_interval_secs ?? 30) * 1000;
-    intervalRef.current = setInterval(() => {
-      pingAll().catch(console.error);
-    }, ms);
-
+    const unlisten = listen<PingResult[]>("ping-results", (e) => updateStatus(e.payload));
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      unlisten.then((fn) => fn());
     };
-  // Réinitialiser si l'intervalle ou le nombre de serveurs change
-  }, [settings.network.ping_interval_secs, servers.length]);
+  }, []);
 }

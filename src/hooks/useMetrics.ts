@@ -1,43 +1,30 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { useStore } from "../stores/useStore";
-import { Server } from "../types";
+import { Server, ServerMetrics } from "../types";
 
 /** Windows et ESXi n'exposent pas /proc : pas de collecte possible par SSH. */
 export function supportsMetrics(server: Server): boolean {
   return server.os_type !== "Windows" && server.os_type !== "ESXi";
 }
 
+export interface MetricsUpdate {
+  server_id: string;
+  metrics: ServerMetrics | null;
+  error: string | null;
+}
+
 /**
- * Collecte périodique des ressources de tous les serveurs en ligne, montée une
- * seule fois au niveau de l'app pour que l'historique continue de se remplir
- * quelle que soit la page affichée.
+ * Reçoit les métriques collectées par la boucle Rust (monitor.rs), qui tourne
+ * indépendamment de la fenêtre, et les range dans le store (valeurs + historique).
  */
 export function useMetrics() {
-  const enabled = useStore((s) => s.settings.network.metrics_enabled);
-  const intervalSecs = useStore((s) => s.settings.network.metrics_interval_secs);
-  // Serveurs dont une collecte est déjà en cours : un serveur lent (timeout 10 s)
-  // ne doit pas accumuler des connexions SSH parallèles d'un tick à l'autre.
-  const inFlight = useRef(new Set<string>());
-
   useEffect(() => {
-    if (!enabled) return;
-
-    function tick() {
-      const { servers, statuses, fetchMetrics } = useStore.getState();
-      for (const server of servers) {
-        if (!supportsMetrics(server) || !statuses[server.id]?.online) continue;
-        if (inFlight.current.has(server.id)) continue;
-        inFlight.current.add(server.id);
-        fetchMetrics(server.id).finally(() => inFlight.current.delete(server.id));
-      }
-    }
-
-    // Premier tick après un court délai : laisse le premier ping établir les statuts
-    const first = setTimeout(tick, 3000);
-    const timer = setInterval(tick, Math.max(5, intervalSecs) * 1000);
+    const unlisten = listen<MetricsUpdate>("metrics-update", (e) => {
+      useStore.getState().applyMetrics(e.payload.server_id, e.payload.metrics, e.payload.error);
+    });
     return () => {
-      clearTimeout(first);
-      clearInterval(timer);
+      unlisten.then((fn) => fn());
     };
-  }, [enabled, intervalSecs]);
+  }, []);
 }
