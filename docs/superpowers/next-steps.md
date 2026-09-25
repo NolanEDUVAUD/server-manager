@@ -1,8 +1,8 @@
-# Reprise — reste à faire (mis à jour le 2026-09-25)
+# Reprise — état et suite (mis à jour le 2026-09-25)
 
-## État actuel (`feature/v2` = `master`)
+## État actuel (`feature/v2` = `master`, version 0.3.0)
 
-Toutes les fonctionnalités de la **Phase 1** sont livrées, testées et poussées. La version affichée est encore **0.2.0**, et la release 0.3.0 n'est pas faite.
+La **Phase 1 est terminée** : toutes ses fonctionnalités sont livrées, testées et poussées, et le tag `v0.3.0` déclenche la release (voir ci-dessous).
 
 | # | Fonctionnalité | État |
 |---|---|---|
@@ -11,46 +11,18 @@ Toutes les fonctionnalités de la **Phase 1** sont livrées, testées et poussé
 | 1.3 | Verrouillage (PIN, Windows Hello, mot de passe maître Argon2id) | ✅ |
 | 1.4 | Sauvegarde / restauration chiffrées `.spmbackup` + sauvegarde automatique | ✅ |
 | 1.5 | Mise à jour automatique signée + workflow `release.yml` | ✅ (clé publique à fournir) |
-| 1.6 | Internationalisation FR/EN | 🟡 lots A, B, C faits ; **lot D restant** |
+| 1.6 | Internationalisation FR/EN, garde-fou contre les textes en dur | ✅ |
 | 1.7 | Organisation (tags, dossiers, favoris, filtres, palette, raccourcis) | ✅ |
 
-Dernières vérifications, toutes vertes : 277 tests Rust, 232 tests Vitest, `tsc`, `vite build`, `npm audit --omit=dev` à 0, et `clippy` sans nouvel avertissement. `cargo audit` n'a plus d'avis corrigeable ; les avis restants sont documentés dans le README.
+Dernières vérifications, toutes vertes : 278 tests Rust, 235 tests Vitest, `tsc`, `vite build`, `npm audit --omit=dev` à 0, et `clippy` sans nouvel avertissement. `cargo audit` n'a plus d'avis corrigeable ; les avis restants sont documentés dans le README.
 
-## Reste à faire pour clore la Phase 1
+## Release 0.3.0
 
-### 1. i18n — lot D (fichiers encore en français seulement)
+- Pousser le tag annoté `v0.3.0` lance `.github/workflows/release.yml` (Windows) : NSIS + MSI + `SHA256SUMS.txt`, release **en brouillon**.
+- Relire le brouillon, vérifier que `grep -a -c -i nolan` renvoie 0 sur l'exécutable, puis publier.
+- **Côté propriétaire, facultatif** : générer la paire de clés de mise à jour (`npm run tauri signer generate -- -w <chemin hors du dépôt>`), mettre la clé **publique** dans `src-tauri/updater-pubkey.txt` et ajouter les secrets GitHub `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Les mises à jour automatiques s'activent à la release suivante.
 
-Ce lot avait été confié à un agent, arrêté avant la fin : rien n'a été fusionné.
-
-- `src/pages/Servers.tsx`, `src/components/ServerForm.tsx`, `src/components/ServerCard.tsx`
-- `src/components/ConfirmDialog.tsx` : libellés par défaut « Confirmer » / « Annuler », à prendre dans `common`
-- `src/components/ServerAuthFields.tsx`, `src/components/SshKeysSettings.tsx`, `src/components/DeployKeyDialog.tsx`, `src/utils/sshAuth.ts`
-- `src/pages/Settings.tsx` : titres des sections, sections Général, Apparence, Réseau, Configuration, À propos, bloc « Modules »
-- `src/stores/useStore.ts` : messages destinés à l'utilisateur
-- `src/utils/index.ts` : `formatBytes` (Mo/Go/To), `formatUptime` (j/h/min), `formatDate` (`"fr-FR"` → `currentLocale()`)
-- `src/components/StatusBadge.tsx` : « En ligne », « Hors ligne », « Inconnu »
-- `src/utils/organisation.ts` : messages de `nameError`, fonction `plural`
-
-Méthode, déjà appliquée aux lots A à C :
-- un espace de noms par groupe de fichiers : `src/i18n/fr/<ns>.ts` et `src/i18n/en/<ns>.ts`, ce dernier typé `Dict["<ns>"]` ;
-- `useT()` dans les composants, `t()` / `currentLocale()` ailleurs ;
-- régénérer les deux `index.ts` avec `python3 docs/superpowers/tools/gen_i18n_index.py`.
-
-Ensuite, **activer le garde-fou** : copier `docs/superpowers/tools/untranslated.test.ts.txt` en `src/i18n/untranslated.test.ts`. Il échoue s'il reste du texte visible écrit en dur dans un `.tsx`. Traiter ses retours, en ajoutant à `UNIVERSAL` les noms propres légitimes.
-
-### 2. Phrases de confirmation du lab
-
-Dans `LabPower.tsx`, les phrases « ÉTEINDRE LE LAB » et « DÉMARRER LE LAB » restent en français, parce que `src-tauri/src/lab_power.rs` les compare mot pour mot. Il faut que le backend accepte aussi « SHUT DOWN THE LAB » et « START THE LAB » (avec un test), puis que l'interface affiche la phrase dans la langue active.
-
-### 3. Release 0.3.0
-
-1. Passer la version à `0.3.0` dans `package.json`, `src-tauri/tauri.conf.json` et `src-tauri/Cargo.toml`, puis lancer `cargo build` pour mettre à jour `Cargo.lock`.
-2. Commit, puis push sur `feature/v2` et `master`.
-3. Créer un tag annoté `v0.3.0`, dont le message sert de notes de version en français, et le pousser.
-4. Le workflow `release.yml` construit sous Windows NSIS + MSI + `SHA256SUMS.txt`, puis crée une release **en brouillon**. Relire le brouillon et le publier.
-5. **Côté propriétaire, facultatif** : générer la paire de clés de mise à jour (`npm run tauri signer generate -- -w <chemin hors du dépôt>`), mettre la clé **publique** dans `src-tauri/updater-pubkey.txt` et ajouter les secrets GitHub `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Sans cela, la release sort quand même, mais sans mise à jour automatique.
-
-### 4. À vérifier sur un vrai Windows (impossible dans le conteneur Linux)
+## À vérifier sur un vrai Windows (impossible dans le conteneur Linux)
 
 - Windows Hello : invite devant la fenêtre et PIN de secours.
 - Détection du verrouillage de la session Windows.
