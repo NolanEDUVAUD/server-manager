@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cron-list"
+description = "Enables the cron_list command without any pre-configured scope."
+commands.allow = ["cron_list"]
+
+[[permission]]
+identifier = "deny-cron-list"
+description = "Denies the cron_list command without any pre-configured scope."
+commands.deny = ["cron_list"]

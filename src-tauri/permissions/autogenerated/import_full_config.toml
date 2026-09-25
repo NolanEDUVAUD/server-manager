@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-import-full-config"
+description = "Enables the import_full_config command without any pre-configured scope."
+commands.allow = ["import_full_config"]
+
+[[permission]]
+identifier = "deny-import-full-config"
+description = "Denies the import_full_config command without any pre-configured scope."
+commands.deny = ["import_full_config"]

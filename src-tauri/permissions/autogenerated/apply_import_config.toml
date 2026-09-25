@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-apply-import-config"
+description = "Enables the apply_import_config command without any pre-configured scope."
+commands.allow = ["apply_import_config"]
+
+[[permission]]
+identifier = "deny-apply-import-config"
+description = "Denies the apply_import_config command without any pre-configured scope."
+commands.deny = ["apply_import_config"]

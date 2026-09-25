@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ping-all"
+description = "Enables the ping_all command without any pre-configured scope."
+commands.allow = ["ping_all"]
+
+[[permission]]
+identifier = "deny-ping-all"
+description = "Denies the ping_all command without any pre-configured scope."
+commands.deny = ["ping_all"]

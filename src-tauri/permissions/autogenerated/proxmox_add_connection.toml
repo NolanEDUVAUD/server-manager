@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-add-connection"
+description = "Enables the proxmox_add_connection command without any pre-configured scope."
+commands.allow = ["proxmox_add_connection"]
+
+[[permission]]
+identifier = "deny-proxmox-add-connection"
+description = "Denies the proxmox_add_connection command without any pre-configured scope."
+commands.deny = ["proxmox_add_connection"]

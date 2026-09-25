@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-close-dashboard-tab"
+description = "Enables the close_dashboard_tab command without any pre-configured scope."
+commands.allow = ["close_dashboard_tab"]
+
+[[permission]]
+identifier = "deny-close-dashboard-tab"
+description = "Denies the close_dashboard_tab command without any pre-configured scope."
+commands.deny = ["close_dashboard_tab"]

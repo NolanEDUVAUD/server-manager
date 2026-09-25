@@ -38,10 +38,85 @@ fn main() {
 
         tauri_build::try_build(
             tauri_build::Attributes::new()
-                .windows_attributes(tauri_build::WindowsAttributes::new_without_app_manifest()),
+                .windows_attributes(tauri_build::WindowsAttributes::new_without_app_manifest())
+                .app_manifest(app_manifest()),
         )
         .expect("failed to run tauri-build");
     } else {
-        tauri_build::build();
+        tauri_build::try_build(tauri_build::Attributes::new().app_manifest(app_manifest()))
+            .expect("failed to run tauri-build");
     }
+}
+
+/// Manifeste ACL de l'app. Sans lui, Tauri n'applique AUCUN contrôle d'accès aux
+/// commandes de l'app : n'importe quelle page chargée dans un onglet web (origine
+/// distante) pouvait appeler `ssh_execute` & co. Avec lui, chaque commande n'est
+/// accessible que si une capability l'autorise (voir capabilities/main.json,
+/// réservée à l'interface locale de la fenêtre principale).
+fn app_manifest() -> tauri_build::AppManifest {
+    tauri_build::AppManifest::new().commands(&[
+        "add_group",
+        "add_server",
+        "apply_import_config",
+        "clear_events",
+        "close_dashboard_tab",
+        "cron_list",
+        "cron_remove_managed",
+        "delete_custom_theme",
+        "delete_group",
+        "delete_schedule",
+        "delete_server",
+        "docker_action",
+        "docker_list",
+        "docker_logs",
+        "export_config",
+        "export_full_config",
+        "get_autostart",
+        "get_data_path",
+        "get_event_stats",
+        "get_events",
+        "get_groups",
+        "get_schedules",
+        "get_server_metrics",
+        "get_servers",
+        "get_settings",
+        "import_config",
+        "import_full_config",
+        "open_dashboard_tab",
+        "ping_all",
+        "ping_group",
+        "ping_server",
+        "proxmox_add_connection",
+        "proxmox_delete_connection",
+        "proxmox_list_connections",
+        "proxmox_list_vms",
+        "proxmox_test_connection",
+        "proxmox_update_connection",
+        "proxmox_vm_action",
+        "proxmox_vm_clone",
+        "proxmox_vm_snapshot_create",
+        "proxmox_vm_snapshot_list",
+        "proxmox_vm_snapshot_rollback",
+        "resize_dashboard_tab",
+        "run_schedule_now",
+        "save_custom_theme",
+        "save_schedule",
+        "set_autostart",
+        "set_dashboard_tab_visible",
+        "ssh_execute",
+        "ssh_reboot",
+        "ssh_shutdown",
+        "ssh_shutdown_group",
+        "terminal_close",
+        "terminal_open",
+        "terminal_resize",
+        "terminal_write",
+        "toggle_server_in_group",
+        "update_group",
+        "update_server",
+        "update_settings",
+        "upload_server_icon",
+        "wake_group",
+        "wake_on_lan",
+    ])
 }

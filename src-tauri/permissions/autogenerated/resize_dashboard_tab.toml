@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-resize-dashboard-tab"
+description = "Enables the resize_dashboard_tab command without any pre-configured scope."
+commands.allow = ["resize_dashboard_tab"]
+
+[[permission]]
+identifier = "deny-resize-dashboard-tab"
+description = "Denies the resize_dashboard_tab command without any pre-configured scope."
+commands.deny = ["resize_dashboard_tab"]

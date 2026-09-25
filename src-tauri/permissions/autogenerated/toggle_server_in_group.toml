@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-toggle-server-in-group"
+description = "Enables the toggle_server_in_group command without any pre-configured scope."
+commands.allow = ["toggle_server_in_group"]
+
+[[permission]]
+identifier = "deny-toggle-server-in-group"
+description = "Denies the toggle_server_in_group command without any pre-configured scope."
+commands.deny = ["toggle_server_in_group"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-vm-action"
+description = "Enables the proxmox_vm_action command without any pre-configured scope."
+commands.allow = ["proxmox_vm_action"]
+
+[[permission]]
+identifier = "deny-proxmox-vm-action"
+description = "Denies the proxmox_vm_action command without any pre-configured scope."
+commands.deny = ["proxmox_vm_action"]

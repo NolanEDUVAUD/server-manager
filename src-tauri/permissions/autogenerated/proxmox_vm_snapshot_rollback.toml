@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-vm-snapshot-rollback"
+description = "Enables the proxmox_vm_snapshot_rollback command without any pre-configured scope."
+commands.allow = ["proxmox_vm_snapshot_rollback"]
+
+[[permission]]
+identifier = "deny-proxmox-vm-snapshot-rollback"
+description = "Denies the proxmox_vm_snapshot_rollback command without any pre-configured scope."
+commands.deny = ["proxmox_vm_snapshot_rollback"]

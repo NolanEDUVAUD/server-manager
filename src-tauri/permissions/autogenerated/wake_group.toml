@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-wake-group"
+description = "Enables the wake_group command without any pre-configured scope."
+commands.allow = ["wake_group"]
+
+[[permission]]
+identifier = "deny-wake-group"
+description = "Denies the wake_group command without any pre-configured scope."
+commands.deny = ["wake_group"]

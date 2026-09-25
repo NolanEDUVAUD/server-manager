@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-delete-connection"
+description = "Enables the proxmox_delete_connection command without any pre-configured scope."
+commands.allow = ["proxmox_delete_connection"]
+
+[[permission]]
+identifier = "deny-proxmox-delete-connection"
+description = "Denies the proxmox_delete_connection command without any pre-configured scope."
+commands.deny = ["proxmox_delete_connection"]

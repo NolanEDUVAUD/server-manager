@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cron-remove-managed"
+description = "Enables the cron_remove_managed command without any pre-configured scope."
+commands.allow = ["cron_remove_managed"]
+
+[[permission]]
+identifier = "deny-cron-remove-managed"
+description = "Denies the cron_remove_managed command without any pre-configured scope."
+commands.deny = ["cron_remove_managed"]

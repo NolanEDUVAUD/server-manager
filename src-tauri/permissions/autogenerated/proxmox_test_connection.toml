@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-proxmox-test-connection"
+description = "Enables the proxmox_test_connection command without any pre-configured scope."
+commands.allow = ["proxmox_test_connection"]
+
+[[permission]]
+identifier = "deny-proxmox-test-connection"
+description = "Denies the proxmox_test_connection command without any pre-configured scope."
+commands.deny = ["proxmox_test_connection"]

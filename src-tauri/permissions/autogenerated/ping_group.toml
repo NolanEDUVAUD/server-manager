@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ping-group"
+description = "Enables the ping_group command without any pre-configured scope."
+commands.allow = ["ping_group"]
+
+[[permission]]
+identifier = "deny-ping-group"
+description = "Denies the ping_group command without any pre-configured scope."
+commands.deny = ["ping_group"]

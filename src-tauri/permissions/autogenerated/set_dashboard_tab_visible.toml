@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-dashboard-tab-visible"
+description = "Enables the set_dashboard_tab_visible command without any pre-configured scope."
+commands.allow = ["set_dashboard_tab_visible"]
+
+[[permission]]
+identifier = "deny-set-dashboard-tab-visible"
+description = "Denies the set_dashboard_tab_visible command without any pre-configured scope."
+commands.deny = ["set_dashboard_tab_visible"]

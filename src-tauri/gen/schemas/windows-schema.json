@@ -177,6 +177,762 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the add_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-add-group",
+          "markdownDescription": "Enables the add_group command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the add_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-add-server",
+          "markdownDescription": "Enables the add_server command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the apply_import_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-apply-import-config",
+          "markdownDescription": "Enables the apply_import_config command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the clear_events command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-clear-events",
+          "markdownDescription": "Enables the clear_events command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the close_dashboard_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-close-dashboard-tab",
+          "markdownDescription": "Enables the close_dashboard_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the cron_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-cron-list",
+          "markdownDescription": "Enables the cron_list command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the cron_remove_managed command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-cron-remove-managed",
+          "markdownDescription": "Enables the cron_remove_managed command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_custom_theme command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-custom-theme",
+          "markdownDescription": "Enables the delete_custom_theme command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-group",
+          "markdownDescription": "Enables the delete_group command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_schedule command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-schedule",
+          "markdownDescription": "Enables the delete_schedule command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-server",
+          "markdownDescription": "Enables the delete_server command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the docker_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-docker-action",
+          "markdownDescription": "Enables the docker_action command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the docker_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-docker-list",
+          "markdownDescription": "Enables the docker_list command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the docker_logs command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-docker-logs",
+          "markdownDescription": "Enables the docker_logs command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the export_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-export-config",
+          "markdownDescription": "Enables the export_config command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the export_full_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-export-full-config",
+          "markdownDescription": "Enables the export_full_config command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_autostart command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-autostart",
+          "markdownDescription": "Enables the get_autostart command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_data_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-data-path",
+          "markdownDescription": "Enables the get_data_path command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_event_stats command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-event-stats",
+          "markdownDescription": "Enables the get_event_stats command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_events command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-events",
+          "markdownDescription": "Enables the get_events command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_groups command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-groups",
+          "markdownDescription": "Enables the get_groups command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_schedules command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-schedules",
+          "markdownDescription": "Enables the get_schedules command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_server_metrics command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-server-metrics",
+          "markdownDescription": "Enables the get_server_metrics command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_servers command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-servers",
+          "markdownDescription": "Enables the get_servers command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-settings",
+          "markdownDescription": "Enables the get_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the import_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-import-config",
+          "markdownDescription": "Enables the import_config command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the import_full_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-import-full-config",
+          "markdownDescription": "Enables the import_full_config command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the open_dashboard_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-dashboard-tab",
+          "markdownDescription": "Enables the open_dashboard_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ping_all command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ping-all",
+          "markdownDescription": "Enables the ping_all command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ping_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ping-group",
+          "markdownDescription": "Enables the ping_group command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ping_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ping-server",
+          "markdownDescription": "Enables the ping_server command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_add_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-add-connection",
+          "markdownDescription": "Enables the proxmox_add_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_delete_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-delete-connection",
+          "markdownDescription": "Enables the proxmox_delete_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_list_connections command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-list-connections",
+          "markdownDescription": "Enables the proxmox_list_connections command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_list_vms command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-list-vms",
+          "markdownDescription": "Enables the proxmox_list_vms command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_test_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-test-connection",
+          "markdownDescription": "Enables the proxmox_test_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_update_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-update-connection",
+          "markdownDescription": "Enables the proxmox_update_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_vm_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-vm-action",
+          "markdownDescription": "Enables the proxmox_vm_action command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_vm_clone command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-vm-clone",
+          "markdownDescription": "Enables the proxmox_vm_clone command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_vm_snapshot_create command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-vm-snapshot-create",
+          "markdownDescription": "Enables the proxmox_vm_snapshot_create command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_vm_snapshot_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-vm-snapshot-list",
+          "markdownDescription": "Enables the proxmox_vm_snapshot_list command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the proxmox_vm_snapshot_rollback command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-proxmox-vm-snapshot-rollback",
+          "markdownDescription": "Enables the proxmox_vm_snapshot_rollback command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the resize_dashboard_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-resize-dashboard-tab",
+          "markdownDescription": "Enables the resize_dashboard_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the run_schedule_now command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-run-schedule-now",
+          "markdownDescription": "Enables the run_schedule_now command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_custom_theme command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-custom-theme",
+          "markdownDescription": "Enables the save_custom_theme command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_schedule command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-schedule",
+          "markdownDescription": "Enables the save_schedule command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_autostart command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-autostart",
+          "markdownDescription": "Enables the set_autostart command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_dashboard_tab_visible command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-dashboard-tab-visible",
+          "markdownDescription": "Enables the set_dashboard_tab_visible command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_execute command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-execute",
+          "markdownDescription": "Enables the ssh_execute command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_reboot command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-reboot",
+          "markdownDescription": "Enables the ssh_reboot command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_shutdown command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-shutdown",
+          "markdownDescription": "Enables the ssh_shutdown command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ssh_shutdown_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ssh-shutdown-group",
+          "markdownDescription": "Enables the ssh_shutdown_group command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the terminal_close command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-terminal-close",
+          "markdownDescription": "Enables the terminal_close command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the terminal_open command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-terminal-open",
+          "markdownDescription": "Enables the terminal_open command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the terminal_resize command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-terminal-resize",
+          "markdownDescription": "Enables the terminal_resize command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the terminal_write command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-terminal-write",
+          "markdownDescription": "Enables the terminal_write command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the toggle_server_in_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-toggle-server-in-group",
+          "markdownDescription": "Enables the toggle_server_in_group command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the update_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-group",
+          "markdownDescription": "Enables the update_group command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the update_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-server",
+          "markdownDescription": "Enables the update_server command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the update_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-settings",
+          "markdownDescription": "Enables the update_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the upload_server_icon command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-upload-server-icon",
+          "markdownDescription": "Enables the upload_server_icon command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the wake_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-wake-group",
+          "markdownDescription": "Enables the wake_group command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the wake_on_lan command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-wake-on-lan",
+          "markdownDescription": "Enables the wake_on_lan command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the add_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-add-group",
+          "markdownDescription": "Denies the add_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the add_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-add-server",
+          "markdownDescription": "Denies the add_server command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the apply_import_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-apply-import-config",
+          "markdownDescription": "Denies the apply_import_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the clear_events command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-clear-events",
+          "markdownDescription": "Denies the clear_events command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the close_dashboard_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-close-dashboard-tab",
+          "markdownDescription": "Denies the close_dashboard_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the cron_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-cron-list",
+          "markdownDescription": "Denies the cron_list command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the cron_remove_managed command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-cron-remove-managed",
+          "markdownDescription": "Denies the cron_remove_managed command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_custom_theme command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-custom-theme",
+          "markdownDescription": "Denies the delete_custom_theme command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-group",
+          "markdownDescription": "Denies the delete_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_schedule command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-schedule",
+          "markdownDescription": "Denies the delete_schedule command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-server",
+          "markdownDescription": "Denies the delete_server command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the docker_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-docker-action",
+          "markdownDescription": "Denies the docker_action command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the docker_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-docker-list",
+          "markdownDescription": "Denies the docker_list command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the docker_logs command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-docker-logs",
+          "markdownDescription": "Denies the docker_logs command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the export_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-export-config",
+          "markdownDescription": "Denies the export_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the export_full_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-export-full-config",
+          "markdownDescription": "Denies the export_full_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_autostart command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-autostart",
+          "markdownDescription": "Denies the get_autostart command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_data_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-data-path",
+          "markdownDescription": "Denies the get_data_path command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_event_stats command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-event-stats",
+          "markdownDescription": "Denies the get_event_stats command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_events command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-events",
+          "markdownDescription": "Denies the get_events command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_groups command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-groups",
+          "markdownDescription": "Denies the get_groups command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_schedules command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-schedules",
+          "markdownDescription": "Denies the get_schedules command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_server_metrics command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-server-metrics",
+          "markdownDescription": "Denies the get_server_metrics command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_servers command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-servers",
+          "markdownDescription": "Denies the get_servers command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-settings",
+          "markdownDescription": "Denies the get_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the import_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-import-config",
+          "markdownDescription": "Denies the import_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the import_full_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-import-full-config",
+          "markdownDescription": "Denies the import_full_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_dashboard_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-dashboard-tab",
+          "markdownDescription": "Denies the open_dashboard_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ping_all command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ping-all",
+          "markdownDescription": "Denies the ping_all command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ping_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ping-group",
+          "markdownDescription": "Denies the ping_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ping_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ping-server",
+          "markdownDescription": "Denies the ping_server command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_add_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-add-connection",
+          "markdownDescription": "Denies the proxmox_add_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_delete_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-delete-connection",
+          "markdownDescription": "Denies the proxmox_delete_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_list_connections command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-list-connections",
+          "markdownDescription": "Denies the proxmox_list_connections command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_list_vms command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-list-vms",
+          "markdownDescription": "Denies the proxmox_list_vms command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_test_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-test-connection",
+          "markdownDescription": "Denies the proxmox_test_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_update_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-update-connection",
+          "markdownDescription": "Denies the proxmox_update_connection command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_vm_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-vm-action",
+          "markdownDescription": "Denies the proxmox_vm_action command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_vm_clone command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-vm-clone",
+          "markdownDescription": "Denies the proxmox_vm_clone command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_vm_snapshot_create command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-vm-snapshot-create",
+          "markdownDescription": "Denies the proxmox_vm_snapshot_create command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_vm_snapshot_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-vm-snapshot-list",
+          "markdownDescription": "Denies the proxmox_vm_snapshot_list command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the proxmox_vm_snapshot_rollback command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-proxmox-vm-snapshot-rollback",
+          "markdownDescription": "Denies the proxmox_vm_snapshot_rollback command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the resize_dashboard_tab command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-resize-dashboard-tab",
+          "markdownDescription": "Denies the resize_dashboard_tab command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the run_schedule_now command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-run-schedule-now",
+          "markdownDescription": "Denies the run_schedule_now command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_custom_theme command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-custom-theme",
+          "markdownDescription": "Denies the save_custom_theme command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_schedule command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-schedule",
+          "markdownDescription": "Denies the save_schedule command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_autostart command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-autostart",
+          "markdownDescription": "Denies the set_autostart command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_dashboard_tab_visible command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-dashboard-tab-visible",
+          "markdownDescription": "Denies the set_dashboard_tab_visible command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_execute command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-execute",
+          "markdownDescription": "Denies the ssh_execute command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_reboot command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-reboot",
+          "markdownDescription": "Denies the ssh_reboot command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_shutdown command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-shutdown",
+          "markdownDescription": "Denies the ssh_shutdown command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ssh_shutdown_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ssh-shutdown-group",
+          "markdownDescription": "Denies the ssh_shutdown_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the terminal_close command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-terminal-close",
+          "markdownDescription": "Denies the terminal_close command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the terminal_open command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-terminal-open",
+          "markdownDescription": "Denies the terminal_open command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the terminal_resize command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-terminal-resize",
+          "markdownDescription": "Denies the terminal_resize command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the terminal_write command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-terminal-write",
+          "markdownDescription": "Denies the terminal_write command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the toggle_server_in_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-toggle-server-in-group",
+          "markdownDescription": "Denies the toggle_server_in_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-group",
+          "markdownDescription": "Denies the update_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_server command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-server",
+          "markdownDescription": "Denies the update_server command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_settings command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-settings",
+          "markdownDescription": "Denies the update_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the upload_server_icon command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-upload-server-icon",
+          "markdownDescription": "Denies the upload_server_icon command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the wake_group command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-wake-group",
+          "markdownDescription": "Denies the wake_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the wake_on_lan command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-wake-on-lan",
+          "markdownDescription": "Denies the wake_on_lan command without any pre-configured scope."
+        },
+        {
           "description": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`",
           "type": "string",
           "const": "core:default",

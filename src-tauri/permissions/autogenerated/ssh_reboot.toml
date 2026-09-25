@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ssh-reboot"
+description = "Enables the ssh_reboot command without any pre-configured scope."
+commands.allow = ["ssh_reboot"]
+
+[[permission]]
+identifier = "deny-ssh-reboot"
+description = "Denies the ssh_reboot command without any pre-configured scope."
+commands.deny = ["ssh_reboot"]
