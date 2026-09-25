@@ -753,6 +753,12 @@
           "markdownDescription": "Enables the update_tray_status command without any pre-configured scope."
         },
         {
+          "description": "Enables the updates_scan command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-updates-scan",
+          "markdownDescription": "Enables the updates_scan command without any pre-configured scope."
+        },
+        {
           "description": "Enables the upload_server_icon command without any pre-configured scope.",
           "type": "string",
           "const": "allow-upload-server-icon",
@@ -1345,6 +1351,12 @@
           "type": "string",
           "const": "deny-update-tray-status",
           "markdownDescription": "Denies the update_tray_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the updates_scan command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-updates-scan",
+          "markdownDescription": "Denies the updates_scan command without any pre-configured scope."
         },
         {
           "description": "Denies the upload_server_icon command without any pre-configured scope.",

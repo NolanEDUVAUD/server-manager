@@ -18,4 +18,5 @@ pub mod snippets;
 pub mod ssh;
 pub mod terminal;
 pub mod tray;
+pub mod updates;
 pub mod wol;

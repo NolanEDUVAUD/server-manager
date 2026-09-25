@@ -474,3 +474,17 @@ export type BatchUpdate =
   | { type: "Finished"; run_id: string; server_id: string; ok: boolean; detail: string; duration_ms: number }
   | { type: "Skipped"; run_id: string; server_id: string; reason: string }
   | { type: "Done"; run_id: string; ok_count: number; failed_count: number };
+
+// ─── Centre de mises à jour ─────────────────────────────────────────────────
+
+export interface UpdateReport {
+  apt_available: boolean;
+  packages: { name: string; new_version: string; old_version: string; security: boolean }[];
+  security_count: number;
+  reboot_required: boolean;
+  kernel: string;
+  lists_age_days: number | null;
+  stale_containers: { name: string; image: string }[];
+}
+
+export interface ServerUpdates { server_id: string; name: string; report: UpdateReport | null; error: string | null }

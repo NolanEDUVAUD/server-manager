@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare, History, CalendarClock, Container, BellRing, Radar, Archive, PowerOff, Network, ListChecks } from "lucide-react";
+import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare, History, CalendarClock, Container, BellRing, Radar, Archive, PowerOff, Network, ListChecks, PackageSearch } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
 import { Console } from "../pages/Console";
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: "/docker", icon: Container, label: "Docker" },
   { to: "/console", icon: TerminalSquare, label: "Console" },
   { to: "/batch", icon: ListChecks, label: "Tâches en lot" },
+  { to: "/updates", icon: PackageSearch, label: "Mises à jour" },
   { to: "/history", icon: History, label: "Historique" },
   { to: "/alerts", icon: BellRing, label: "Alertes" },
   { to: "/scheduler", icon: CalendarClock, label: "Planificateur" },

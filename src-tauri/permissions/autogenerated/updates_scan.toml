@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-updates-scan"
+description = "Enables the updates_scan command without any pre-configured scope."
+commands.allow = ["updates_scan"]
+
+[[permission]]
+identifier = "deny-updates-scan"
+description = "Denies the updates_scan command without any pre-configured scope."
+commands.deny = ["updates_scan"]

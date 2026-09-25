@@ -110,6 +110,7 @@
     "allow-get-ansible-config",
     "allow-save-ansible-config",
     "allow-ansible-list-playbooks",
-    "allow-ansible-run"
+    "allow-ansible-run",
+    "allow-updates-scan"
   ]
 }

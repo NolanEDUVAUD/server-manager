@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { AlertTriangle, CheckCircle2, Loader2, MinusCircle, Play, Save, Trash2, XCircle, ListChecks, BookOpen, RefreshCw } from "lucide-react";
@@ -9,6 +10,12 @@ import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { looksModifying, TEMPLATES } from "../utils/batch";
 import { cn } from "../utils";
+
+/** Pré-remplissage depuis une autre page (ex. Mises à jour) : rien n'est lancé sans confirmation */
+export interface BatchPrefill {
+  script: string;
+  serverIds: string[];
+}
 
 type ServerRun = { status: "pending" | "running" | "ok" | "failed" | "skipped"; output: string; detail?: string; ms?: number };
 
@@ -38,9 +45,10 @@ function RunOutput({ runs, names }: { runs: Record<string, ServerRun>; names: Re
 export function Batch() {
   const { servers, groups } = useStore();
   const { toasts, removeToast, success, error } = useToast();
+  const prefill = useLocation().state as BatchPrefill | null;
   const [tab, setTab] = useState<"script" | "ansible">("script");
-  const [script, setScript] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [script, setScript] = useState(prefill?.script ?? "");
+  const [selected, setSelected] = useState<Set<string>>(new Set(prefill?.serverIds ?? []));
   const [mode, setMode] = useState<BatchMode>("Parallel");
   const [stopOnError, setStopOnError] = useState(false);
   const [tasks, setTasks] = useState<BatchTask[]>([]);

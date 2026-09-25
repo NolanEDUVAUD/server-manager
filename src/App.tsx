@@ -16,6 +16,7 @@ import { Backups } from "./pages/Backups";
 import { LabPower } from "./pages/LabPower";
 import { Network } from "./pages/Network";
 import { Batch } from "./pages/Batch";
+import { Updates } from "./pages/Updates";
 import { Settings } from "./pages/Settings";
 import { useStore } from "./stores/useStore";
 import { usePing } from "./hooks/usePing";
@@ -70,6 +71,7 @@ function AppContent() {
         <Route path="/lab-power" element={<LabPower />} />
         <Route path="/network" element={<Network />} />
         <Route path="/batch" element={<Batch />} />
+        <Route path="/updates" element={<Updates />} />
         {/* Rendue en permanence par Layout, la route sert juste à l'activer */}
         <Route path="/console" element={null} />
         <Route path="/proxmox" element={<Proxmox />} />
