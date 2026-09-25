@@ -6,4 +6,5 @@ pub mod proxmox;
 pub mod servers;
 pub mod settings;
 pub mod ssh;
+pub mod terminal;
 pub mod wol;

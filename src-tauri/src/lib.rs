@@ -5,8 +5,9 @@ mod metrics;
 mod models;
 mod proxmox;
 mod storage;
+mod terminal;
 
-use commands::{dashboards, groups, metrics as metrics_cmd, ping, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{dashboards, groups, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -20,6 +21,7 @@ pub fn run() {
             let state = AppState::load(&app.handle());
             app.manage(state);
             app.manage(dashboard_state::DashboardState::default());
+            app.manage(terminal::TerminalState::default());
             Ok(())
         })
         .plugin(tauri_plugin_dialog::init())
@@ -81,6 +83,11 @@ pub fn run() {
             dashboards::resize_dashboard_tab,
             // ── Monitoring des ressources ─────────────────────
             metrics_cmd::get_server_metrics,
+            // ── Console SSH ───────────────────────────────────
+            terminal_cmd::terminal_open,
+            terminal_cmd::terminal_write,
+            terminal_cmd::terminal_resize,
+            terminal_cmd::terminal_close,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

@@ -21,6 +21,7 @@ import {
   VmType,
   DashboardTab,
   MetricsSample,
+  TerminalSession,
   ServerMetrics,
 } from "../types";
 import {
@@ -111,6 +112,16 @@ interface AppStore {
   metricsErrors: Record<string, string>;
   metricsHistory: Record<string, MetricsSample[]>;
   fetchMetrics: (serverId: string) => Promise<void>;
+
+  // ── Console SSH ────────────────────────────────────────────────────────
+  terminalSessions: TerminalSession[];
+  activeTerminalKey: string | null;
+  /** Crée une session (la connexion est lancée par le composant TerminalView) */
+  openTerminal: (serverId: string) => string;
+  updateTerminal: (key: string, patch: Partial<TerminalSession>) => void;
+  reconnectTerminal: (key: string) => void;
+  closeTerminal: (key: string) => Promise<void>;
+  setActiveTerminal: (key: string) => void;
   openDashboardTab: (tab: DashboardTab, x: number, y: number, width: number, height: number) => Promise<void>;
   closeDashboardTab: (label: string) => Promise<void>;
   setActiveDashboardTab: (label: string | null) => Promise<void>;
@@ -167,6 +178,8 @@ export const useStore = create<AppStore>((set, get) => ({
   metrics: {},
   metricsErrors: {},
   metricsHistory: {},
+  terminalSessions: [],
+  activeTerminalKey: null,
 
   // ── Initialisation ─────────────────────────────────────────────────────
   initialize: async () => {
@@ -525,6 +538,58 @@ export const useStore = create<AppStore>((set, get) => ({
       });
     }
   },
+
+  // ── Console SSH ────────────────────────────────────────────────────────
+  openTerminal: (serverId) => {
+    const key = crypto.randomUUID();
+    set((s) => {
+      const name = s.servers.find((sv) => sv.id === serverId)?.name ?? serverId;
+      const count = s.terminalSessions.filter((t) => t.serverId === serverId).length;
+      const session: TerminalSession = {
+        key,
+        serverId,
+        title: count === 0 ? name : `${name} (${count + 1})`,
+        status: "connecting",
+        attempt: 0,
+      };
+      return { terminalSessions: [...s.terminalSessions, session], activeTerminalKey: key };
+    });
+    return key;
+  },
+
+  updateTerminal: (key, patch) => {
+    set((s) => ({
+      terminalSessions: s.terminalSessions.map((t) => (t.key === key ? { ...t, ...patch } : t)),
+    }));
+  },
+
+  reconnectTerminal: (key) => {
+    set((s) => ({
+      terminalSessions: s.terminalSessions.map((t) =>
+        t.key === key
+          ? { ...t, status: "connecting", closedReason: undefined, sessionId: undefined, attempt: t.attempt + 1 }
+          : t
+      ),
+    }));
+  },
+
+  closeTerminal: async (key) => {
+    const session = get().terminalSessions.find((t) => t.key === key);
+    set((s) => {
+      const index = s.terminalSessions.findIndex((t) => t.key === key);
+      const remaining = s.terminalSessions.filter((t) => t.key !== key);
+      const activeTerminalKey =
+        s.activeTerminalKey === key
+          ? (remaining[Math.min(index, remaining.length - 1)]?.key ?? null)
+          : s.activeTerminalKey;
+      return { terminalSessions: remaining, activeTerminalKey };
+    });
+    if (session?.sessionId) {
+      await invoke("terminal_close", { sessionId: session.sessionId }).catch(() => {});
+    }
+  },
+
+  setActiveTerminal: (key) => set({ activeTerminalKey: key }),
 
   setActiveDashboardTab: async (label) => {
     const prev = get().activeDashboardTabLabel;

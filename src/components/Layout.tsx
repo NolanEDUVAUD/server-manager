@@ -1,13 +1,15 @@
-import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import { LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { cn } from "../utils";
+import { Console } from "../pages/Console";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/servers", icon: Server, label: "Serveurs" },
   { to: "/groups", icon: Layers, label: "Groupes" },
   { to: "/resources", icon: Activity, label: "Ressources" },
+  { to: "/console", icon: TerminalSquare, label: "Console" },
   { to: "/proxmox", icon: Boxes, label: "Proxmox" },
   { to: "/dashboards", icon: LayoutPanelTop, label: "Onglets web" },
   { to: "/settings", icon: Settings, label: "Paramètres" },
@@ -19,6 +21,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { servers, statuses } = useStore();
+  const onConsole = useLocation().pathname === "/console";
 
   const onlineCount = servers.filter((s) => statuses[s.id]?.online).length;
   const totalCount = servers.length;
@@ -88,7 +91,14 @@ export function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 min-w-0 relative overflow-hidden">
+        <div className={cn("h-full overflow-y-auto", onConsole && "hidden")}>{children}</div>
+        {/* Console montée en permanence : les terminaux et leurs sessions SSH
+            survivent à la navigation entre les pages */}
+        <div className={cn("h-full overflow-y-auto", !onConsole && "hidden")}>
+          <Console />
+        </div>
+      </main>
     </div>
   );
 }

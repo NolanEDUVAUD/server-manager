@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Power, RotateCcw, Zap, Pencil, Trash2, Loader2, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Power, RotateCcw, Zap, Pencil, Trash2, Loader2, RefreshCw, TerminalSquare } from "lucide-react";
 import { Server, OS_ICONS } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -15,7 +16,8 @@ interface ServerCardProps {
 }
 
 export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardProps) {
-  const { statuses, wakeServer, shutdownServer, rebootServer, pingServer } = useStore();
+  const { statuses, wakeServer, shutdownServer, rebootServer, pingServer, openTerminal } = useStore();
+  const navigate = useNavigate();
   const status = statuses[server.id];
 
   const [loading, setLoading] = useState<string | null>(null);
@@ -73,6 +75,16 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
               ) : (
                 <RefreshCw size={13} />
               )}
+            </button>
+            <button
+              onClick={() => {
+                openTerminal(server.id);
+                navigate("/console");
+              }}
+              className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
+              title="Ouvrir une console SSH"
+            >
+              <TerminalSquare size={13} />
             </button>
             <button
               onClick={() => onEdit(server)}

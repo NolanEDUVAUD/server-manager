@@ -1,0 +1,155 @@
+import { useEffect, useRef, useState } from "react";
+import { Plus, X, TerminalSquare, RotateCw } from "lucide-react";
+import { useStore } from "../stores/useStore";
+import { TerminalView } from "../components/TerminalView";
+import { OS_ICONS, TerminalStatus } from "../types";
+import { cn } from "../utils";
+
+const STATUS_DOT: Record<TerminalStatus, string> = {
+  connecting: "bg-accent-warning animate-pulse-soft",
+  open: "bg-accent-success",
+  closed: "bg-text-muted",
+};
+
+/** Liste des serveurs pour ouvrir une nouvelle session. */
+function ServerPicker({ onPick, compact }: { onPick: (id: string) => void; compact?: boolean }) {
+  const { servers, statuses } = useStore();
+  if (servers.length === 0) {
+    return <p className="text-text-muted text-sm p-3">Aucun serveur configuré.</p>;
+  }
+  return (
+    <div className={cn(compact ? "flex flex-col py-1" : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3")}>
+      {servers.map((s) => {
+        const online = statuses[s.id]?.online;
+        return (
+          <button
+            key={s.id}
+            onClick={() => onPick(s.id)}
+            className={cn(
+              "flex items-center gap-2.5 text-left transition-all duration-150",
+              compact
+                ? "px-3 py-2 text-sm hover:bg-bg-hover"
+                : "p-3 rounded-win bg-bg-tertiary border border-border-primary hover:border-accent-primary/40 hover:shadow-win-hover"
+            )}
+          >
+            <span className="text-lg shrink-0">{OS_ICONS[s.os_type]}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-text-primary text-sm truncate">{s.name}</span>
+              <span className="block text-text-muted text-xs truncate">{s.ssh_user}@{s.ip}</span>
+            </span>
+            <span className={cn("w-2 h-2 rounded-full shrink-0", online ? "bg-accent-success" : "bg-text-muted")} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Console() {
+  const {
+    terminalSessions, activeTerminalKey, openTerminal, closeTerminal, setActiveTerminal, reconnectTerminal,
+  } = useStore();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const active = terminalSessions.find((t) => t.key === activeTerminalKey);
+
+  // Fermer le menu « nouvelle session » au clic à l'extérieur
+  useEffect(() => {
+    if (!pickerOpen) return;
+    function onClick(e: MouseEvent) {
+      if (!pickerRef.current?.contains(e.target as Node)) setPickerOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [pickerOpen]);
+
+  function pick(serverId: string) {
+    setPickerOpen(false);
+    openTerminal(serverId);
+  }
+
+  if (terminalSessions.length === 0) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-text-primary font-semibold text-lg">Console</h1>
+          <p className="text-text-secondary text-xs mt-0.5">
+            Terminal SSH avec les identifiants enregistrés pour chaque serveur
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-text-secondary text-sm">
+          <TerminalSquare size={16} className="opacity-60" />
+          Choisis un serveur pour ouvrir une session :
+        </div>
+        <ServerPicker onPick={pick} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* ── Onglets des sessions ─────────────────────────────────────── */}
+      <div className="flex items-center gap-1 border-b border-border-primary bg-bg-secondary px-2 shrink-0">
+        <div className="flex items-center gap-1 overflow-x-auto min-w-0">
+          {terminalSessions.map((t) => (
+            <div
+              key={t.key}
+              onClick={() => setActiveTerminal(t.key)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2.5 text-sm cursor-pointer border-b-2 transition-colors shrink-0",
+                t.key === activeTerminalKey
+                  ? "border-accent-primary text-text-primary"
+                  : "border-transparent text-text-secondary hover:text-text-primary"
+              )}
+            >
+              <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_DOT[t.status])} />
+              <span className="truncate max-w-[160px]">{t.title}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeTerminal(t.key);
+                }}
+                className="hover:text-red-400 transition-colors"
+                title="Fermer la session"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div ref={pickerRef} className="relative shrink-0">
+          <button
+            onClick={() => setPickerOpen((o) => !o)}
+            className="p-1.5 ml-1 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
+            title="Nouvelle session"
+          >
+            <Plus size={14} />
+          </button>
+          {pickerOpen && (
+            <div className="absolute right-0 top-full mt-1 w-64 max-h-80 overflow-y-auto z-20 bg-bg-tertiary border border-border-primary rounded-win shadow-win-hover animate-fade-in">
+              <ServerPicker onPick={pick} compact />
+            </div>
+          )}
+        </div>
+
+        {active?.status === "closed" && (
+          <button
+            onClick={() => reconnectTerminal(active.key)}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-win bg-accent-primary text-white hover:bg-accent-secondary transition-colors shrink-0"
+          >
+            <RotateCw size={12} />
+            Reconnecter
+          </button>
+        )}
+      </div>
+
+      {/* ── Terminaux (tous montés, seul l'actif est visible) ─────────── */}
+      <div className="relative flex-1 min-h-0">
+        {terminalSessions.map((t) => (
+          <TerminalView key={t.key} session={t} active={t.key === activeTerminalKey} />
+        ))}
+      </div>
+    </div>
+  );
+}

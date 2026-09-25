@@ -44,6 +44,8 @@ function AppContent() {
         <Route path="/servers" element={<Servers />} />
         <Route path="/groups" element={<Groups />} />
         <Route path="/resources" element={<Resources />} />
+        {/* Rendue en permanence par Layout, la route sert juste à l'activer */}
+        <Route path="/console" element={null} />
         <Route path="/proxmox" element={<Proxmox />} />
         <Route path="/dashboards" element={<Dashboards />} />
         <Route path="/settings" element={<Settings />} />

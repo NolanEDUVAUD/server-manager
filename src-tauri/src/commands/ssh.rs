@@ -11,7 +11,7 @@ use crate::{
 };
 
 // ── Handler SSH minimal (accepte tous les hosts pour usage homelab) ───────
-struct SshHandler;
+pub(crate) struct SshHandler;
 
 #[async_trait]
 impl client::Handler for SshHandler {
@@ -27,15 +27,14 @@ impl client::Handler for SshHandler {
     }
 }
 
-// ── Fonction interne d'exécution SSH ──────────────────────────────────────
-pub(crate) async fn execute_ssh(
+// ── Connexion + authentification (partagée par l'exécution et la console) ─
+pub(crate) async fn connect_ssh(
     ip: &str,
     port: u16,
     user: &str,
     password: &str,
-    command: &str,
     timeout_secs: u64,
-) -> Result<SshResult, String> {
+) -> Result<client::Handle<SshHandler>, String> {
     // Le timeout est géré par tokio::time::timeout ci-dessous
     let config = Arc::new(client::Config::default());
 
@@ -55,6 +54,19 @@ pub(crate) async fn execute_ssh(
     if !authenticated {
         return Err(format!("Mot de passe incorrect pour {}@{}", user, ip));
     }
+    Ok(session)
+}
+
+// ── Fonction interne d'exécution SSH ──────────────────────────────────────
+pub(crate) async fn execute_ssh(
+    ip: &str,
+    port: u16,
+    user: &str,
+    password: &str,
+    command: &str,
+    timeout_secs: u64,
+) -> Result<SshResult, String> {
+    let session = connect_ssh(ip, port, user, password, timeout_secs).await?;
 
     let mut channel = session
         .channel_open_session()

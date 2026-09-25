@@ -219,3 +219,20 @@ export interface MetricsSample {
   cpu: number;
   mem: number;
 }
+
+// ─── Console SSH ────────────────────────────────────────────────────────────
+
+export type TerminalStatus = "connecting" | "open" | "closed";
+
+export interface TerminalSession {
+  /** Clé côté frontend, stable entre les reconnexions */
+  key: string;
+  serverId: string;
+  title: string;
+  /** Identifiant de session côté Rust, défini une fois connecté */
+  sessionId?: string;
+  status: TerminalStatus;
+  closedReason?: string;
+  /** Incrémenté à chaque reconnexion pour relancer la connexion du terminal */
+  attempt: number;
+}
