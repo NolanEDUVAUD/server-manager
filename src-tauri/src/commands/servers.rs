@@ -28,7 +28,7 @@ pub fn add_server(state: State<AppState>, payload: ServerPayload) -> Result<Serv
         .map_err(|e| format!("Erreur mutex: {}", e))?;
 
     // Chiffrer le mot de passe avant stockage
-    let key = crypto::derive_key(&data.encryption_salt);
+    let key = crypto::data_key(&data)?;
     let encrypted_password = crypto::encrypt(&payload.ssh_password, &key)?;
 
     let mut server = Server::new(
@@ -79,7 +79,7 @@ pub fn update_server(
 
     // Extraire le salt avant le borrow mutable sur servers
     let encrypted_password = if !payload.ssh_password.is_empty() {
-        let key = crypto::derive_key(&data.encryption_salt);
+        let key = crypto::data_key(&data)?;
         Some(crypto::encrypt(&payload.ssh_password, &key)?)
     } else {
         None
@@ -158,7 +158,7 @@ pub fn get_decrypted_password(data: &AppData, server_id: &str) -> Result<String,
         .find(|s| s.id == server_id)
         .ok_or_else(|| format!("Serveur introuvable: {}", server_id))?;
 
-    let key = crypto::derive_key(&data.encryption_salt);
+    let key = crypto::data_key(&data)?;
     crypto::decrypt(&server.ssh_password, &key)
 }
 

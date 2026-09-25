@@ -36,7 +36,7 @@ pub fn build_client(data: &AppData, connection_id: &str) -> Result<ProxmoxClient
         .iter()
         .find(|c| c.id == connection_id)
         .ok_or_else(|| format!("Connexion Proxmox introuvable: {}", connection_id))?;
-    let key = crypto::derive_key(&data.encryption_salt);
+    let key = crypto::data_key(&data)?;
     let secret = crypto::decrypt(&conn.token_secret, &key)?;
     ProxmoxClient::new(
         &conn.api_url,
@@ -65,7 +65,7 @@ pub fn proxmox_add_connection(
     validate_connection_payload(&payload)?;
 
     let mut data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
-    let key = crypto::derive_key(&data.encryption_salt);
+    let key = crypto::data_key(&data)?;
     let encrypted_secret = crypto::encrypt(&payload.token_secret, &key)?;
 
     let connection = ProxmoxConnection::new(
@@ -93,7 +93,7 @@ pub fn proxmox_update_connection(
 
     let mut data = state.data.lock().map_err(|e| format!("Erreur mutex: {}", e))?;
     let encrypted_secret = if !payload.token_secret.is_empty() {
-        let key = crypto::derive_key(&data.encryption_salt);
+        let key = crypto::data_key(&data)?;
         Some(crypto::encrypt(&payload.token_secret, &key)?)
     } else {
         None

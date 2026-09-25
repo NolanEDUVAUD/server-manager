@@ -27,7 +27,8 @@ impl AppState {
         let data_path = data_dir.join("data.json");
         log::info!("Fichier de données : {:?}", data_path);
 
-        let data = load_app_data(&data_path);
+        let mut data = load_app_data(&data_path);
+        migrate_to_master_key(&mut data, &data_path);
 
         AppState {
             data: Mutex::new(data),
@@ -82,6 +83,7 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
             encryption_salt: v1.encryption_salt,
             proxmox_connections: Vec::new(),
             schedules: Vec::new(),
+            key_version: 1,
         };
         // Sauvegarder immédiatement en format v2
         if let Ok(json) = serde_json::to_string_pretty(&data) {
@@ -91,4 +93,58 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
     }
     log::error!("Erreur de lecture du JSON (données réinitialisées)");
     crate::models::AppData::default()
+}
+
+/// Charge la clé maître et, si besoin, migre les secrets de l'ancienne clé dérivée
+/// (sel stocké à côté des données) vers la clé maître. data.json est sauvegardé
+/// avant toute modification ; en cas d'échec, les données restent en l'état.
+fn migrate_to_master_key(data: &mut crate::models::AppData, path: &std::path::Path) {
+    use crate::crypto;
+    let master = match crate::keystore::load_or_create_master_key() {
+        Ok(k) => k,
+        Err(e) => {
+            log::warn!("{} — les secrets restent protégés par l'ancienne clé", e);
+            return;
+        }
+    };
+    crypto::set_master_key(master);
+    if data.key_version >= crypto::KEY_VERSION_MASTER {
+        return;
+    }
+
+    let backup = path.with_file_name("data.json.pre-master-key.bak");
+    if path.exists() {
+        if let Err(e) = std::fs::copy(path, &backup) {
+            log::warn!("Sauvegarde avant migration impossible ({}), migration annulée", e);
+            return;
+        }
+    }
+    let legacy = crypto::derive_key(&data.encryption_salt);
+    match crypto::reencrypt_all(data, &legacy, &master) {
+        Ok(()) => {
+            data.key_version = crypto::KEY_VERSION_MASTER;
+            match serde_json::to_string_pretty(&*data).map(|json| std::fs::write(path, json)) {
+                Ok(Ok(())) => {
+                    // La sauvegarde contient les secrets sous l'ancienne clé (déchiffrables avec le
+                    // seul data.json) : on la supprime dès que le fichier migré est relu et vérifié.
+                    if verify_migrated(path, &master) {
+                        let _ = std::fs::remove_file(&backup);
+                        log::info!("Secrets migrés vers la clé maître et vérifiés");
+                    } else {
+                        log::warn!("Vérification après migration échouée : sauvegarde conservée {:?}", backup);
+                    }
+                }
+                _ => log::warn!("Écriture après migration impossible : la sauvegarde {:?} est intacte", backup),
+            }
+        }
+        Err(e) => log::warn!("Migration vers la clé maître impossible : {}", e),
+    }
+}
+
+/// Relit le fichier migré et vérifie que chaque secret se déchiffre avec la clé maître
+fn verify_migrated(path: &std::path::Path, master: &[u8; 32]) -> bool {
+    let data = load_app_data(path);
+    data.key_version >= crate::crypto::KEY_VERSION_MASTER
+        && data.servers.iter().all(|s| crate::crypto::decrypt(&s.ssh_password, master).is_ok())
+        && data.proxmox_connections.iter().all(|c| crate::crypto::decrypt(&c.token_secret, master).is_ok())
 }

@@ -299,6 +299,13 @@ pub struct AppData {
     pub proxmox_connections: Vec<ProxmoxConnection>,
     #[serde(default)]
     pub schedules: Vec<crate::scheduler::Schedule>,
+    /// Schéma de la clé de chiffrement des secrets (voir crypto::KEY_VERSION_MASTER)
+    #[serde(default = "legacy_key_version")]
+    pub key_version: u8,
+}
+
+fn legacy_key_version() -> u8 {
+    1
 }
 
 impl Default for AppData {
@@ -310,6 +317,7 @@ impl Default for AppData {
             encryption_salt: crate::crypto::generate_salt(),
             proxmox_connections: Vec::new(),
             schedules: Vec::new(),
+            key_version: 1,
         }
     }
 }

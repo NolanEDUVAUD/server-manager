@@ -4,6 +4,7 @@ mod crypto;
 mod dashboard_state;
 mod docker;
 mod events;
+mod keystore;
 mod metrics;
 mod models;
 mod proxmox;
