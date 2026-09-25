@@ -561,6 +561,12 @@
           "markdownDescription": "Enables the update_settings command without any pre-configured scope."
         },
         {
+          "description": "Enables the update_tray_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-update-tray-status",
+          "markdownDescription": "Enables the update_tray_status command without any pre-configured scope."
+        },
+        {
           "description": "Enables the upload_server_icon command without any pre-configured scope.",
           "type": "string",
           "const": "allow-upload-server-icon",
@@ -961,6 +967,12 @@
           "type": "string",
           "const": "deny-update-settings",
           "markdownDescription": "Denies the update_settings command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the update_tray_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-update-tray-status",
+          "markdownDescription": "Denies the update_tray_status command without any pre-configured scope."
         },
         {
           "description": "Denies the upload_server_icon command without any pre-configured scope.",

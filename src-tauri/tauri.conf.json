@@ -20,7 +20,9 @@
         "resizable": true,
         "decorations": true,
         "center": true,
-        "shadow": true
+        "shadow": true,
+        "visible": false,
+        "label": "main"
       }
     ],
     "security": {

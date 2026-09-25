@@ -15,6 +15,7 @@ import { useStore } from "./stores/useStore";
 import { usePing } from "./hooks/usePing";
 import { useMetrics } from "./hooks/useMetrics";
 import { useEventFeed } from "./hooks/useEventFeed";
+import { useTraySync } from "./hooks/useTraySync";
 
 function AppContent() {
   const { initialize, loading } = useStore();
@@ -32,6 +33,9 @@ function AppContent() {
 
   // Historique des événements (chargement + flux en direct)
   useEventFeed();
+
+  // Infobulle et menu de l'icône de zone de notification
+  useTraySync();
 
   if (loading) {
     return (

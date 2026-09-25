@@ -189,7 +189,7 @@ function SectionGeneral() {
       <div className="bg-bg-tertiary rounded-win p-4 card">
         <ToggleRow
           label="Démarrer minimisé"
-          description="Réduit la fenêtre au démarrage de l'application"
+          description="Démarre directement dans la zone de notification"
           checked={settings.general.start_minimized}
           onChange={v => handleToggle('start_minimized', v)}
         />
@@ -204,6 +204,12 @@ function SectionGeneral() {
           description="Affiche des notifications OS pour les événements importants"
           checked={settings.general.notifications}
           onChange={v => handleToggle('notifications', v)}
+        />
+        <ToggleRow
+          label="Fermer dans la zone de notification"
+          description="La croix réduit l'app près de l'horloge : planificateur, collecte et alertes continuent"
+          checked={settings.general.close_to_tray}
+          onChange={v => handleToggle('close_to_tray', v)}
         />
       </div>
     </div>

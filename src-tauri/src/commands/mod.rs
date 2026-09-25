@@ -11,4 +11,5 @@ pub mod servers;
 pub mod settings;
 pub mod ssh;
 pub mod terminal;
+pub mod tray;
 pub mod wol;

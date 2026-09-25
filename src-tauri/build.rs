@@ -119,6 +119,7 @@ fn app_manifest() -> tauri_build::AppManifest {
         "update_group",
         "update_server",
         "update_settings",
+        "update_tray_status",
         "upload_server_icon",
         "wake_group",
         "wake_on_lan",

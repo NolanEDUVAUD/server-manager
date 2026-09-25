@@ -57,6 +57,8 @@ export interface GeneralSettings {
   start_minimized: boolean;
   auto_start: boolean;
   notifications: boolean;
+  /** Fermer la fenêtre la réduit dans la zone de notification */
+  close_to_tray: boolean;
 }
 
 export interface AppearanceSettings {

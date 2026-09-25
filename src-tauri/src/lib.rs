@@ -15,8 +15,9 @@ mod proxmox;
 mod scheduler;
 mod storage;
 mod terminal;
+mod tray;
 
-use commands::{dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -38,7 +39,36 @@ pub fn run() {
             app.manage(events::EventLog::load(app.handle()));
             // Boucle du planificateur (tâches WoL / arrêt programmées)
             scheduler::start(app.handle().clone());
+            // Icône de zone de notification ; la fenêtre, créée masquée, n'est
+            // affichée que si l'utilisateur n'a pas demandé un démarrage minimisé
+            tray::create(app.handle())?;
+            let start_minimized = app
+                .state::<AppState>()
+                .data
+                .lock()
+                .map(|d| d.settings.general.start_minimized)
+                .unwrap_or(false);
+            if !start_minimized {
+                tray::show_main_window(app.handle());
+            }
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Fermer = réduire dans la zone de notification (si activé) : le planificateur,
+            // la collecte et les alertes continuent de tourner
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let to_tray = window
+                    .app_handle()
+                    .state::<AppState>()
+                    .data
+                    .lock()
+                    .map(|d| d.settings.general.close_to_tray)
+                    .unwrap_or(true);
+                if to_tray && window.label() == "main" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
@@ -119,6 +149,8 @@ pub fn run() {
             integrations_cmd::get_integrations,
             integrations_cmd::save_integration,
             integrations_cmd::test_integration,
+            // ── Zone de notification ────────────────────────────
+            tray_cmd::update_tray_status,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,

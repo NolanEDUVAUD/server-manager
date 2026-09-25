@@ -151,11 +151,14 @@ pub struct GeneralSettings {
     pub start_minimized: bool,
     pub auto_start: bool,
     pub notifications: bool,
+    /// Fermer la fenêtre la réduit dans la zone de notification au lieu de quitter
+    #[serde(default = "default_true")]
+    pub close_to_tray: bool,
 }
 
 impl Default for GeneralSettings {
     fn default() -> Self {
-        Self { start_minimized: false, auto_start: false, notifications: true }
+        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true }
     }
 }
 
@@ -387,4 +390,8 @@ mod tests {
         assert_eq!(data.settings.network.proxmox_poll_interval_secs, 15);
         assert_eq!(data.settings.network.proxmox_timeout_secs, 10);
     }
+}
+
+fn default_true() -> bool {
+    true
 }

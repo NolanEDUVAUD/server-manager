@@ -78,6 +78,7 @@
     "allow-forget-host-key",
     "allow-get-integrations",
     "allow-save-integration",
-    "allow-test-integration"
+    "allow-test-integration",
+    "allow-update-tray-status"
   ]
 }

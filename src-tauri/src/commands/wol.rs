@@ -50,6 +50,11 @@ pub async fn wake_group(
     events: State<'_, EventLog>,
     group_id: String,
 ) -> Result<Vec<String>, String> {
+    wake_group_inner(&state, &events, &group_id)
+}
+
+/// Réveil d'un groupe, utilisable aussi depuis l'icône de zone de notification
+pub(crate) fn wake_group_inner(state: &AppState, events: &EventLog, group_id: &str) -> Result<Vec<String>, String> {
     let servers_to_wake = {
         let data = state
             .data

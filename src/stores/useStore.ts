@@ -159,7 +159,7 @@ interface AppStore {
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  general: { start_minimized: false, auto_start: false, notifications: true },
+  general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true },
   appearance: {
     brightness: 1.0,
     font_size: 14,
@@ -707,7 +707,7 @@ export const useStore = create<AppStore>((set, get) => ({
   // ── Réinitialisation des paramètres ───────────────────────────────────
   resetSettings: async () => {
     const defaults: AppSettings = {
-      general: { start_minimized: false, auto_start: false, notifications: true },
+      general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true },
       appearance: {
         brightness: 1.0,
         font_size: 14,
