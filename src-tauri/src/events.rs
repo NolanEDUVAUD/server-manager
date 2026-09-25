@@ -9,6 +9,9 @@ use uuid::Uuid;
 /// Nombre maximal d'événements conservés (les plus anciens sont supprimés)
 pub const MAX_EVENTS: usize = 5000;
 
+/// Pings manqués consécutifs avant de déclarer un serveur hors ligne
+pub const OFFLINE_CONFIRMATIONS: u32 = 2;
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum EventKind {
     Offline,
@@ -54,6 +57,8 @@ pub struct EventStore {
     pub events: Vec<Event>,
     /// Dernier statut connu par serveur, pour détecter les transitions de ping
     last_status: HashMap<String, bool>,
+    /// Pings manqués consécutifs par serveur
+    failures: HashMap<String, u32>,
 }
 
 impl EventStore {
@@ -66,7 +71,7 @@ impl EventStore {
                 last_status.insert(id.clone(), e.kind == EventKind::Online);
             }
         }
-        EventStore { events, last_status }
+        EventStore { events, last_status, failures: HashMap::new() }
     }
 
     pub fn push(&mut self, event: Event) {
@@ -77,14 +82,24 @@ impl EventStore {
         }
     }
 
-    /// Renvoie le type d'événement si le statut a changé depuis la dernière
-    /// observation. La première observation d'un serveur ne produit rien.
+    /// Renvoie le type d'événement si le statut a changé. La première observation
+    /// d'un serveur ne produit rien. Un serveur n'est déclaré hors ligne qu'après
+    /// `OFFLINE_CONFIRMATIONS` pings manqués consécutifs : un ping perdu isolé
+    /// (serveur lent, proche du délai) ne remplit pas l'historique de fausses coupures.
     pub fn observe(&mut self, server_id: &str, online: bool) -> Option<EventKind> {
-        let previous = self.last_status.insert(server_id.to_string(), online);
-        match previous {
-            Some(was) if was != online => Some(if online { EventKind::Online } else { EventKind::Offline }),
-            _ => None,
+        let previous = self.last_status.get(server_id).copied();
+        if online {
+            self.failures.remove(server_id);
+            self.last_status.insert(server_id.to_string(), true);
+            return (previous == Some(false)).then_some(EventKind::Online);
         }
+        let failures = self.failures.entry(server_id.to_string()).or_insert(0);
+        *failures += 1;
+        if *failures < OFFLINE_CONFIRMATIONS {
+            return None;
+        }
+        self.last_status.insert(server_id.to_string(), false);
+        (previous == Some(true)).then_some(EventKind::Offline)
     }
 }
 
@@ -234,6 +249,8 @@ mod tests {
         let mut store = EventStore::default();
         assert_eq!(store.observe("a", true), None);
         assert_eq!(store.observe("a", true), None);
+        // Premier ping manqué : pas encore de coupure
+        assert_eq!(store.observe("a", false), None);
         assert_eq!(store.observe("a", false), Some(EventKind::Offline));
         assert_eq!(store.observe("a", false), None);
         assert_eq!(store.observe("a", true), Some(EventKind::Online));
@@ -250,8 +267,20 @@ mod tests {
             ev(4, EventKind::Offline, "b"),
         ]);
         assert_eq!(store.observe("a", true), Some(EventKind::Online));
+        store.observe("b", false);
         assert_eq!(store.observe("b", false), None);
         assert_eq!(store.observe("c", true), None);
+    }
+
+    #[test]
+    fn isolated_lost_pings_do_not_create_outages() {
+        let mut store = EventStore::default();
+        store.observe("nas", true);
+        // Serveur lent qui perd un ping sur deux (cas de truenas)
+        for _ in 0..5 {
+            assert_eq!(store.observe("nas", false), None);
+            assert_eq!(store.observe("nas", true), None);
+        }
     }
 
     #[test]

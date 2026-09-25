@@ -141,10 +141,12 @@ impl ProxmoxClient {
 
     pub async fn list_all_vms(&self) -> Result<Vec<ProxmoxVm>, String> {
         let nodes = self.list_nodes().await?;
+        log::debug!("Proxmox {} : {} nœud(s) visible(s)", self.api_url, nodes.len());
         let mut all = Vec::new();
         for node in &nodes {
             let mut qemu = self.list_vms_of_type(&node.node, VmType::Qemu).await?;
             let mut lxc = self.list_vms_of_type(&node.node, VmType::Lxc).await?;
+            log::debug!("Proxmox nœud {} : {} VM, {} CT", node.node, qemu.len(), lxc.len());
             all.append(&mut qemu);
             all.append(&mut lxc);
         }

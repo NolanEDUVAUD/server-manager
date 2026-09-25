@@ -1,6 +1,7 @@
 // src/components/IconPicker.tsx
-import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { useEffect, useState } from 'react';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
+import { appDataDir, join } from '@tauri-apps/api/path';
 import { open } from '@tauri-apps/plugin-dialog';
 import {
   Server, Database, HardDrive, Monitor, Cpu, Globe, Network,
@@ -135,20 +136,46 @@ export function ServerIconDisplay({ icon, size = 16 }: { icon: string | null | u
   }
 
   if (icon.startsWith('file:')) {
-    const fileName = icon.replace('file:', '');
-    // Utilise le protocole asset:// pour accéder aux fichiers dans AppData
-    return (
-      <img
-        src={`asset://localhost/icons/${fileName}`}
-        width={size}
-        height={size}
-        className="rounded object-cover"
-        style={{ width: size, height: size }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-      />
-    );
+    return <UploadedIcon fileName={icon.replace('file:', '')} size={size} />;
   }
 
   // Rétrocompatibilité : icône texte/emoji
   return <span style={{ fontSize: size }}>{icon}</span>;
+}
+
+/** Dossier des icônes (chemin absolu), résolu une seule fois pour toute l'app */
+let iconsDirPromise: Promise<string> | null = null;
+function iconsDir(): Promise<string> {
+  iconsDirPromise ??= appDataDir().then((dir) => join(dir, 'icons'));
+  return iconsDirPromise;
+}
+
+/**
+ * Icône importée par l'utilisateur. Le protocole asset attend un chemin absolu
+ * (http://asset.localhost/<chemin> sous Windows) : convertFileSrc construit la
+ * bonne URL, limitée par le scope « $APPDATA/icons/** » de tauri.conf.json.
+ */
+function UploadedIcon({ fileName, size }: { fileName: string; size: number }) {
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    iconsDir()
+      .then((dir) => join(dir, fileName))
+      .then((path) => alive && setSrc(convertFileSrc(path)))
+      .catch(() => alive && setSrc(null));
+    return () => { alive = false; };
+  }, [fileName]);
+
+  if (!src) return <Server size={size} />;
+  return (
+    <img
+      src={src}
+      width={size}
+      height={size}
+      className="rounded object-cover"
+      style={{ width: size, height: size }}
+      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+    />
+  );
 }

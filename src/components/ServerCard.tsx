@@ -118,7 +118,7 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
               )
             }
             disabled={!!loading}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
+            className="flex-1 min-w-0 whitespace-nowrap flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                        border border-yellow-500/30 bg-yellow-500/5 text-yellow-400
                        hover:bg-yellow-500/15 hover:border-yellow-500/50
                        text-xs font-medium transition-all disabled:opacity-50"
@@ -136,7 +136,7 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
           <button
             onClick={() => setConfirmAction("shutdown")}
             disabled={!!loading}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
+            className="flex-1 min-w-0 whitespace-nowrap flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                        border border-red-500/30 bg-red-500/5 text-red-400
                        hover:bg-red-500/15 hover:border-red-500/50
                        text-xs font-medium transition-all disabled:opacity-50"
@@ -154,7 +154,7 @@ export function ServerCard({ server, onEdit, onDelete, onMessage }: ServerCardPr
           <button
             onClick={() => setConfirmAction("reboot")}
             disabled={!!loading}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
+            className="flex-1 min-w-0 whitespace-nowrap flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                        border border-border-primary bg-bg-secondary text-text-secondary
                        hover:bg-bg-hover hover:text-text-primary
                        text-xs font-medium transition-all disabled:opacity-50"

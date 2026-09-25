@@ -4,24 +4,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        // === NOUVELLES CLÉS CSS VARIABLES (thème dynamique) ===
-        'bg-primary':    'var(--bg-primary)',
-        'bg-secondary':  'var(--bg-secondary)',
-        'bg-tertiary':   'var(--bg-tertiary)',
-        'bg-input':      'var(--bg-input)',
-        'bg-hover':      'var(--bg-hover)',
-        'bg-active':     'var(--bg-active)',
-        'text-primary':  'var(--text-primary)',
-        'text-secondary':'var(--text-secondary)',
-        'text-muted':    'var(--text-muted)',
-        'accent-primary':  'var(--accent-primary)',
-        'accent-secondary':'var(--accent-secondary)',
-        'accent-success':  'var(--accent-success)',
-        'accent-warning':  'var(--accent-warning)',
-        'accent-error':    'var(--accent-error)',
-        'accent-info':     'var(--accent-info)',
-        'border-primary':  'var(--border-primary)',
-        'border-secondary':'var(--border-secondary)',
+        // === CLÉS CSS VARIABLES (thème dynamique) ===
+        // color-mix + <alpha-value> : sans ça, Tailwind ignore silencieusement les
+        // modificateurs d'opacité (bg-accent-primary/10, border-accent-info/20…)
+        // sur des couleurs var(), et la bordure retombe sur le gris clair par défaut.
+        'bg-primary':    'color-mix(in srgb, var(--bg-primary) calc(<alpha-value> * 100%), transparent)',
+        'bg-secondary':  'color-mix(in srgb, var(--bg-secondary) calc(<alpha-value> * 100%), transparent)',
+        'bg-tertiary':   'color-mix(in srgb, var(--bg-tertiary) calc(<alpha-value> * 100%), transparent)',
+        'bg-input':      'color-mix(in srgb, var(--bg-input) calc(<alpha-value> * 100%), transparent)',
+        'bg-hover':      'color-mix(in srgb, var(--bg-hover) calc(<alpha-value> * 100%), transparent)',
+        'bg-active':     'color-mix(in srgb, var(--bg-active) calc(<alpha-value> * 100%), transparent)',
+        'text-primary':  'color-mix(in srgb, var(--text-primary) calc(<alpha-value> * 100%), transparent)',
+        'text-secondary':'color-mix(in srgb, var(--text-secondary) calc(<alpha-value> * 100%), transparent)',
+        'text-muted':    'color-mix(in srgb, var(--text-muted) calc(<alpha-value> * 100%), transparent)',
+        'accent-primary':  'color-mix(in srgb, var(--accent-primary) calc(<alpha-value> * 100%), transparent)',
+        'accent-secondary':'color-mix(in srgb, var(--accent-secondary) calc(<alpha-value> * 100%), transparent)',
+        'accent-success':  'color-mix(in srgb, var(--accent-success) calc(<alpha-value> * 100%), transparent)',
+        'accent-warning':  'color-mix(in srgb, var(--accent-warning) calc(<alpha-value> * 100%), transparent)',
+        'accent-error':    'color-mix(in srgb, var(--accent-error) calc(<alpha-value> * 100%), transparent)',
+        'accent-info':     'color-mix(in srgb, var(--accent-info) calc(<alpha-value> * 100%), transparent)',
+        'border-primary':  'color-mix(in srgb, var(--border-primary) calc(<alpha-value> * 100%), transparent)',
+        'border-secondary':'color-mix(in srgb, var(--border-secondary) calc(<alpha-value> * 100%), transparent)',
       },
       fontFamily: {
         sans: ['"Segoe UI Variable"', '"Segoe UI"', "Inter", "sans-serif"],

@@ -79,6 +79,32 @@ fn state_from_status(status: &str) -> String {
     .to_string()
 }
 
+/// Image référencée par empreinte (« sha256:1ea34eafe5dc6910… ») : on garde 12 caractères
+fn short_image(image: &str) -> String {
+    match image.strip_prefix("sha256:") {
+        Some(hash) => format!("sha256:{}", &hash[..hash.len().min(12)]),
+        None => image.to_string(),
+    }
+}
+
+/// « 0.0.0.0:53->53/tcp, [::]:53->53/tcp » → « 53->53/tcp » : l'écoute IPv4 et IPv6
+/// d'un même port n'apparaît qu'une fois, et l'adresse « toutes interfaces » est omise.
+fn compact_ports(ports: &str) -> String {
+    let mut seen: Vec<String> = Vec::new();
+    for part in ports.split(", ").map(str::trim).filter(|p| !p.is_empty()) {
+        let p = part
+            .strip_prefix("0.0.0.0:")
+            .or_else(|| part.strip_prefix("[::]:"))
+            .or_else(|| part.strip_prefix(":::"))
+            .unwrap_or(part)
+            .to_string();
+        if !seen.contains(&p) {
+            seen.push(p);
+        }
+    }
+    seen.join(", ")
+}
+
 pub fn parse_list(output: &str) -> Result<DockerHost, String> {
     if output.contains(NO_DOCKER) {
         return Ok(DockerHost { available: false, containers: Vec::new() });
@@ -106,9 +132,9 @@ pub fn parse_list(output: &str) -> Result<DockerHost, String> {
             state: if ps.state.is_empty() { state_from_status(&ps.status) } else { ps.state.clone() },
             id: short,
             name: ps.names,
-            image: ps.image,
+            image: short_image(&ps.image),
             status: ps.status,
-            ports: ps.ports,
+            ports: compact_ports(&ps.ports),
             cpu_percent: st.and_then(|s| percent(&s.cpu_perc)),
             mem_percent: st.and_then(|s| percent(&s.mem_perc)),
             mem_usage: st.map(|s| s.mem_usage.clone()),
@@ -155,7 +181,7 @@ mod tests {
         assert_eq!(web.id, "a1b2c3d4e5f6");
         assert_eq!(web.cpu_percent, Some(1.25));
         assert_eq!(web.mem_usage.as_deref(), Some("12.3MiB / 1.9GiB"));
-        assert_eq!(web.ports, "0.0.0.0:80->80/tcp");
+        assert_eq!(web.ports, "80->80/tcp");
 
         let old = &host.containers[2];
         assert_eq!(old.state, "exited");
@@ -167,6 +193,17 @@ mod tests {
         let host = parse_list(OUTPUT).unwrap();
         let cache = host.containers.iter().find(|c| c.name == "cache").unwrap();
         assert_eq!(cache.state, "paused");
+    }
+
+    #[test]
+    fn digests_are_shortened_and_ports_deduplicated() {
+        assert_eq!(short_image("sha256:1ea34eafe5dc691007946e8eaab7bf46b0de9412"), "sha256:1ea34eafe5dc");
+        assert_eq!(short_image("nginx:latest"), "nginx:latest");
+        assert_eq!(
+            compact_ports("0.0.0.0:53->53/tcp, [::]:53->53/tcp, 0.0.0.0:53->53/udp, [::]:53->53/udp, 443/udp, 127.0.0.1:8080->80/tcp"),
+            "53->53/tcp, 53->53/udp, 443/udp, 127.0.0.1:8080->80/tcp"
+        );
+        assert_eq!(compact_ports(""), "");
     }
 
     #[test]

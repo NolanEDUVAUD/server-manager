@@ -108,7 +108,7 @@ function ToggleRow({ label, description, checked, onChange }: {
         aria-pressed={checked}
       >
         <span className={[
-          'absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-150',
+          'absolute top-0.5 left-0 w-4 h-4 rounded-full bg-white transition-transform duration-150',
           checked ? 'translate-x-5' : 'translate-x-0.5'
         ].join(' ')} />
       </button>

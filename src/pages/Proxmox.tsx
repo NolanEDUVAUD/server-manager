@@ -122,6 +122,22 @@ export function Proxmox() {
               <VmCard key={`${conn.id}-${vm.node}-${vm.vm_type}-${vm.vmid}`} vm={vm} connectionId={conn.id} onMessage={onMessage} />
             ))}
           </div>
+          {/* Liste chargée sans erreur mais vide : cas typique d'un jeton API avec
+              « séparation des privilèges » sans rôle, qui voit les nœuds mais aucun invité */}
+          {proxmoxVms[conn.id]?.length === 0 && !proxmoxErrors[conn.id] && (
+            <div className="text-xs text-text-secondary bg-bg-tertiary border border-border-primary rounded-win p-4 space-y-2">
+              <p className="flex items-center gap-2 text-accent-warning">
+                <AlertCircle size={13} /> Aucune VM ni aucun conteneur visible
+              </p>
+              <p>
+                Si ton cluster en contient, le jeton <code className="text-text-primary">{conn.token_id}</code> n'a
+                probablement pas les droits de lecture. Sur un nœud Proxmox (en root) :
+              </p>
+              <pre className="bg-bg-primary rounded p-2 font-mono text-[11px] text-text-primary select-text overflow-x-auto">{`pveum acl modify / --tokens '${conn.token_id}' --roles PVEVMAdmin
+pveum acl modify /storage --tokens '${conn.token_id}' --roles PVEDatastoreUser`}</pre>
+              <p className="text-text-muted">PVEVMAdmin : voir et piloter les VM (démarrage, snapshots, clonage) · PVEDatastoreUser : espace disque pour les clones.</p>
+            </div>
+          )}
         </div>
       ))}
 
