@@ -1,3 +1,5 @@
+import { t, TKey } from "../i18n";
+
 /** Motifs de commandes qui modifient le système (heuristique d'avertissement) */
 const MODIFYING = [
   /\bapt(-get)?\s+(-\S+\s+)*(upgrade|full-upgrade|dist-upgrade|install|remove|purge|autoremove)\b/,
@@ -20,19 +22,20 @@ export function looksModifying(script: string): boolean {
 }
 
 export interface BatchTemplate {
-  name: string;
+  /** Clé du libellé, traduite à l'affichage */
+  nameKey: TKey;
   script: string;
 }
 
 /** Modèles proposés ; les modifiants sont identifiés par looksModifying() */
 export const TEMPLATES: BatchTemplate[] = [
-  { name: "Espace disque", script: "df -h -x tmpfs -x devtmpfs" },
-  { name: "Mises à jour disponibles", script: "apt list --upgradable 2>/dev/null | tail -n +2" },
-  { name: "Redémarrage requis ?", script: "[ -f /var/run/reboot-required ] && echo 'Redémarrage requis' || echo 'Non'" },
-  { name: "Services en échec", script: "systemctl --failed --no-legend || true" },
-  { name: "Version du noyau", script: "uname -r" },
-  { name: "Mettre à jour les paquets (Debian/Proxmox)", script: "export DEBIAN_FRONTEND=noninteractive\napt-get update\napt-get -y full-upgrade" },
-  { name: "Nettoyer les images Docker inutilisées", script: "docker image prune -af" },
+  { nameKey: "batch.templates.diskSpace", script: "df -h -x tmpfs -x devtmpfs" },
+  { nameKey: "batch.templates.availableUpdates", script: "apt list --upgradable 2>/dev/null | tail -n +2" },
+  { nameKey: "batch.templates.rebootRequired", script: "[ -f /var/run/reboot-required ] && echo 'Redémarrage requis' || echo 'Non'" },
+  { nameKey: "batch.templates.failedServices", script: "systemctl --failed --no-legend || true" },
+  { nameKey: "batch.templates.kernelVersion", script: "uname -r" },
+  { nameKey: "batch.templates.upgradePackages", script: "export DEBIAN_FRONTEND=noninteractive\napt-get update\napt-get -y full-upgrade" },
+  { nameKey: "batch.templates.pruneImages", script: "docker image prune -af" },
 ];
 
 /** Réponse rapide proposée pour une question détectée dans la sortie */
@@ -61,11 +64,11 @@ export function detectPrompt(output: string): DetectedPrompt | null {
   if (/\(Y\/I\/N\/O\/D\/Z\)/i.test(last)) {
     const file = /Configuration file '([^']+)'/.exec(output.slice(-2000))?.[1];
     return {
-      question: file ? `Fichier de configuration modifié : ${file}` : last,
+      question: file ? t("batch.prompt.configFile", { file }) : last,
       choices: [
-        { label: "Garder ma version", send: "N\n", hint: "N — choix par défaut, conserve la configuration actuelle" },
-        { label: "Version du paquet", send: "Y\n", hint: "Y — remplace par la version du mainteneur" },
-        { label: "Voir les différences", send: "D\n", hint: "D — affiche le diff (q pour quitter)" },
+        { label: t("batch.prompt.keepMine"), send: "N\n", hint: t("batch.prompt.keepMineHint") },
+        { label: t("batch.prompt.packageVersion"), send: "Y\n", hint: t("batch.prompt.packageVersionHint") },
+        { label: t("batch.prompt.showDiff"), send: "D\n", hint: t("batch.prompt.showDiffHint") },
       ],
     };
   }
@@ -75,12 +78,12 @@ export function detectPrompt(output: string): DetectedPrompt | null {
   if (yn) {
     const yes = yn[1] ? yn[1].toLowerCase() : "yes";
     const no = yn[2] ? "n" : "no";
-    return { question: last, choices: [{ label: "Oui", send: `${yes}\n` }, { label: "Non", send: `${no}\n` }] };
+    return { question: last, choices: [{ label: t("common.yes"), send: `${yes}\n` }, { label: t("common.no"), send: `${no}\n` }] };
   }
 
   // Pager (ex. après « D » de dpkg) ou « Press [ENTER] to continue »
   if (/^:$|\(END\)$|press \[?enter\]?/i.test(last)) {
-    return { question: last, choices: [{ label: "Continuer", send: "\n" }, { label: "Quitter (q)", send: "q" }] };
+    return { question: last, choices: [{ label: t("batch.prompt.continue"), send: "\n" }, { label: t("batch.prompt.quit"), send: "q" }] };
   }
 
   // Question générique : la ligne se termine par « ? » ou « : » sans retour à la ligne

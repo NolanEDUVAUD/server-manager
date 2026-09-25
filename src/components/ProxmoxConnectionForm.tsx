@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Network, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { ProxmoxConnection, ProxmoxConnectionPayload } from "../types";
 import { useStore } from "../stores/useStore";
+import { useT } from "../i18n";
 
 interface ProxmoxConnectionFormProps {
   connection: ProxmoxConnection | null;
@@ -10,6 +11,7 @@ interface ProxmoxConnectionFormProps {
 }
 
 export function ProxmoxConnectionForm({ connection, onClose, onMessage }: ProxmoxConnectionFormProps) {
+  const { t } = useT();
   const { addProxmoxConnection, updateProxmoxConnection, testProxmoxConnection } = useStore();
   const [form, setForm] = useState<ProxmoxConnectionPayload>({
     name: connection?.name ?? "",
@@ -50,10 +52,10 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
     try {
       if (connection) {
         await updateProxmoxConnection(connection.id, form);
-        onMessage("Connexion mise à jour", "success");
+        onMessage(t("proxmox.form.updated"), "success");
       } else {
         await addProxmoxConnection(form);
-        onMessage("Connexion ajoutée", "success");
+        onMessage(t("proxmox.form.added"), "success");
       }
       onClose();
     } catch (e) {
@@ -78,7 +80,7 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
               <Network size={18} className="text-accent-primary" />
             </div>
             <h2 className="text-text-primary font-semibold">
-              {connection ? "Modifier la connexion" : "Nouvelle connexion Proxmox"}
+              {connection ? t("proxmox.form.editTitle") : t("proxmox.form.newTitle")}
             </h2>
           </div>
           <button onClick={onClose} className="text-text-secondary hover:text-text-primary transition-colors">
@@ -89,7 +91,7 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="space-y-3">
             <div>
-              <label className={labelClass}>Nom</label>
+              <label className={labelClass}>{t("proxmox.form.name")}</label>
               <input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -99,7 +101,7 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
               />
             </div>
             <div>
-              <label className={labelClass}>URL de l'API</label>
+              <label className={labelClass}>{t("proxmox.form.apiUrl")}</label>
               <input
                 value={form.api_url}
                 onChange={(e) => setForm((f) => ({ ...f, api_url: e.target.value }))}
@@ -109,7 +111,7 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
               />
             </div>
             <div>
-              <label className={labelClass}>Token ID</label>
+              <label className={labelClass}>{t("proxmox.form.tokenId")}</label>
               <input
                 value={form.token_id}
                 onChange={(e) => setForm((f) => ({ ...f, token_id: e.target.value }))}
@@ -120,7 +122,7 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
             </div>
             <div>
               <label className={labelClass}>
-                Secret {connection && "(laisser vide pour ne pas changer)"}
+                {t("proxmox.form.secret")} {connection && t("proxmox.form.secretKeep")}
               </label>
               <input
                 type="password"
@@ -137,7 +139,7 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
                 onChange={(e) => setForm((f) => ({ ...f, verify_tls: e.target.checked }))}
                 className="accent-accent-primary"
               />
-              Vérifier le certificat TLS
+              {t("proxmox.form.verifyTls")}
             </label>
           </div>
 
@@ -150,14 +152,14 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
                 className="flex items-center gap-2 px-3 py-2 text-sm bg-bg-active text-text-primary rounded-win hover:bg-bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {testing ? <Loader2 size={14} className="animate-spin" /> : null}
-                Tester la connexion
+                {t("proxmox.form.test")}
               </button>
               {testResult === "ok" && <CheckCircle2 size={16} className="text-green-400" />}
               {testResult === "fail" && <XCircle size={16} className="text-red-400" />}
             </div>
             {connection && !form.token_secret && (
               <p className="text-xs text-text-secondary mt-1.5">
-                Retape le secret pour tester la connexion
+                {t("proxmox.form.retypeSecret")}
               </p>
             )}
           </div>
@@ -168,14 +170,14 @@ export function ProxmoxConnectionForm({ connection, onClose, onMessage }: Proxmo
               onClick={onClose}
               className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all"
             >
-              Annuler
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="px-5 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all disabled:opacity-50"
             >
-              {saving ? "Sauvegarde..." : "Sauvegarder"}
+              {saving ? t("proxmox.form.saving") : t("common.save")}
             </button>
           </div>
         </form>

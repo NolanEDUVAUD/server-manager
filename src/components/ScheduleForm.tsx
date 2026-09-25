@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { X, CalendarClock } from "lucide-react";
 import { Group, Schedule, ScheduleAction, ScheduleMode, Server } from "../types";
-import { DAY_LABELS } from "../utils/schedule";
+import { DAY_KEYS } from "../utils/schedule";
 import { cn } from "../utils";
+import { useT, TKey } from "../i18n";
 
 interface ScheduleFormProps {
   initial?: Schedule;
@@ -12,23 +13,24 @@ interface ScheduleFormProps {
   onCancel: () => void;
 }
 
-const ACTIONS: { value: ScheduleAction; label: string }[] = [
-  { value: "Wake", label: "Allumer (Wake-on-LAN)" },
-  { value: "Shutdown", label: "Éteindre" },
-  { value: "Reboot", label: "Redémarrer" },
+const ACTIONS: { value: ScheduleAction; labelKey: TKey }[] = [
+  { value: "Wake", labelKey: "scheduler.form.wakeOnLan" },
+  { value: "Shutdown", labelKey: "scheduler.actions.shutdown" },
+  { value: "Reboot", labelKey: "scheduler.actions.reboot" },
 ];
 
 /** Raccourcis de sélection des jours */
-const PRESETS: { label: string; days: number[] }[] = [
-  { label: "Semaine", days: [0, 1, 2, 3, 4] },
-  { label: "Week-end", days: [5, 6] },
-  { label: "Tous", days: [0, 1, 2, 3, 4, 5, 6] },
+const PRESETS: { labelKey: TKey; days: number[] }[] = [
+  { labelKey: "scheduler.form.presetWeek", days: [0, 1, 2, 3, 4] },
+  { labelKey: "scheduler.form.presetWeekend", days: [5, 6] },
+  { labelKey: "scheduler.form.presetAll", days: [0, 1, 2, 3, 4, 5, 6] },
 ];
 
 const inputClass =
   "w-full bg-bg-secondary border border-border-primary rounded-win px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors";
 
 export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: ScheduleFormProps) {
+  const { t } = useT();
   const firstTarget = servers[0]
     ? `Server:${servers[0].id}`
     : groups[0] ? `Group:${groups[0].id}` : "";
@@ -50,9 +52,9 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return setError("Le nom est requis");
-    if (!target) return setError("Choisis un serveur ou un groupe");
-    if (days.length === 0) return setError("Choisis au moins un jour");
+    if (!name.trim()) return setError(t("scheduler.form.nameRequired"));
+    if (!target) return setError(t("scheduler.form.targetRequired"));
+    if (days.length === 0) return setError(t("scheduler.form.daysRequired"));
     const [kind, id] = target.split(":") as ["Server" | "Group", string];
     setSubmitting(true);
     try {
@@ -83,7 +85,7 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
             <div className="p-2 rounded-win bg-accent-primary/10">
               <CalendarClock size={18} className="text-accent-primary" />
             </div>
-            <h2 className="text-text-primary font-semibold">{initial ? "Modifier la tâche" : "Nouvelle tâche planifiée"}</h2>
+            <h2 className="text-text-primary font-semibold">{initial ? t("scheduler.form.editTitle") : t("scheduler.form.newTitle")}</h2>
           </div>
           <button onClick={onCancel} className="text-text-secondary hover:text-text-primary transition-colors">
             <X size={18} />
@@ -92,32 +94,32 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Nom *</label>
-            <input aria-label="Nom de la tâche" className={inputClass} value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder="Extinction de nuit" />
+            <label className="block text-xs font-medium text-text-secondary mb-1">{t("scheduler.form.name")}</label>
+            <input aria-label={t("scheduler.form.nameLabel")} className={inputClass} value={name} onChange={(e) => { setName(e.target.value); setError(""); }} placeholder={t("scheduler.form.namePlaceholder")} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">Action</label>
-              <select aria-label="Action" className={inputClass} value={action} onChange={(e) => setAction(e.target.value as ScheduleAction)}>
-                {ACTIONS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+              <label className="block text-xs font-medium text-text-secondary mb-1">{t("scheduler.form.action")}</label>
+              <select aria-label={t("scheduler.form.action")} className={inputClass} value={action} onChange={(e) => setAction(e.target.value as ScheduleAction)}>
+                {ACTIONS.map((a) => <option key={a.value} value={a.value}>{t(a.labelKey)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">Heure</label>
-              <input type="time" aria-label="Heure" className={inputClass} value={time} onChange={(e) => setTime(e.target.value)} required />
+              <label className="block text-xs font-medium text-text-secondary mb-1">{t("scheduler.form.time")}</label>
+              <input type="time" aria-label={t("scheduler.form.time")} className={inputClass} value={time} onChange={(e) => setTime(e.target.value)} required />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Cible</label>
-            <select aria-label="Cible" className={inputClass} value={target} onChange={(e) => setTarget(e.target.value)}>
+            <label className="block text-xs font-medium text-text-secondary mb-1">{t("scheduler.form.target")}</label>
+            <select aria-label={t("scheduler.form.target")} className={inputClass} value={target} onChange={(e) => setTarget(e.target.value)}>
               {groups.length > 0 && (
-                <optgroup label="Groupes">
+                <optgroup label={t("scheduler.form.groups")}>
                   {groups.map((g) => <option key={g.id} value={`Group:${g.id}`}>{g.icon ? `${g.icon} ` : ""}{g.name}</option>)}
                 </optgroup>
               )}
-              <optgroup label="Serveurs">
+              <optgroup label={t("scheduler.form.servers")}>
                 {servers.map((s) => <option key={s.id} value={`Server:${s.id}`}>{s.name}</option>)}
               </optgroup>
             </select>
@@ -125,19 +127,19 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium text-text-secondary">Jours</label>
+              <label className="text-xs font-medium text-text-secondary">{t("scheduler.form.days")}</label>
               <div className="flex gap-2">
                 {PRESETS.map((p) => (
-                  <button key={p.label} type="button" onClick={() => setDays(p.days)} className="text-[11px] text-accent-primary hover:underline">
-                    {p.label}
+                  <button key={p.labelKey} type="button" onClick={() => setDays(p.days)} className="text-[11px] text-accent-primary hover:underline">
+                    {t(p.labelKey)}
                   </button>
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-7 gap-1">
-              {DAY_LABELS.map((label, d) => (
+              {DAY_KEYS.map((dayKey, d) => (
                 <button
-                  key={label}
+                  key={dayKey}
                   type="button"
                   onClick={() => toggleDay(d)}
                   className={cn(
@@ -147,18 +149,18 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
                       : "border-border-primary text-text-muted hover:bg-bg-hover"
                   )}
                 >
-                  {label}
+                  {t(dayKey)}
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5">Exécution</label>
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">{t("scheduler.form.execution")}</label>
             <div className="grid grid-cols-2 gap-2">
               {([
-                ["App", "Par l'app", "Tant que l'app est ouverte"],
-                ["Cron", "Sur le serveur (cron)", "Même app fermée · Linux"],
+                ["App", t("scheduler.form.modeApp"), t("scheduler.form.modeAppHint")],
+                ["Cron", t("scheduler.form.modeCron"), t("scheduler.form.modeCronHint")],
               ] as const).map(([value, label, hint]) => (
                 <button
                   key={value}
@@ -178,28 +180,28 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
               ))}
             </div>
             {action === "Wake" && (
-              <p className="text-[11px] text-text-muted mt-1.5">Le réveil est envoyé par l'app : un serveur éteint ne peut pas exécuter de cron.</p>
+              <p className="text-[11px] text-text-muted mt-1.5">{t("scheduler.form.wakeNote")}</p>
             )}
             {effectiveMode === "Cron" && (
               <p className="text-[11px] text-text-muted mt-1.5">
-                Heure du serveur. La commande d'arrêt du serveur est utilisée ; avec <code>sudo</code>, il faut un sudo sans mot de passe.
+                {t("scheduler.form.cronNoteBefore")} <code>sudo</code>{t("scheduler.form.cronNoteAfter")}
               </p>
             )}
           </div>
 
           <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
             <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-accent-primary" />
-            Tâche active
+            {t("scheduler.form.active")}
           </label>
 
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <div className="flex gap-3 justify-end pt-2 border-t border-border-primary">
             <button type="button" onClick={onCancel} className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all">
-              Annuler
+              {t("common.cancel")}
             </button>
             <button type="submit" disabled={submitting} className="px-5 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium transition-all disabled:opacity-50">
-              {submitting ? "Enregistrement…" : initial ? "Mettre à jour" : "Créer"}
+              {submitting ? t("common.saving") : initial ? t("scheduler.form.update") : t("scheduler.form.create")}
             </button>
           </div>
         </form>

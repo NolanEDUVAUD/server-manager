@@ -6,6 +6,7 @@ import "@xterm/xterm/css/xterm.css";
 import { useStore } from "../stores/useStore";
 import { TerminalSession } from "../types";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 /** Message du backend : octets du terminal (ArrayBuffer) ou fin de session (JSON). */
 type TerminalEvent = ArrayBuffer | { closed: string };
@@ -43,6 +44,7 @@ export function TerminalView({ session, active }: TerminalViewProps) {
   // Lu par les callbacks xterm (onData/onResize) : doit toujours refléter la session courante
   const sessionIdRef = useRef<string | null>(null);
   const updateTerminal = useStore((s) => s.updateTerminal);
+  const { t } = useT();
 
   // Ajuste le terminal à son conteneur ; impossible tant que l'onglet est masqué (taille nulle)
   function fit() {
@@ -92,7 +94,7 @@ export function TerminalView({ session, active }: TerminalViewProps) {
     let cancelled = false;
     sessionIdRef.current = null;
     fit();
-    term.write(`${attempt > 0 ? "\r\n" : ""}${GREY}Connexion à ${title}…${RESET}\r\n`);
+    term.write(`${attempt > 0 ? "\r\n" : ""}${GREY}${t("console.connecting", { title })}${RESET}\r\n`);
 
     const channel = new Channel<TerminalEvent>();
     channel.onmessage = (msg) => {
@@ -117,7 +119,7 @@ export function TerminalView({ session, active }: TerminalViewProps) {
         }
         sessionIdRef.current = sessionId;
         // Ne pas repasser en « open » si la fin de session est déjà arrivée
-        const current = useStore.getState().terminalSessions.find((t) => t.key === key);
+        const current = useStore.getState().terminalSessions.find((x) => x.key === key);
         if (current?.status === "connecting") updateTerminal(key, { status: "open", sessionId });
         term.focus();
       })

@@ -1,0 +1,27 @@
+/** Page Logs : journaux systemd centralisés dans Loki */
+export const logs = {
+  title: "Logs",
+  subtitle: "Journaux systemd centralisés dans Loki",
+  configureBefore: "Configure Loki dans",
+  configureLink: "Paramètres → Intégrations",
+  levels: {
+    errors: "Erreurs",
+    warnings: "Avertissements +",
+    info: "Infos +",
+    all: "Tout",
+  },
+  host: "Hôte",
+  notInApp: "hors app",
+  level: "Niveau",
+  range: "Période",
+  unit: "Unité",
+  allUnits: "Toutes les unités",
+  searchPlaceholder: "Rechercher…",
+  searchLabel: "Texte recherché",
+  live: "Direct",
+  aroundOutage: "Autour de la dernière coupure",
+  aroundOutageHint: "10 min avant → 5 min après la dernière coupure",
+  window: "Fenêtre : {start} → {end}",
+  backToLive: "revenir au direct",
+  empty: "Aucune entrée pour ces critères.",
+};

@@ -5,6 +5,7 @@ import { useStore } from "../stores/useStore";
 import { MigrationPlan, ProxmoxVm } from "../types";
 import { waitTask } from "./MigrateModal";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 type Row = { vm: ProxmoxVm; plan?: MigrationPlan; error?: string; target?: string; state: "check" | "ready" | "blocked" | "running" | "ok" | "failed"; message?: string };
 
@@ -13,6 +14,7 @@ type Row = { vm: ProxmoxVm; plan?: MigrationPlan; error?: string; target?: strin
  * Les invités impossibles à déplacer sont listés avec la raison, sans rien tenter.
  */
 export function DrainNodeModal({ connectionId, node, onClose }: { connectionId: string; node: string; onClose: () => void }) {
+  const { t } = useT();
   const { proxmoxVms, loadProxmoxVms } = useStore();
   const guests = (proxmoxVms[connectionId] ?? []).filter((v) => v.node === node && v.status === "running");
   const [rows, setRows] = useState<Row[]>(guests.map((vm) => ({ vm, state: "check" })));
@@ -24,10 +26,10 @@ export function DrainNodeModal({ connectionId, node, onClose }: { connectionId: 
     for (const vm of guests) {
       invoke<MigrationPlan>("proxmox_migration_plan", { connectionId, node, vmid: vm.vmid, vmType: vm.vm_type })
         .then((plan) => {
-          const target = plan.targets.find((t) => t.allowed)?.node;
+          const target = plan.targets.find((x) => x.allowed)?.node;
           update(vm.vmid, target
             ? { plan, target, state: "ready" }
-            : { plan, state: "blocked", message: plan.targets[0]?.reasons.join(" · ") || plan.notes.join(" · ") || "aucune cible" });
+            : { plan, state: "blocked", message: plan.targets[0]?.reasons.join(" · ") || plan.notes.join(" · ") || t("proxmox.drain.noTarget") });
         })
         .catch((e) => update(vm.vmid, { state: "blocked", message: String(e) }));
     }
@@ -60,11 +62,11 @@ export function DrainNodeModal({ connectionId, node, onClose }: { connectionId: 
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={running ? undefined : onClose} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-xl mx-4 animate-slide-in">
         <div className="flex items-center justify-between p-5 border-b border-border-primary">
-          <h2 className="text-text-primary font-semibold">Vider le nœud {node}</h2>
+          <h2 className="text-text-primary font-semibold">{t("proxmox.drain.title", { node })}</h2>
           {!running && <button onClick={onClose} className="text-text-secondary hover:text-text-primary"><X size={18} /></button>}
         </div>
         <div className="p-5 space-y-3">
-          {guests.length === 0 ? <p className="text-sm text-text-muted">Aucun invité démarré sur ce nœud.</p> : (
+          {guests.length === 0 ? <p className="text-sm text-text-muted">{t("proxmox.drain.empty")}</p> : (
             <div className="divide-y divide-border-secondary max-h-80 overflow-y-auto">
               {rows.map((r) => (
                 <div key={r.vm.vmid} className="flex items-start gap-3 py-2 text-sm">
@@ -75,7 +77,7 @@ export function DrainNodeModal({ connectionId, node, onClose }: { connectionId: 
                   <div className="flex-1 min-w-0">
                     <p className="text-text-primary">{r.vm.name} <span className="text-text-muted">· {r.vm.vm_type.toUpperCase()} {r.vm.vmid}</span></p>
                     <p className={cn("text-xs", r.state === "failed" ? "text-accent-error" : "text-text-muted")}>
-                      {r.state === "ready" ? `migrable vers ${r.target}` : r.state === "blocked" ? `non migrable : ${r.message}` : r.message ?? ""}
+                      {r.state === "ready" ? t("proxmox.drain.ready", { target: r.target ?? "" }) : r.state === "blocked" ? t("proxmox.drain.blocked", { reason: r.message ?? "" }) : r.message ?? ""}
                     </p>
                   </div>
                 </div>
@@ -83,9 +85,9 @@ export function DrainNodeModal({ connectionId, node, onClose }: { connectionId: 
             </div>
           )}
           <div className="flex gap-3 justify-end pt-2 border-t border-border-primary">
-            <button onClick={onClose} disabled={running} className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:bg-bg-hover disabled:opacity-50">Fermer</button>
+            <button onClick={onClose} disabled={running} className="px-4 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:bg-bg-hover disabled:opacity-50">{t("common.close")}</button>
             <button onClick={drain} disabled={running || checking || ready === 0} className="px-5 py-2 text-sm rounded-win bg-accent-primary hover:bg-accent-secondary text-white font-medium disabled:opacity-50">
-              {running ? "Migration en cours…" : `Migrer ${ready} invité(s)`}
+              {running ? t("proxmox.drain.running") : t("proxmox.drain.migrate", { count: ready })}
             </button>
           </div>
         </div>

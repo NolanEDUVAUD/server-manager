@@ -6,12 +6,13 @@ import { useStore } from "../stores/useStore";
 import { LogEntry } from "../types";
 import { cn } from "../utils";
 import { fold } from "../utils/fuzzy";
+import { useT, TKey } from "../i18n";
 
-const LEVELS = [
-  { value: 3, label: "Erreurs" },
-  { value: 4, label: "Avertissements +" },
-  { value: 6, label: "Infos +" },
-  { value: 7, label: "Tout" },
+const LEVELS: { value: number; labelKey: TKey }[] = [
+  { value: 3, labelKey: "logs.levels.errors" },
+  { value: 4, labelKey: "logs.levels.warnings" },
+  { value: 6, labelKey: "logs.levels.info" },
+  { value: 7, labelKey: "logs.levels.all" },
 ];
 const RANGES = [
   { value: 15, label: "15 min" },
@@ -28,6 +29,7 @@ export function matchServer<T extends { name: string }>(host: string, servers: T
 }
 
 export function Logs() {
+  const { t, locale } = useT();
   const { servers, events } = useStore();
   const [hosts, setHosts] = useState<string[] | null>(null);
   const [host, setHost] = useState("");
@@ -96,9 +98,9 @@ export function Logs() {
   if (error && !hosts) {
     return (
       <div className="p-6 space-y-2">
-        <h1 className="text-text-primary font-semibold text-lg">Logs</h1>
+        <h1 className="text-text-primary font-semibold text-lg">{t("logs.title")}</h1>
         <p className="text-sm text-accent-error">{error}</p>
-        <p className="text-xs text-text-muted">Configure Loki dans <Link to="/settings" className="text-accent-primary hover:underline">Paramètres → Intégrations</Link>.</p>
+        <p className="text-xs text-text-muted">{t("logs.configureBefore")} <Link to="/settings" className="text-accent-primary hover:underline">{t("logs.configureLink")}</Link>.</p>
       </div>
     );
   }
@@ -108,55 +110,55 @@ export function Logs() {
   return (
     <div className="p-6 space-y-4 flex flex-col h-full">
       <div>
-        <h1 className="text-text-primary font-semibold text-lg">Logs</h1>
-        <p className="text-text-secondary text-xs mt-0.5">Journaux systemd centralisés dans Loki</p>
+        <h1 className="text-text-primary font-semibold text-lg">{t("logs.title")}</h1>
+        <p className="text-text-secondary text-xs mt-0.5">{t("logs.subtitle")}</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <select value={host} onChange={(e) => { setHost(e.target.value); setWindow(null); }} className={selectClass} aria-label="Hôte">
-          {(hosts ?? []).map((h) => <option key={h} value={h}>{h}{matchServer(h, servers) ? "" : " (hors app)"}</option>)}
+        <select value={host} onChange={(e) => { setHost(e.target.value); setWindow(null); }} className={selectClass} aria-label={t("logs.host")}>
+          {(hosts ?? []).map((h) => <option key={h} value={h}>{h}{matchServer(h, servers) ? "" : ` (${t("logs.notInApp")})`}</option>)}
         </select>
-        <select value={level} onChange={(e) => setLevel(Number(e.target.value))} className={selectClass} aria-label="Niveau">
-          {LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+        <select value={level} onChange={(e) => setLevel(Number(e.target.value))} className={selectClass} aria-label={t("logs.level")}>
+          {LEVELS.map((l) => <option key={l.value} value={l.value}>{t(l.labelKey)}</option>)}
         </select>
-        <select value={range} onChange={(e) => { setRange(Number(e.target.value)); setWindow(null); }} className={selectClass} aria-label="Période">
+        <select value={range} onChange={(e) => { setRange(Number(e.target.value)); setWindow(null); }} className={selectClass} aria-label={t("logs.range")}>
           {RANGES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
         </select>
-        <select value={unit} onChange={(e) => setUnit(e.target.value)} className={cn(selectClass, "max-w-56")} aria-label="Unité">
-          <option value="">Toutes les unités</option>
+        <select value={unit} onChange={(e) => setUnit(e.target.value)} className={cn(selectClass, "max-w-56")} aria-label={t("logs.unit")}>
+          <option value="">{t("logs.allUnits")}</option>
           {units.map((u) => <option key={u} value={u}>{u}</option>)}
         </select>
         <form onSubmit={(e) => { e.preventDefault(); search(); }} className="flex items-center gap-1 flex-1 min-w-48">
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Rechercher…" aria-label="Texte recherché" className={cn(selectClass, "flex-1")} />
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={t("logs.searchPlaceholder")} aria-label={t("logs.searchLabel")} className={cn(selectClass, "flex-1")} />
           <button type="submit" className="p-2 rounded-win border border-border-primary text-text-secondary hover:text-accent-primary"><Search size={14} /></button>
         </form>
         <button onClick={() => setLive((l) => !l)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-win border text-sm", live ? "border-accent-success text-accent-success" : "border-border-primary text-text-secondary")}>
-          <Radio size={13} className={cn(live && "animate-pulse-soft")} /> Direct
+          <Radio size={13} className={cn(live && "animate-pulse-soft")} /> {t("logs.live")}
         </button>
         {lastOutage && (
-          <button onClick={aroundOutage} className="flex items-center gap-1.5 px-3 py-1.5 rounded-win border border-border-primary text-sm text-text-secondary hover:text-text-primary" title="10 min avant → 5 min après la dernière coupure">
-            <HistoryIcon size={13} /> Autour de la dernière coupure
+          <button onClick={aroundOutage} className="flex items-center gap-1.5 px-3 py-1.5 rounded-win border border-border-primary text-sm text-text-secondary hover:text-text-primary" title={t("logs.aroundOutageHint")}>
+            <HistoryIcon size={13} /> {t("logs.aroundOutage")}
           </button>
         )}
       </div>
 
       {window_ && (
         <p className="text-xs text-accent-info">
-          Fenêtre : {new Date(window_.start).toLocaleString("fr-FR")} → {new Date(window_.end).toLocaleTimeString("fr-FR")}
-          <button onClick={() => { setWindow(null); search(null); }} className="ml-2 underline">revenir au direct</button>
+          {t("logs.window", { start: new Date(window_.start).toLocaleString(locale), end: new Date(window_.end).toLocaleTimeString(locale) })}
+          <button onClick={() => { setWindow(null); search(null); }} className="ml-2 underline">{t("logs.backToLive")}</button>
         </p>
       )}
       {error && <p className="text-sm text-accent-error">{error}</p>}
 
       <div className="flex-1 min-h-0 overflow-y-auto bg-bg-primary border border-border-primary rounded-win font-mono text-[11px]">
         {!entries || loading && entries.length === 0 ? (
-          <div className="p-4 text-text-muted flex items-center gap-2">{loading ? <Loader2 size={14} className="animate-spin" /> : <ScrollText size={14} />} Chargement…</div>
+          <div className="p-4 text-text-muted flex items-center gap-2">{loading ? <Loader2 size={14} className="animate-spin" /> : <ScrollText size={14} />} {t("common.loading")}</div>
         ) : entries.length === 0 ? (
-          <p className="p-4 text-text-muted">Aucune entrée pour ces critères.</p>
+          <p className="p-4 text-text-muted">{t("logs.empty")}</p>
         ) : (
           entries.map((e, i) => (
             <div key={`${e.ts}-${i}`} className="flex gap-3 px-3 py-0.5 hover:bg-bg-hover select-text">
-              <span className="text-text-muted shrink-0">{new Date(e.ts).toLocaleTimeString("fr-FR")}</span>
+              <span className="text-text-muted shrink-0">{new Date(e.ts).toLocaleTimeString(locale)}</span>
               <span className="text-text-muted shrink-0 w-40 truncate" title={e.unit}>{e.unit.replace(/\.service$/, "")}</span>
               <span className={cn("break-all", e.priority !== null ? PRIORITY_COLOR[e.priority] ?? "text-text-secondary" : "text-text-secondary")}>{e.line}</span>
             </div>

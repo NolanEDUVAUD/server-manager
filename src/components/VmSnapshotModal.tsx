@@ -3,6 +3,7 @@ import { Camera, Loader2, RotateCcw, Copy, X } from "lucide-react";
 import { ProxmoxVm, ProxmoxSnapshot } from "../types";
 import { useStore } from "../stores/useStore";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { useT } from "../i18n";
 
 interface VmSnapshotModalProps {
   vm: ProxmoxVm;
@@ -12,6 +13,7 @@ interface VmSnapshotModalProps {
 }
 
 export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnapshotModalProps) {
+  const { t } = useT();
   const { proxmoxSnapshotList, proxmoxSnapshotCreate, proxmoxSnapshotRollback, proxmoxCloneVm } = useStore();
   const [snapshots, setSnapshots] = useState<ProxmoxSnapshot[]>([]);
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,7 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
     setCreating(true);
     try {
       await proxmoxSnapshotCreate(connectionId, vm.node, vm.vmid, vm.vm_type, newSnapshotName.trim());
-      onMessage(`Snapshot "${newSnapshotName}" créé`, "success");
+      onMessage(t("proxmox.snapshots.created", { name: newSnapshotName }), "success");
       setNewSnapshotName("");
       await refresh();
     } catch (e) {
@@ -64,7 +66,7 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
     setRollbackTarget(null);
     try {
       await proxmoxSnapshotRollback(connectionId, vm.node, vm.vmid, vm.vm_type, target.name);
-      onMessage(`Restauration vers "${target.name}" lancée`, "success");
+      onMessage(t("proxmox.snapshots.rollbackStarted", { name: target.name }), "success");
     } catch (e) {
       onMessage(String(e), "error");
     }
@@ -75,7 +77,7 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
     setCloning(true);
     try {
       await proxmoxCloneVm(connectionId, vm.node, vm.vmid, vm.vm_type, cloneName.trim());
-      onMessage(`Clonage de ${vm.name} vers "${cloneName}" lancé`, "success");
+      onMessage(t("proxmox.snapshots.cloneStarted", { vm: vm.name, name: cloneName }), "success");
     } catch (e) {
       onMessage(String(e), "error");
     } finally {
@@ -93,7 +95,7 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
               <div className="p-2 rounded-win bg-accent-primary/10">
                 <Camera size={16} className="text-accent-primary" />
               </div>
-              <h2 className="text-text-primary font-medium text-base">Snapshots — {vm.name}</h2>
+              <h2 className="text-text-primary font-medium text-base">{t("proxmox.snapshots.title", { name: vm.name })}</h2>
             </div>
             <button onClick={onClose} className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors">
               <X size={18} />
@@ -107,7 +109,7 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
                   <Loader2 size={18} className="animate-spin text-text-secondary" />
                 </div>
               ) : snapshots.length === 0 ? (
-                <p className="text-text-secondary text-sm text-center py-4">Aucun snapshot</p>
+                <p className="text-text-secondary text-sm text-center py-4">{t("proxmox.snapshots.empty")}</p>
               ) : (
                 snapshots.map((s) => (
                   <div key={s.name} className="flex items-center justify-between gap-2 bg-bg-secondary border border-border-primary rounded-win px-3 py-2">
@@ -118,9 +120,9 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
                     <button
                       onClick={() => setRollbackTarget(s)}
                       className="shrink-0 flex items-center gap-1 px-2 py-1 text-xs rounded-win border border-border-primary text-text-secondary hover:text-accent-primary hover:border-accent-primary/50 transition-colors"
-                      title="Restaurer"
+                      title={t("proxmox.snapshots.restore")}
                     >
-                      <RotateCcw size={12} /> Restaurer
+                      <RotateCcw size={12} /> {t("proxmox.snapshots.restore")}
                     </button>
                   </div>
                 ))
@@ -131,7 +133,7 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
               <input
                 value={newSnapshotName}
                 onChange={(e) => setNewSnapshotName(e.target.value)}
-                placeholder="Nom du snapshot"
+                placeholder={t("proxmox.snapshots.namePlaceholder")}
                 className="flex-1 bg-bg-secondary border border-border-primary rounded-win px-3 py-2 text-text-primary text-sm focus:outline-none focus:border-accent-primary transition-colors"
               />
               <button
@@ -139,12 +141,12 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
                 disabled={creating || !newSnapshotName.trim()}
                 className="px-3 py-2 text-sm bg-accent-primary text-white rounded-win hover:bg-accent-secondary transition-colors disabled:opacity-50"
               >
-                {creating ? <Loader2 size={14} className="animate-spin" /> : "Créer"}
+                {creating ? <Loader2 size={14} className="animate-spin" /> : t("proxmox.snapshots.create")}
               </button>
             </div>
 
             <div className="pt-4 border-t border-border-primary space-y-2">
-              <p className="text-text-secondary text-xs">Cloner cette VM/conteneur</p>
+              <p className="text-text-secondary text-xs">{t("proxmox.snapshots.cloneLabel")}</p>
               <div className="flex gap-2">
                 <input
                   value={cloneName}
@@ -157,7 +159,7 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
                   className="flex items-center gap-1.5 px-3 py-2 text-sm bg-bg-secondary border border-border-primary text-text-primary rounded-win hover:bg-bg-hover transition-colors disabled:opacity-50"
                 >
                   {cloning ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
-                  Cloner
+                  {t("proxmox.snapshots.clone")}
                 </button>
               </div>
             </div>
@@ -167,9 +169,9 @@ export function VmSnapshotModal({ vm, connectionId, onClose, onMessage }: VmSnap
 
       {rollbackTarget && (
         <ConfirmDialog
-          title={`Restaurer "${rollbackTarget.name}"`}
-          message={`Cette action va restaurer ${vm.name} à l'état du snapshot "${rollbackTarget.name}". Les changements depuis ce snapshot seront perdus.`}
-          confirmLabel="Restaurer"
+          title={t("proxmox.snapshots.restoreTitle", { name: rollbackTarget.name })}
+          message={t("proxmox.snapshots.restoreMessage", { vm: vm.name, name: rollbackTarget.name })}
+          confirmLabel={t("proxmox.snapshots.restore")}
           dangerous
           onConfirm={handleRollback}
           onCancel={() => setRollbackTarget(null)}

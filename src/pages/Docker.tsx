@@ -9,6 +9,7 @@ import { supportsMetrics } from "../hooks/useMetrics";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 type HostState = { loading: boolean; host?: DockerHost; error?: string };
 
@@ -21,6 +22,7 @@ const STATE_COLOR: Record<string, string> = {
 const REFRESH_MS = 15_000;
 
 function LogsModal({ serverId, container, onClose }: { serverId: string; container: DockerContainer; onClose: () => void }) {
+  const { t } = useT();
   const [logs, setLogs] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -39,14 +41,14 @@ function LogsModal({ serverId, container, onClose }: { serverId: string; contain
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-4xl mx-4 h-[75vh] flex flex-col animate-slide-in">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border-primary shrink-0">
           <div className="min-w-0">
-            <h2 className="text-text-primary font-semibold text-sm truncate">Logs · {container.name}</h2>
-            <p className="text-text-muted text-xs truncate">{container.image} · 300 dernières lignes</p>
+            <h2 className="text-text-primary font-semibold text-sm truncate">{t("docker.logs.title", { name: container.name })}</h2>
+            <p className="text-text-muted text-xs truncate">{container.image} · {t("docker.logs.lastLines", { count: 300 })}</p>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={load} className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10" title="Actualiser">
+            <button onClick={load} className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10" title={t("common.refresh")}>
               <RefreshCw size={14} />
             </button>
-            <button onClick={onClose} className="p-1.5 rounded text-text-secondary hover:text-text-primary" title="Fermer">
+            <button onClick={onClose} className="p-1.5 rounded text-text-secondary hover:text-text-primary" title={t("common.close")}>
               <X size={16} />
             </button>
           </div>
@@ -57,7 +59,7 @@ function LogsModal({ serverId, container, onClose }: { serverId: string; contain
           ) : logs === null ? (
             <Loader2 size={16} className="animate-spin text-text-muted" />
           ) : (
-            <pre className="text-xs text-text-secondary font-mono whitespace-pre-wrap break-all select-text">{logs || "(aucune sortie)"}</pre>
+            <pre className="text-xs text-text-secondary font-mono whitespace-pre-wrap break-all select-text">{logs || t("docker.logs.noOutput")}</pre>
           )}
         </div>
       </div>
@@ -66,6 +68,7 @@ function LogsModal({ serverId, container, onClose }: { serverId: string; contain
 }
 
 export function Docker() {
+  const { t } = useT();
   const { servers, statuses } = useStore();
   const { toasts, removeToast, success, error } = useToast();
   const candidates = servers.filter(supportsMetrics);
@@ -107,7 +110,7 @@ export function Docker() {
     setBusy(`${c.id}:${action}`);
     try {
       await invoke("docker_action", { serverId: selected, container: c.id, action });
-      success(`${c.name} : ${action === "start" ? "démarré" : action === "stop" ? "arrêté" : "redémarré"}`);
+      success(t(action === "start" ? "docker.started" : action === "stop" ? "docker.stopped" : "docker.restarted", { name: c.name }));
       refresh(selected);
     } catch (e) {
       error(String(e));
@@ -121,10 +124,10 @@ export function Docker() {
 
   function hostBadge(serverId: string): string {
     const st = hosts[serverId];
-    if (!statuses[serverId]?.online) return "hors ligne";
+    if (!statuses[serverId]?.online) return t("docker.badge.offline");
     if (!st || (st.loading && !st.host)) return "…";
-    if (st.error) return "erreur";
-    if (!st.host?.available) return "pas de Docker";
+    if (st.error) return t("docker.badge.error");
+    if (!st.host?.available) return t("docker.badge.noDocker");
     const running = st.host.containers.filter((c) => c.state === "running").length;
     return `${running}/${st.host.containers.length}`;
   }
@@ -135,7 +138,7 @@ export function Docker() {
       <div>
         <h1 className="text-text-primary font-semibold text-lg">Docker</h1>
         <p className="text-text-secondary text-xs mt-0.5">
-          Conteneurs de tes serveurs via SSH · un serveur absent ? Ajoute ta VM Docker dans « Serveurs »
+          {t("docker.subtitle")}
         </p>
       </div>
 
@@ -168,7 +171,7 @@ export function Docker() {
       {!selected ? (
         <div className="flex flex-col items-center gap-2 py-16 text-text-muted text-sm">
           <ContainerIcon size={28} className="opacity-50" />
-          Choisis un serveur pour voir ses conteneurs.
+          {t("docker.pickServer")}
         </div>
       ) : current?.error ? (
         <div className="flex items-start gap-2 text-sm text-accent-error bg-bg-tertiary border border-border-primary rounded-win p-4">
@@ -177,18 +180,18 @@ export function Docker() {
         </div>
       ) : current?.host && !current.host.available ? (
         <p className="text-sm text-text-secondary bg-bg-tertiary border border-border-primary rounded-win p-4">
-          Docker n'est pas installé sur ce serveur (ou pas dans le PATH de l'utilisateur SSH).
+          {t("docker.notInstalled")}
         </p>
       ) : !current?.host ? (
         <Loader2 size={18} className="animate-spin text-text-muted" />
       ) : containers.length === 0 ? (
-        <p className="text-sm text-text-secondary">Aucun conteneur sur ce serveur.</p>
+        <p className="text-sm text-text-secondary">{t("docker.noContainers")}</p>
       ) : (
         <div className="bg-bg-tertiary border border-border-primary rounded-win overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2 border-b border-border-primary text-xs text-text-muted">
-            <span>{containers.length} conteneur(s)</span>
+            <span>{t("docker.containers", { count: containers.length })}</span>
             <button onClick={() => refresh(selected)} className="flex items-center gap-1 hover:text-accent-primary">
-              <RefreshCw size={12} className={cn(current.loading && "animate-spin")} /> Actualiser
+              <RefreshCw size={12} className={cn(current.loading && "animate-spin")} /> {t("common.refresh")}
             </button>
           </div>
           <div className="divide-y divide-border-secondary">
@@ -216,14 +219,14 @@ export function Docker() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {!running ? (
-                      <IconButton title="Démarrer" busy={busy === `${c.id}:start`} onClick={() => act(c, "start")}><Play size={13} /></IconButton>
+                      <IconButton title={t("docker.start")} busy={busy === `${c.id}:start`} onClick={() => act(c, "start")}><Play size={13} /></IconButton>
                     ) : (
                       <>
-                        <IconButton title="Redémarrer" busy={busy === `${c.id}:restart`} onClick={() => act(c, "restart")}><RotateCw size={13} /></IconButton>
-                        <IconButton title="Arrêter" busy={busy === `${c.id}:stop`} onClick={() => act(c, "stop")} danger><Square size={13} /></IconButton>
+                        <IconButton title={t("docker.restart")} busy={busy === `${c.id}:restart`} onClick={() => act(c, "restart")}><RotateCw size={13} /></IconButton>
+                        <IconButton title={t("docker.stop")} busy={busy === `${c.id}:stop`} onClick={() => act(c, "stop")} danger><Square size={13} /></IconButton>
                       </>
                     )}
-                    <IconButton title="Logs" onClick={() => setLogsFor(c)}><ScrollText size={13} /></IconButton>
+                    <IconButton title={t("docker.logs.button")} onClick={() => setLogsFor(c)}><ScrollText size={13} /></IconButton>
                   </div>
                 </div>
               );

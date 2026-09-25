@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { detectPrompt, looksModifying, TEMPLATES } from "./batch";
+import { t } from "../i18n";
 
 describe("looksModifying", () => {
   it("repère les commandes qui modifient le système", () => {
@@ -18,7 +19,7 @@ describe("looksModifying", () => {
   });
 
   it("classe correctement les modèles fournis", () => {
-    const modifying = TEMPLATES.filter((t) => looksModifying(t.script)).map((t) => t.name);
+    const modifying = TEMPLATES.filter((tpl) => looksModifying(tpl.script)).map((tpl) => t(tpl.nameKey));
     expect(modifying).toEqual(["Mettre à jour les paquets (Debian/Proxmox)", "Nettoyer les images Docker inutilisées"]);
   });
 });

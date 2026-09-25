@@ -8,21 +8,23 @@ import { ServerCrons } from "../components/ServerCrons";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
-import { nextRun, formatDays } from "../utils/schedule";
+import { nextRun, formatSchedule } from "../utils/schedule";
 import { cn } from "../utils";
+import { useT, TKey } from "../i18n";
 
-const ACTION_META: Record<ScheduleAction, { label: string; icon: typeof Zap; color: string }> = {
-  Wake: { label: "Allumer", icon: Zap, color: "text-yellow-400" },
-  Shutdown: { label: "Éteindre", icon: Power, color: "text-red-400" },
-  Reboot: { label: "Redémarrer", icon: RotateCcw, color: "text-accent-info" },
+const ACTION_META: Record<ScheduleAction, { labelKey: TKey; icon: typeof Zap; color: string }> = {
+  Wake: { labelKey: "scheduler.actions.wake", icon: Zap, color: "text-yellow-400" },
+  Shutdown: { labelKey: "scheduler.actions.shutdown", icon: Power, color: "text-red-400" },
+  Reboot: { labelKey: "scheduler.actions.reboot", icon: RotateCcw, color: "text-accent-info" },
 };
 
-function formatNext(date: Date | null): string {
+function formatNext(date: Date | null, locale: string): string {
   if (!date) return "—";
-  return date.toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleString(locale, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 export function Scheduler() {
+  const { t, locale } = useT();
   const {
     schedules, servers, groups, loadSchedules, saveSchedule, deleteSchedule, runScheduleNow,
     settings,
@@ -43,14 +45,14 @@ export function Scheduler() {
   function targetName(s: Schedule): string {
     if (s.target.kind === "Group") {
       const g = groups.find((x) => x.id === s.target.id);
-      return g ? `Groupe ${g.name}` : "Groupe supprimé";
+      return g ? t("scheduler.group", { name: g.name }) : t("scheduler.deletedGroup");
     }
-    return servers.find((x) => x.id === s.target.id)?.name ?? "Serveur supprimé";
+    return servers.find((x) => x.id === s.target.id)?.name ?? t("scheduler.deletedServer");
   }
 
   /** Signale les serveurs dont le crontab n'a pas pu être mis à jour */
   function reportCron(errors: string[]) {
-    if (errors.length > 0) warning(`Crontab non synchronisé — ${errors.join(" · ")}`);
+    if (errors.length > 0) warning(t("scheduler.cronNotSynced", { errors: errors.join(" · ") }));
   }
 
   async function toggle(s: Schedule) {
@@ -65,7 +67,7 @@ export function Scheduler() {
     setRunning(null);
     try {
       await runScheduleNow(s.id);
-      success(`« ${s.name} » exécutée — résultat dans l'Historique`);
+      success(t("scheduler.ranNow", { name: s.name }));
     } catch (e) {
       error(String(e));
     }
@@ -76,8 +78,8 @@ export function Scheduler() {
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-text-primary font-semibold text-lg">Planificateur</h1>
-          <p className="text-text-secondary text-xs mt-0.5">Allumages, extinctions et redémarrages programmés</p>
+          <h1 className="text-text-primary font-semibold text-lg">{t("scheduler.title")}</h1>
+          <p className="text-text-secondary text-xs mt-0.5">{t("scheduler.subtitle")}</p>
         </div>
         <button
           onClick={() => setEditing("new")}
@@ -85,16 +87,16 @@ export function Scheduler() {
           className="flex items-center gap-2 px-4 py-2 text-sm bg-accent-primary hover:bg-accent-secondary text-white rounded-win transition-colors disabled:opacity-50"
         >
           <Plus size={15} />
-          Nouvelle tâche
+          {t("scheduler.newTask")}
         </button>
       </div>
 
       <div className="flex items-start gap-2 text-xs text-text-secondary bg-accent-info/5 border border-accent-info/20 rounded-win p-3">
         <Info size={14} className="text-accent-info shrink-0 mt-0.5" />
         <span>
-          Les tâches s'exécutent tant que l'app est ouverte (même réduite).
+          {t("scheduler.appNote")}
           {!settings.general.auto_start && (
-            <> Active le <Link to="/settings" className="text-accent-primary hover:underline">démarrage automatique</Link> pour ne pas en manquer.</>
+            <> {t("scheduler.autoStartBefore")} <Link to="/settings" className="text-accent-primary hover:underline">{t("scheduler.autoStartLink")}</Link> {t("scheduler.autoStartAfter")}</>
           )}
         </span>
       </div>
@@ -102,7 +104,7 @@ export function Scheduler() {
       {schedules.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-16 text-text-muted text-sm">
           <CalendarClock size={28} className="opacity-50" />
-          Aucune tâche planifiée.
+          {t("scheduler.empty")}
         </div>
       ) : (
         <div className="bg-bg-tertiary border border-border-primary rounded-win divide-y divide-border-secondary overflow-hidden">
@@ -115,31 +117,31 @@ export function Scheduler() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-text-primary truncate">
                     <span className="font-medium">{s.name}</span>
-                    <span className="text-text-secondary"> · {meta.label} {targetName(s)}</span>
+                    <span className="text-text-secondary"> · {t(meta.labelKey)} {targetName(s)}</span>
                     {s.mode === "Cron" && (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-accent-info/15 text-accent-info align-middle">cron</span>
                     )}
                   </p>
                   <p className="text-xs text-text-muted">
-                    {formatDays(s.days)} à {s.time}
-                    {s.enabled && <> · prochaine : {formatNext(nextRun(s, now))}{s.mode === "Cron" && " (heure du serveur)"}</>}
+                    {formatSchedule(s.days, s.time)}
+                    {s.enabled && <> · {t("scheduler.next", { date: formatNext(nextRun(s, now), locale) })}{s.mode === "Cron" && ` (${t("scheduler.serverTime")})`}</>}
                   </p>
                 </div>
                 <button
                   onClick={() => toggle(s)}
                   className={cn("relative w-9 h-5 rounded-full transition-colors shrink-0", s.enabled ? "bg-accent-primary" : "bg-bg-hover")}
-                  title={s.enabled ? "Désactiver" : "Activer"}
+                  title={s.enabled ? t("scheduler.disable") : t("scheduler.enable")}
                 >
                   <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all", s.enabled ? "left-[18px]" : "left-0.5")} />
                 </button>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => setRunning(s)} className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all" title="Exécuter maintenant">
+                  <button onClick={() => setRunning(s)} className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all" title={t("scheduler.runNow")}>
                     <Play size={13} />
                   </button>
-                  <button onClick={() => setEditing(s)} className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all" title="Modifier">
+                  <button onClick={() => setEditing(s)} className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all" title={t("common.edit")}>
                     <Pencil size={13} />
                   </button>
-                  <button onClick={() => setDeleting(s)} className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all" title="Supprimer">
+                  <button onClick={() => setDeleting(s)} className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all" title={t("common.delete")}>
                     <Trash2 size={13} />
                   </button>
                 </div>
@@ -162,8 +164,8 @@ export function Scheduler() {
             setEditing(null);
             success(
               schedule.mode === "Cron" && report.cron_errors.length === 0
-                ? `Tâche « ${schedule.name} » enregistrée et installée en cron`
-                : `Tâche « ${schedule.name} » enregistrée`
+                ? t("scheduler.savedCron", { name: schedule.name })
+                : t("scheduler.saved", { name: schedule.name })
             );
             reportCron(report.cron_errors);
           }}
@@ -172,9 +174,9 @@ export function Scheduler() {
 
       {deleting && (
         <ConfirmDialog
-          title="Supprimer la tâche"
-          message={`Supprimer « ${deleting.name} » ?`}
-          confirmLabel="Supprimer"
+          title={t("scheduler.deleteTitle")}
+          message={t("scheduler.deleteMessage", { name: deleting.name })}
+          confirmLabel={t("common.delete")}
           dangerous
           onCancel={() => setDeleting(null)}
           onConfirm={() => {
@@ -187,9 +189,9 @@ export function Scheduler() {
 
       {running && (
         <ConfirmDialog
-          title="Exécuter maintenant"
-          message={`${ACTION_META[running.action].label} ${targetName(running)} immédiatement ?`}
-          confirmLabel="Exécuter"
+          title={t("scheduler.runNow")}
+          message={t("scheduler.runMessage", { action: t(ACTION_META[running.action].labelKey), target: targetName(running) })}
+          confirmLabel={t("scheduler.run")}
           dangerous={running.action !== "Wake"}
           onCancel={() => setRunning(null)}
           onConfirm={() => runNow(running)}

@@ -5,6 +5,7 @@ import { TerminalView } from "../components/TerminalView";
 import { SnippetMenu } from "../components/SnippetMenu";
 import { OS_ICONS, TerminalStatus } from "../types";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 const STATUS_DOT: Record<TerminalStatus, string> = {
   connecting: "bg-accent-warning animate-pulse-soft",
@@ -14,9 +15,10 @@ const STATUS_DOT: Record<TerminalStatus, string> = {
 
 /** Liste des serveurs pour ouvrir une nouvelle session. */
 function ServerPicker({ onPick, compact }: { onPick: (id: string) => void; compact?: boolean }) {
+  const { t } = useT();
   const { servers, statuses } = useStore();
   if (servers.length === 0) {
-    return <p className="text-text-muted text-sm p-3">Aucun serveur configuré.</p>;
+    return <p className="text-text-muted text-sm p-3">{t("console.noServers")}</p>;
   }
   return (
     <div className={cn(compact ? "flex flex-col py-1" : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3")}>
@@ -47,12 +49,13 @@ function ServerPicker({ onPick, compact }: { onPick: (id: string) => void; compa
 }
 
 export function Console() {
+  const { t } = useT();
   const {
     terminalSessions, activeTerminalKey, openTerminal, closeTerminal, setActiveTerminal, reconnectTerminal,
   } = useStore();
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
-  const active = terminalSessions.find((t) => t.key === activeTerminalKey);
+  const active = terminalSessions.find((x) => x.key === activeTerminalKey);
 
   // Fermer le menu « nouvelle session » au clic à l'extérieur
   useEffect(() => {
@@ -73,14 +76,14 @@ export function Console() {
     return (
       <div className="p-6 space-y-6">
         <div>
-          <h1 className="text-text-primary font-semibold text-lg">Console</h1>
+          <h1 className="text-text-primary font-semibold text-lg">{t("console.title")}</h1>
           <p className="text-text-secondary text-xs mt-0.5">
-            Terminal SSH avec les identifiants enregistrés pour chaque serveur
+            {t("console.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2 text-text-secondary text-sm">
           <TerminalSquare size={16} className="opacity-60" />
-          Choisis un serveur pour ouvrir une session :
+          {t("console.pickServer")}
         </div>
         <ServerPicker onPick={pick} />
       </div>
@@ -92,26 +95,26 @@ export function Console() {
       {/* ── Onglets des sessions ─────────────────────────────────────── */}
       <div className="flex items-center gap-1 border-b border-border-primary bg-bg-secondary px-2 shrink-0">
         <div className="flex items-center gap-1 overflow-x-auto min-w-0">
-          {terminalSessions.map((t) => (
+          {terminalSessions.map((session) => (
             <div
-              key={t.key}
-              onClick={() => setActiveTerminal(t.key)}
+              key={session.key}
+              onClick={() => setActiveTerminal(session.key)}
               className={cn(
                 "flex items-center gap-2 px-3 py-2.5 text-sm cursor-pointer border-b-2 transition-colors shrink-0",
-                t.key === activeTerminalKey
+                session.key === activeTerminalKey
                   ? "border-accent-primary text-text-primary"
                   : "border-transparent text-text-secondary hover:text-text-primary"
               )}
             >
-              <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_DOT[t.status])} />
-              <span className="truncate max-w-[160px]">{t.title}</span>
+              <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_DOT[session.status])} />
+              <span className="truncate max-w-[160px]">{session.title}</span>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  closeTerminal(t.key);
+                  closeTerminal(session.key);
                 }}
                 className="hover:text-red-400 transition-colors"
-                title="Fermer la session"
+                title={t("console.closeSession")}
               >
                 <X size={12} />
               </button>
@@ -123,7 +126,7 @@ export function Console() {
           <button
             onClick={() => setPickerOpen((o) => !o)}
             className="p-1.5 ml-1 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-            title="Nouvelle session"
+            title={t("console.newSession")}
           >
             <Plus size={14} />
           </button>
@@ -142,15 +145,15 @@ export function Console() {
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-win bg-accent-primary text-white hover:bg-accent-secondary transition-colors shrink-0"
           >
             <RotateCw size={12} />
-            Reconnecter
+            {t("console.reconnect")}
           </button>
         )}
       </div>
 
       {/* ── Terminaux (tous montés, seul l'actif est visible) ─────────── */}
       <div className="relative flex-1 min-h-0">
-        {terminalSessions.map((t) => (
-          <TerminalView key={t.key} session={t} active={t.key === activeTerminalKey} />
+        {terminalSessions.map((session) => (
+          <TerminalView key={session.key} session={session} active={session.key === activeTerminalKey} />
         ))}
       </div>
     </div>

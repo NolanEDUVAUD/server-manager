@@ -5,11 +5,13 @@ import { useStore } from "../stores/useStore";
 import { CronEntry } from "../types";
 import { supportsMetrics } from "../hooks/useMetrics";
 import { cn } from "../utils";
+import { useT } from "../i18n";
 
 type HostCrons = { loading: boolean; entries?: CronEntry[]; error?: string };
 
 /** Crons présents sur les serveurs, avec repérage des lignes gérées par l'app. */
 export function ServerCrons({ onError, onSuccess }: { onError: (msg: string) => void; onSuccess: (msg: string) => void }) {
+  const { t } = useT();
   const { servers, statuses, schedules } = useStore();
   const candidates = servers.filter(supportsMetrics);
   const [selected, setSelected] = useState<string | null>(null);
@@ -26,7 +28,7 @@ export function ServerCrons({ onError, onSuccess }: { onError: (msg: string) => 
   async function removeOrphan(serverId: string, scheduleId: string) {
     try {
       await invoke("cron_remove_managed", { serverId, scheduleId });
-      onSuccess("Ligne orpheline retirée du crontab");
+      onSuccess(t("scheduler.crons.orphanRemoved"));
       load(serverId);
     } catch (e) {
       onError(String(e));
@@ -43,8 +45,8 @@ export function ServerCrons({ onError, onSuccess }: { onError: (msg: string) => 
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-text-primary font-medium text-sm">Cron des serveurs</h2>
-        <p className="text-text-muted text-xs mt-0.5">Crontab de l'utilisateur SSH, /etc/crontab et /etc/cron.d (lecture seule hors tâches de l'app)</p>
+        <h2 className="text-text-primary font-medium text-sm">{t("scheduler.crons.title")}</h2>
+        <p className="text-text-muted text-xs mt-0.5">{t("scheduler.crons.subtitle")}</p>
       </div>
       <div className="flex gap-2 flex-wrap">
         {candidates.map((s) => (
@@ -67,9 +69,9 @@ export function ServerCrons({ onError, onSuccess }: { onError: (msg: string) => 
       {selected && (
         <div className="bg-bg-tertiary border border-border-primary rounded-win overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2 border-b border-border-primary text-xs text-text-muted">
-            <span>{current?.entries ? `${current.entries.length} entrée(s)` : "Lecture…"}</span>
+            <span>{current?.entries ? t("scheduler.crons.entries", { count: current.entries.length }) : t("scheduler.crons.reading")}</span>
             <button onClick={() => load(selected)} className="flex items-center gap-1 hover:text-accent-primary">
-              <RefreshCw size={12} className={cn(current?.loading && "animate-spin")} /> Actualiser
+              <RefreshCw size={12} className={cn(current?.loading && "animate-spin")} /> {t("common.refresh")}
             </button>
           </div>
           {current?.error ? (
@@ -79,12 +81,12 @@ export function ServerCrons({ onError, onSuccess }: { onError: (msg: string) => 
           ) : !current?.entries ? (
             <div className="p-4"><Loader2 size={16} className="animate-spin text-text-muted" /></div>
           ) : current.entries.length === 0 ? (
-            <p className="p-4 text-sm text-text-muted">Aucun cron sur ce serveur.</p>
+            <p className="p-4 text-sm text-text-muted">{t("scheduler.crons.empty")}</p>
           ) : (
             [...bySource].map(([source, entries]) => (
               <div key={source}>
                 <p className="px-4 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-text-secondary">
-                  {source === "crontab" ? "Crontab de l'utilisateur SSH" : source}
+                  {source === "crontab" ? t("scheduler.crons.userCrontab") : source}
                 </p>
                 <div className="divide-y divide-border-secondary">
                   {entries.map((e, i) => {
@@ -104,13 +106,13 @@ export function ServerCrons({ onError, onSuccess }: { onError: (msg: string) => 
                         )}
                         {orphan && (
                           <>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-warning/15 text-accent-warning shrink-0" title="Étiquetée par l'app mais la tâche n'existe plus">
-                              orpheline
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-warning/15 text-accent-warning shrink-0" title={t("scheduler.crons.orphanHint")}>
+                              {t("scheduler.crons.orphan")}
                             </span>
                             <button
                               onClick={() => removeOrphan(selected, e.managed_id!)}
                               className="p-1 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 shrink-0"
-                              title="Retirer du crontab"
+                              title={t("scheduler.crons.remove")}
                             >
                               <Trash2 size={12} />
                             </button>

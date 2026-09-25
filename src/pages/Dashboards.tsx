@@ -7,6 +7,7 @@ import { cn } from "../utils";
 import { webTargets, WebTarget } from "../utils/webTargets";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
+import { useT } from "../i18n";
 
 /** Liste des interfaces web ouvrables (menu déroulant ou page vide). */
 function TargetPicker({ targets, openLabels, onPick, compact }: {
@@ -15,19 +16,20 @@ function TargetPicker({ targets, openLabels, onPick, compact }: {
   onPick: (t: WebTarget) => void;
   compact?: boolean;
 }) {
+  const { t } = useT();
   if (targets.length === 0) {
     return (
       <p className="text-text-muted text-sm p-3">
-        Aucune interface web connue : ajoute une connexion Proxmox ou un serveur Proxmox / TrueNAS.
+        {t("webTabs.none")}
       </p>
     );
   }
   return (
     <div className={cn(compact ? "flex flex-col py-1" : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3")}>
-      {targets.map((t) => (
+      {targets.map((target) => (
         <button
-          key={t.label}
-          onClick={() => onPick(t)}
+          key={target.label}
+          onClick={() => onPick(target)}
           className={cn(
             "flex items-center gap-2.5 text-left transition-all duration-150",
             compact
@@ -37,10 +39,10 @@ function TargetPicker({ targets, openLabels, onPick, compact }: {
         >
           <Globe size={16} className="text-accent-primary shrink-0" />
           <span className="min-w-0 flex-1">
-            <span className="block text-text-primary text-sm truncate">{t.title}</span>
-            <span className="block text-text-muted text-xs truncate">{t.kind} · {t.url}</span>
+            <span className="block text-text-primary text-sm truncate">{target.title}</span>
+            <span className="block text-text-muted text-xs truncate">{target.kind} · {target.url}</span>
           </span>
-          {openLabels.has(t.label) && <span className="text-[10px] text-accent-primary shrink-0">ouvert</span>}
+          {openLabels.has(target.label) && <span className="text-[10px] text-accent-primary shrink-0">{t("webTabs.open")}</span>}
         </button>
       ))}
     </div>
@@ -48,6 +50,7 @@ function TargetPicker({ targets, openLabels, onPick, compact }: {
 }
 
 export function Dashboards() {
+  const { t } = useT();
   const {
     dashboardTabs, activeDashboardTabLabel, setActiveDashboardTab, closeDashboardTab, openDashboardTab,
     servers, proxmoxConnections, loadProxmoxConnections,
@@ -58,7 +61,7 @@ export function Dashboards() {
   const { toasts, removeToast, error } = useToast();
 
   const targets = webTargets(servers, proxmoxConnections);
-  const openLabels = new Set(dashboardTabs.map((t) => t.label));
+  const openLabels = new Set(dashboardTabs.map((tab) => tab.label));
 
   useDashboardTabSync(containerRef);
 
@@ -128,7 +131,7 @@ export function Dashboards() {
                   closeDashboardTab(tab.label);
                 }}
                 className="hover:text-red-400 transition-colors"
-                title="Fermer l'onglet"
+                title={t("webTabs.closeTab")}
               >
                 <X size={12} />
               </button>
@@ -141,7 +144,7 @@ export function Dashboards() {
             <button
               onClick={() => setPickerOpen((o) => !o)}
               className="p-1.5 ml-1 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-              title="Ouvrir une interface web"
+              title={t("webTabs.openWeb")}
             >
               <Plus size={14} />
             </button>
@@ -158,7 +161,7 @@ export function Dashboards() {
         <div className="p-6 space-y-4 overflow-y-auto">
           <div className="flex items-center gap-2 text-text-secondary text-sm">
             <LayoutPanelTop size={16} className="opacity-60" />
-            Choisis une interface web à ouvrir :
+            {t("webTabs.pick")}
           </div>
           <TargetPicker targets={targets} openLabels={openLabels} onPick={pick} />
         </div>

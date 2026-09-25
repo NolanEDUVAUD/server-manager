@@ -7,16 +7,20 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { cn, formatBytes } from "../utils";
+import { useT } from "../i18n";
 
-const fmtDate = (secs: number) => new Date(secs * 1000).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+type Translate = ReturnType<typeof useT>["t"];
+
+const fmtDate = (secs: number, locale: string) => new Date(secs * 1000).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
 
 /** Âge lisible d'une sauvegarde, en jours */
-function age(secs: number): string {
+function age(secs: number, t: Translate): string {
   const days = Math.floor((Date.now() / 1000 - secs) / 86400);
-  return days <= 0 ? "aujourd'hui" : days === 1 ? "hier" : `il y a ${days} j`;
+  return days <= 0 ? t("backups.today") : days === 1 ? t("backups.yesterday") : t("backups.daysAgo", { count: days });
 }
 
 export function Backups() {
+  const { t, locale } = useT();
   const { proxmoxConnections, loadProxmoxConnections } = useStore();
   const { toasts, removeToast, success, error } = useToast();
   const [connId, setConnId] = useState<string | null>(null);
@@ -49,7 +53,7 @@ export function Backups() {
     setConfirm(null);
     try {
       await invoke("proxmox_backup_now", { connectionId: connId, node: c.node, vmid: c.vmid, name: c.name, storage: c.storage });
-      success(`Sauvegarde de ${c.name} lancée vers ${c.storage}`);
+      success(t("backups.started", { name: c.name, storage: c.storage }));
       setTimeout(load, 5000);
     } catch (e) {
       error(String(e));
@@ -57,7 +61,7 @@ export function Backups() {
   }
 
   if (proxmoxConnections.length === 0) {
-    return <div className="p-6 text-sm text-text-muted">Ajoute d'abord une connexion dans la page Proxmox.</div>;
+    return <div className="p-6 text-sm text-text-muted">{t("backups.noConnection")}</div>;
   }
 
   return (
@@ -65,11 +69,11 @@ export function Backups() {
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-text-primary font-semibold text-lg">Sauvegardes</h1>
-          <p className="text-text-secondary text-xs mt-0.5">Jobs vzdump, invités couverts ou non, dernières archives</p>
+          <h1 className="text-text-primary font-semibold text-lg">{t("backups.title")}</h1>
+          <p className="text-text-secondary text-xs mt-0.5">{t("backups.subtitle")}</p>
         </div>
         <button onClick={load} className="flex items-center gap-2 px-3 py-2 text-sm rounded-win border border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-hover">
-          <RefreshCw size={14} className={cn(loading && "animate-spin")} /> Actualiser
+          <RefreshCw size={14} className={cn(loading && "animate-spin")} /> {t("common.refresh")}
         </button>
       </div>
 
@@ -85,12 +89,12 @@ export function Backups() {
               ))}
             </div>
           ) : (
-            <p className="flex items-center gap-2 text-sm text-accent-success"><CheckCircle2 size={15} /> Tout est couvert et les stockages sont disponibles.</p>
+            <p className="flex items-center gap-2 text-sm text-accent-success"><CheckCircle2 size={15} /> {t("backups.allGood")}</p>
           )}
 
           <div className="space-y-2">
-            <h2 className="flex items-center gap-2 text-text-primary font-medium text-sm"><CalendarClock size={14} /> Jobs planifiés</h2>
-            {report.jobs.length === 0 ? <p className="text-xs text-text-muted">Aucun job.</p> : (
+            <h2 className="flex items-center gap-2 text-text-primary font-medium text-sm"><CalendarClock size={14} /> {t("backups.jobs")}</h2>
+            {report.jobs.length === 0 ? <p className="text-xs text-text-muted">{t("backups.noJobs")}</p> : (
               <div className="bg-bg-tertiary border border-border-primary rounded-win divide-y divide-border-secondary">
                 {report.jobs.map((j) => (
                   <div key={j.id} className={cn("flex items-center gap-4 px-4 py-3 text-sm", !j.enabled && "opacity-50")}>
@@ -98,11 +102,11 @@ export function Backups() {
                     <div className="flex-1 min-w-0">
                       <p className="text-text-primary">{j.schedule_text} <span className="text-text-muted">→ {j.storage}</span></p>
                       <p className="text-xs text-text-muted truncate">
-                        {j.all_guests ? "tous les invités" : `${j.vmids.length} invité(s) : ${j.vmids.join(", ")}`}
-                        {!j.storage_available && <span className="text-accent-error"> · stockage indisponible</span>}
+                        {j.all_guests ? t("backups.allGuests") : t("backups.someGuests", { count: j.vmids.length, ids: j.vmids.join(", ") })}
+                        {!j.storage_available && <span className="text-accent-error"> · {t("backups.storageUnavailable")}</span>}
                       </p>
                     </div>
-                    {j.next_run && <span className="text-xs text-text-secondary shrink-0">prochain : {fmtDate(j.next_run)}</span>}
+                    {j.next_run && <span className="text-xs text-text-secondary shrink-0">{t("backups.nextRun", { date: fmtDate(j.next_run, locale) })}</span>}
                   </div>
                 ))}
               </div>
@@ -110,9 +114,9 @@ export function Backups() {
           </div>
 
           <div className="space-y-2">
-            <h2 className="flex items-center gap-2 text-text-primary font-medium text-sm"><Archive size={14} /> Invités</h2>
+            <h2 className="flex items-center gap-2 text-text-primary font-medium text-sm"><Archive size={14} /> {t("backups.guests")}</h2>
             {report.unreadable_storages.length > 0 && (
-              <p className="text-xs text-text-muted">Archives illisibles sur {report.unreadable_storages.join(", ")} (stockage indisponible) : la « dernière sauvegarde » peut être plus récente.</p>
+              <p className="text-xs text-text-muted">{t("backups.unreadable", { storages: report.unreadable_storages.join(", ") })}</p>
             )}
             <div className="bg-bg-tertiary border border-border-primary rounded-win divide-y divide-border-secondary">
               {report.guests.map((g) => {
@@ -124,26 +128,26 @@ export function Backups() {
                     <div className="flex-1 min-w-0">
                       <p className="text-text-primary truncate"><span className="font-medium">{g.name}</span> <span className="text-text-muted">· {g.kind.toUpperCase()} {g.vmid} · {g.node}</span></p>
                       <p className="text-xs text-text-muted">
-                        {g.covered ? "couvert par un job" : "aucun job"} ·{" "}
-                        {g.last_backup ? `dernière archive ${age(g.last_backup)}${g.last_backup_size ? ` (${formatBytes(g.last_backup_size)})` : ""}` : "aucune archive lisible"}
+                        {g.covered ? t("backups.covered") : t("backups.notCovered")} ·{" "}
+                        {g.last_backup ? `${t("backups.lastArchive", { age: age(g.last_backup, t) })}${g.last_backup_size ? ` (${formatBytes(g.last_backup_size)})` : ""}` : t("backups.noArchive")}
                       </p>
                     </div>
                     {storages.length > 0 ? (
                       <div className="flex items-center gap-1 shrink-0">
                         {storages.length > 1 && (
-                          <select value={chosen} onChange={(e) => setStorageFor((p) => ({ ...p, [g.vmid]: e.target.value }))} className="bg-bg-input border border-border-primary rounded px-2 py-1 text-xs text-text-primary" aria-label={`Stockage pour ${g.name}`}>
+                          <select value={chosen} onChange={(e) => setStorageFor((p) => ({ ...p, [g.vmid]: e.target.value }))} className="bg-bg-input border border-border-primary rounded px-2 py-1 text-xs text-text-primary" aria-label={t("backups.storageFor", { name: g.name })}>
                             {storages.map((s) => <option key={s}>{s}</option>)}
                           </select>
                         )}
                         <button
                           onClick={() => setConfirm({ vmid: g.vmid, name: g.name, node: g.node, storage: chosen })}
                           className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-win border border-border-primary text-text-secondary hover:text-accent-primary hover:border-accent-primary/40"
-                          title={`Sauvegarder maintenant vers ${chosen}`}
+                          title={t("backups.backupNowTo", { storage: chosen })}
                         >
-                          <Save size={12} /> Sauvegarder
+                          <Save size={12} /> {t("backups.backup")}
                         </button>
                       </div>
-                    ) : <span className="text-xs text-text-muted shrink-0">aucun stockage de sauvegarde disponible</span>}
+                    ) : <span className="text-xs text-text-muted shrink-0">{t("backups.noStorage")}</span>}
                   </div>
                 );
               })}
@@ -152,15 +156,15 @@ export function Backups() {
 
           {report.tasks.length > 0 && (
             <div className="space-y-2">
-              <h2 className="text-text-primary font-medium text-sm">Dernières tâches de sauvegarde</h2>
+              <h2 className="text-text-primary font-medium text-sm">{t("backups.recentTasks")}</h2>
               <div className="bg-bg-tertiary border border-border-primary rounded-win divide-y divide-border-secondary">
-                {report.tasks.slice(0, 10).map((t) => (
-                  <div key={`${t.node}${t.start}${t.vmid}`} className="flex items-center gap-3 px-4 py-2 text-xs">
-                    <span className={cn("w-1.5 h-1.5 rounded-full", t.ok ? "bg-accent-success" : t.status === "en cours" ? "bg-accent-warning" : "bg-accent-error")} />
-                    <span className="text-text-primary w-32">{t.node}</span>
-                    <span className="text-text-secondary w-20">{t.vmid ?? "job"}</span>
-                    <span className="text-text-muted flex-1">{fmtDate(t.start)}</span>
-                    <span className={t.ok ? "text-accent-success" : "text-accent-error"}>{t.status}</span>
+                {report.tasks.slice(0, 10).map((task) => (
+                  <div key={`${task.node}${task.start}${task.vmid}`} className="flex items-center gap-3 px-4 py-2 text-xs">
+                    <span className={cn("w-1.5 h-1.5 rounded-full", task.ok ? "bg-accent-success" : task.status === "en cours" ? "bg-accent-warning" : "bg-accent-error")} />
+                    <span className="text-text-primary w-32">{task.node}</span>
+                    <span className="text-text-secondary w-20">{task.vmid ?? t("backups.job")}</span>
+                    <span className="text-text-muted flex-1">{fmtDate(task.start, locale)}</span>
+                    <span className={task.ok ? "text-accent-success" : "text-accent-error"}>{task.status}</span>
                   </div>
                 ))}
               </div>
@@ -171,9 +175,9 @@ export function Backups() {
 
       {confirm && (
         <ConfirmDialog
-          title="Sauvegarder maintenant"
-          message={`Lancer une sauvegarde (snapshot, zstd) de ${confirm.name} vers ${confirm.storage} ?`}
-          confirmLabel="Sauvegarder"
+          title={t("backups.confirmTitle")}
+          message={t("backups.confirmMessage", { name: confirm.name, storage: confirm.storage })}
+          confirmLabel={t("backups.backup")}
           onCancel={() => setConfirm(null)}
           onConfirm={run}
         />

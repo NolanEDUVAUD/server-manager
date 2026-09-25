@@ -10,10 +10,12 @@ import { ProxmoxConnectionForm } from "../components/ProxmoxConnectionForm";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { ProxmoxConnection } from "../types";
+import { useT } from "../i18n";
 
 export function Proxmox() {
   const { proxmoxConnections, proxmoxVms, proxmoxErrors, loadProxmoxConnections, deleteProxmoxConnection, openDashboardTab } = useStore();
   const navigate = useNavigate();
+  const { t } = useT();
   const { toasts, removeToast, success, error, info } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ProxmoxConnection | null>(null);
@@ -48,7 +50,7 @@ export function Proxmox() {
     if (!deleting) return;
     try {
       await deleteProxmoxConnection(deleting.id);
-      success(`Connexion "${deleting.name}" supprimée`);
+      success(t("proxmox.page.deleted", { name: deleting.name }));
     } catch (e) {
       error(String(e));
     } finally {
@@ -67,14 +69,14 @@ export function Proxmox() {
           }}
           className="flex items-center gap-2 px-3 py-2 text-sm bg-accent-primary text-white rounded-win hover:bg-accent-secondary transition-colors"
         >
-          <Plus size={14} /> Nouvelle connexion
+          <Plus size={14} /> {t("proxmox.page.newConnection")}
         </button>
       </div>
 
       {proxmoxConnections.length === 0 && (
         <div className="text-center py-16 text-text-secondary">
           <ServerIcon size={32} className="mx-auto mb-3 opacity-40" />
-          <p>Aucune connexion Proxmox configurée</p>
+          <p>{t("proxmox.page.empty")}</p>
         </div>
       )}
 
@@ -88,14 +90,14 @@ export function Proxmox() {
                 className="flex items-center gap-1 text-xs text-red-400"
                 title={proxmoxErrors[conn.id] ?? undefined}
               >
-                <AlertCircle size={12} /> Hors ligne
+                <AlertCircle size={12} /> {t("common.offline")}
               </span>
             )}
             <div className="flex items-center gap-1 ml-auto">
               <button
                 onClick={() => openWebGui(conn)}
                 className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-                title="Ouvrir l'interface web"
+                title={t("proxmox.page.openWeb")}
               >
                 <Globe size={13} />
               </button>
@@ -105,14 +107,14 @@ export function Proxmox() {
                   setShowForm(true);
                 }}
                 className="p-1.5 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
-                title="Modifier"
+                title={t("common.edit")}
               >
                 <Pencil size={13} />
               </button>
               <button
                 onClick={() => setDeleting(conn)}
                 className="p-1.5 rounded text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-all"
-                title="Supprimer"
+                title={t("common.delete")}
               >
                 <Trash2 size={13} />
               </button>
@@ -129,15 +131,15 @@ export function Proxmox() {
           {proxmoxVms[conn.id]?.length === 0 && !proxmoxErrors[conn.id] && (
             <div className="text-xs text-text-secondary bg-bg-tertiary border border-border-primary rounded-win p-4 space-y-2">
               <p className="flex items-center gap-2 text-accent-warning">
-                <AlertCircle size={13} /> Aucune VM ni aucun conteneur visible
+                <AlertCircle size={13} /> {t("proxmox.page.noGuests")}
               </p>
               <p>
-                Si ton cluster en contient, le jeton <code className="text-text-primary">{conn.token_id}</code> n'a
-                probablement pas les droits de lecture. Sur un nœud Proxmox (en root) :
+                {t("proxmox.page.tokenBefore")} <code className="text-text-primary">{conn.token_id}</code>{" "}
+                {t("proxmox.page.tokenAfter")}
               </p>
               <pre className="bg-bg-primary rounded p-2 font-mono text-[11px] text-text-primary select-text overflow-x-auto">{`pveum acl modify / --tokens '${conn.token_id}' --roles PVEVMAdmin
 pveum acl modify /storage --tokens '${conn.token_id}' --roles PVEDatastoreUser`}</pre>
-              <p className="text-text-muted">PVEVMAdmin : voir et piloter les VM (démarrage, snapshots, clonage) · PVEDatastoreUser : espace disque pour les clones.</p>
+              <p className="text-text-muted">{t("proxmox.page.rolesHelp")}</p>
             </div>
           )}
         </div>
@@ -153,9 +155,9 @@ pveum acl modify /storage --tokens '${conn.token_id}' --roles PVEDatastoreUser`}
 
       {deleting && (
         <ConfirmDialog
-          title={`Supprimer ${deleting.name}`}
-          message="Cette action est irréversible. La connexion Proxmox et ses VM associées seront retirées de la liste."
-          confirmLabel="Supprimer"
+          title={t("proxmox.page.deleteTitle", { name: deleting.name })}
+          message={t("proxmox.page.deleteMessage")}
+          confirmLabel={t("common.delete")}
           dangerous
           onConfirm={handleDelete}
           onCancel={() => setDeleting(null)}

@@ -5,6 +5,7 @@ import { useStore } from "../stores/useStore";
 import { cn, formatBytes } from "../utils";
 import { VmSnapshotModal } from "./VmSnapshotModal";
 import { MigrateModal } from "./MigrateModal";
+import { useT } from "../i18n";
 
 interface VmCardProps {
   vm: ProxmoxVm;
@@ -13,6 +14,7 @@ interface VmCardProps {
 }
 
 export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
+  const { t } = useT();
   const { proxmoxVmAction } = useStore();
   const [loading, setLoading] = useState<string | null>(null);
   const [showSnapshots, setShowSnapshots] = useState(false);
@@ -25,7 +27,7 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
     setLoading(key);
     try {
       await proxmoxVmAction(connectionId, vm.node, vm.vmid, vm.vm_type, action);
-      onMessage(`Action "${action}" envoyée à ${vm.name}`, "success");
+      onMessage(t("proxmox.vm.actionSent", { action, name: vm.name }), "success");
     } catch (e) {
       onMessage(String(e), "error");
     } finally {
@@ -56,7 +58,7 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
               : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
           )}
         >
-          {isRunning ? "En cours" : "Arrêtée"}
+          {isRunning ? t("proxmox.vm.running") : t("proxmox.vm.stopped")}
         </span>
       </div>
 
@@ -72,7 +74,7 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
           </p>
         </div>
         <div>
-          <p className="text-text-secondary">Disque</p>
+          <p className="text-text-secondary">{t("proxmox.vm.disk")}</p>
           <p className="text-text-primary font-mono whitespace-nowrap">{formatBytes(vm.maxdisk)}</p>
         </div>
       </div>
@@ -82,42 +84,42 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
           <button
             onClick={() => runAction("start", "start")}
             disabled={!!loading}
-            title="Démarrer"
+            title={t("proxmox.vm.start")}
             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                        border border-green-500/30 bg-green-500/5 text-green-400
                        hover:bg-green-500/15 text-xs font-medium transition-all disabled:opacity-50"
           >
             {loading === "start" ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
-            Démarrer
+            {t("proxmox.vm.start")}
           </button>
         ) : (
           <>
             <button
               onClick={() => runAction("stop", "stop")}
               disabled={!!loading}
-              title="Arrêter"
+              title={t("proxmox.vm.stop")}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                          border border-red-500/30 bg-red-500/5 text-red-400
                          hover:bg-red-500/15 text-xs font-medium transition-all disabled:opacity-50"
             >
               {loading === "stop" ? <Loader2 size={12} className="animate-spin" /> : <Square size={12} />}
-              Arrêter
+              {t("proxmox.vm.stop")}
             </button>
             <button
               onClick={() => runAction("reboot", "reboot")}
               disabled={!!loading}
-              title="Redémarrer"
+              title={t("proxmox.vm.reboot")}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                          border border-border-primary bg-bg-secondary text-text-secondary
                          hover:bg-bg-hover text-xs font-medium transition-all disabled:opacity-50"
             >
               {loading === "reboot" ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-              Reboot
+              {t("proxmox.vm.rebootShort")}
             </button>
             <button
               onClick={() => runAction("suspend", "suspend")}
               disabled={!!loading}
-              title="Suspendre"
+              title={t("proxmox.vm.suspend")}
               className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                          border border-border-primary bg-bg-secondary text-text-secondary
                          hover:bg-bg-hover text-xs font-medium transition-all disabled:opacity-50"
@@ -129,7 +131,7 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
         <button
           onClick={() => setShowSnapshots(true)}
           disabled={!!loading}
-          title="Snapshots"
+          title={t("proxmox.vm.snapshots")}
           className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                      border border-border-primary bg-bg-secondary text-text-secondary
                      hover:bg-bg-hover text-xs font-medium transition-all disabled:opacity-50"
@@ -139,7 +141,7 @@ export function VmCard({ vm, connectionId, onMessage }: VmCardProps) {
         <button
           onClick={() => setShowMigrate(true)}
           disabled={!!loading}
-          title="Migrer vers un autre nœud"
+          title={t("proxmox.vm.migrate")}
           className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-win
                      border border-border-primary bg-bg-secondary text-text-secondary
                      hover:bg-bg-hover text-xs font-medium transition-all disabled:opacity-50"
