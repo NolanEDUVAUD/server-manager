@@ -26,3 +26,7 @@ src-tauri/WixTools/
 # OS
 .DS_Store
 Thumbs.db
+
+# Schémas ACL propres à la plateforme de compilation (seul celui de Windows est suivi)
+src-tauri/gen/schemas/linux-schema.json
+src-tauri/gen/schemas/macOS-schema.json
