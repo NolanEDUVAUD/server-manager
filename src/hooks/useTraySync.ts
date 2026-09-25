@@ -10,8 +10,10 @@ export function useTraySync() {
   const online = useStore((s) => s.servers.filter((sv) => s.statuses[sv.id]?.online).length);
   const total = useStore((s) => s.servers.length);
   const groupsKey = useStore((s) => s.groups.map((g) => `${g.id}:${g.name}`).join("|"));
+  // Le menu suit la langue de l'interface
+  const language = useStore((s) => s.settings.general.language);
 
   useEffect(() => {
     invoke("update_tray_status", { online, total }).catch(() => {});
-  }, [online, total, groupsKey]);
+  }, [online, total, groupsKey, language]);
 }

@@ -12,13 +12,43 @@ pub const TRAY_ID: &str = "main";
 const WOL_PREFIX: &str = "wol:";
 const LOCK_ID: &str = "lock";
 
+/// Textes du menu et de l'infobulle dans la langue de l'interface
+pub struct TrayTexts {
+    pub open: &'static str,
+    pub wake: &'static str,
+    pub lock: &'static str,
+    pub quit: &'static str,
+    pub online: &'static str,
+}
+
+pub fn texts(language: &str) -> TrayTexts {
+    match language {
+        "en" => TrayTexts { open: "Open Server Manager", wake: "Wake a group (WoL)", lock: "Lock now", quit: "Quit", online: "online" },
+        _ => TrayTexts {
+            open: "Ouvrir Server Manager",
+            wake: "Réveiller un groupe (WoL)",
+            lock: "Verrouiller maintenant",
+            quit: "Quitter",
+            online: "en ligne",
+        },
+    }
+}
+
+fn language(app: &AppHandle) -> String {
+    app.state::<AppState>().data.lock().map(|d| d.settings.general.language.clone()).unwrap_or_default()
+}
+
 /// Texte de l'infobulle selon le nombre de serveurs en ligne
-pub fn tooltip(online: u32, total: u32) -> String {
+pub fn tooltip(online: u32, total: u32, language: &str) -> String {
     if total == 0 {
         "Server Manager".into()
     } else {
-        format!("Server Manager — {}/{} en ligne", online, total)
+        format!("Server Manager — {}/{} {}", online, total, texts(language).online)
     }
+}
+
+pub fn tooltip_for(app: &AppHandle, online: u32, total: u32) -> String {
+    tooltip(online, total, &language(app))
 }
 
 /// Identifiant d'élément de menu → groupe à réveiller
@@ -41,17 +71,18 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         .map(|l| (l.is_enabled(&lock_cfg), l.is_locked()))
         .unwrap_or((false, false));
 
-    let open = MenuItem::with_id(app, "open", "Ouvrir Server Manager", true, None::<&str>)?;
+    let tx = texts(&language(app));
+    let open = MenuItem::with_id(app, "open", tx.open, true, None::<&str>)?;
     let sep1 = PredefinedMenuItem::separator(app)?;
     let wol_items: Vec<MenuItem<Wry>> = groups
         .iter()
         .map(|(id, name)| MenuItem::with_id(app, format!("{}{}", WOL_PREFIX, id), name, true, None::<&str>))
         .collect::<tauri::Result<_>>()?;
     let wol_refs: Vec<&dyn IsMenuItem<Wry>> = wol_items.iter().map(|i| i as &dyn IsMenuItem<Wry>).collect();
-    let wake = Submenu::with_items(app, "Réveiller un groupe (WoL)", !groups.is_empty() && !locked, &wol_refs)?;
-    let lock = MenuItem::with_id(app, LOCK_ID, "Verrouiller maintenant", !locked, None::<&str>)?;
+    let wake = Submenu::with_items(app, tx.wake, !groups.is_empty() && !locked, &wol_refs)?;
+    let lock = MenuItem::with_id(app, LOCK_ID, tx.lock, !locked, None::<&str>)?;
     let sep2 = PredefinedMenuItem::separator(app)?;
-    let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", tx.quit, true, None::<&str>)?;
     if lock_enabled {
         Menu::with_items(app, &[&open, &sep1, &wake, &lock, &sep2, &quit])
     } else {
@@ -126,8 +157,11 @@ mod tests {
 
     #[test]
     fn tooltip_shows_online_count() {
-        assert_eq!(tooltip(5, 6), "Server Manager — 5/6 en ligne");
-        assert_eq!(tooltip(0, 0), "Server Manager");
+        assert_eq!(tooltip(5, 6, "fr"), "Server Manager — 5/6 en ligne");
+        assert_eq!(tooltip(5, 6, "en"), "Server Manager — 5/6 online");
+        assert_eq!(tooltip(0, 0, "en"), "Server Manager");
+        // Langue inconnue ou absente : français
+        assert_eq!(texts("").quit, "Quitter");
     }
 
     #[test]
