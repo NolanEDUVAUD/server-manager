@@ -459,3 +459,18 @@ export interface NetworkDevice {
 // ─── Commandes mémorisées ───────────────────────────────────────────────────
 
 export interface Snippet { id: string; name: string; command: string }
+
+// ─── Tâches en lot / Ansible ────────────────────────────────────────────────
+
+export type BatchMode = "Parallel" | "Sequential";
+
+export interface BatchTask { id: string; name: string; script: string; server_ids: string[]; mode: BatchMode; stop_on_error: boolean }
+
+export interface AnsibleConfig { server_id: string; dir: string }
+
+export type BatchUpdate =
+  | { type: "Started"; run_id: string; server_id: string }
+  | { type: "Output"; run_id: string; server_id: string; chunk: string }
+  | { type: "Finished"; run_id: string; server_id: string; ok: boolean; detail: string; duration_ms: number }
+  | { type: "Skipped"; run_id: string; server_id: string; reason: string }
+  | { type: "Done"; run_id: string; ok_count: number; failed_count: number };

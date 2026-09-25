@@ -45,7 +45,7 @@ pub fn build_line(schedule_id: &str, time: &str, days: &[u8], command: &str) -> 
 }
 
 /// Entoure une valeur d'apostrophes pour le shell (' → '\'')
-fn shell_quote(value: &str) -> String {
+pub(crate) fn shell_quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\\''"))
 }
 

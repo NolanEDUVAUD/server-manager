@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-ansible-config"
+description = "Enables the get_ansible_config command without any pre-configured scope."
+commands.allow = ["get_ansible_config"]
+
+[[permission]]
+identifier = "deny-get-ansible-config"
+description = "Denies the get_ansible_config command without any pre-configured scope."
+commands.deny = ["get_ansible_config"]

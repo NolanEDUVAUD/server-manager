@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-delete-batch-task"
+description = "Enables the delete_batch_task command without any pre-configured scope."
+commands.allow = ["delete_batch_task"]
+
+[[permission]]
+identifier = "deny-delete-batch-task"
+description = "Denies the delete_batch_task command without any pre-configured scope."
+commands.deny = ["delete_batch_task"]

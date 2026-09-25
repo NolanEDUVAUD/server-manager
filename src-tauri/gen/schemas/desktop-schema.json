@@ -189,6 +189,18 @@
           "markdownDescription": "Enables the add_server command without any pre-configured scope."
         },
         {
+          "description": "Enables the ansible_list_playbooks command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ansible-list-playbooks",
+          "markdownDescription": "Enables the ansible_list_playbooks command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ansible_run command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ansible-run",
+          "markdownDescription": "Enables the ansible_run command without any pre-configured scope."
+        },
+        {
           "description": "Enables the apply_import_config command without any pre-configured scope.",
           "type": "string",
           "const": "allow-apply-import-config",
@@ -223,6 +235,12 @@
           "type": "string",
           "const": "allow-delete-alert-rule",
           "markdownDescription": "Enables the delete_alert_rule command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the delete_batch_task command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-delete-batch-task",
+          "markdownDescription": "Enables the delete_batch_task command without any pre-configured scope."
         },
         {
           "description": "Enables the delete_custom_theme command without any pre-configured scope.",
@@ -309,10 +327,22 @@
           "markdownDescription": "Enables the get_alert_rules command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_ansible_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-ansible-config",
+          "markdownDescription": "Enables the get_ansible_config command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_autostart command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-autostart",
           "markdownDescription": "Enables the get_autostart command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_batch_tasks command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-batch-tasks",
+          "markdownDescription": "Enables the get_batch_tasks command without any pre-configured scope."
         },
         {
           "description": "Enables the get_data_path command without any pre-configured scope.",
@@ -555,6 +585,12 @@
           "markdownDescription": "Enables the resize_dashboard_tab command without any pre-configured scope."
         },
         {
+          "description": "Enables the run_batch command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-run-batch",
+          "markdownDescription": "Enables the run_batch command without any pre-configured scope."
+        },
+        {
           "description": "Enables the run_probe_now command without any pre-configured scope.",
           "type": "string",
           "const": "allow-run-probe-now",
@@ -571,6 +607,18 @@
           "type": "string",
           "const": "allow-save-alert-rule",
           "markdownDescription": "Enables the save_alert_rule command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_ansible_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-ansible-config",
+          "markdownDescription": "Enables the save_ansible_config command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_batch_task command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-batch-task",
+          "markdownDescription": "Enables the save_batch_task command without any pre-configured scope."
         },
         {
           "description": "Enables the save_custom_theme command without any pre-configured scope.",
@@ -735,6 +783,18 @@
           "markdownDescription": "Denies the add_server command without any pre-configured scope."
         },
         {
+          "description": "Denies the ansible_list_playbooks command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ansible-list-playbooks",
+          "markdownDescription": "Denies the ansible_list_playbooks command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ansible_run command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ansible-run",
+          "markdownDescription": "Denies the ansible_run command without any pre-configured scope."
+        },
+        {
           "description": "Denies the apply_import_config command without any pre-configured scope.",
           "type": "string",
           "const": "deny-apply-import-config",
@@ -769,6 +829,12 @@
           "type": "string",
           "const": "deny-delete-alert-rule",
           "markdownDescription": "Denies the delete_alert_rule command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the delete_batch_task command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-delete-batch-task",
+          "markdownDescription": "Denies the delete_batch_task command without any pre-configured scope."
         },
         {
           "description": "Denies the delete_custom_theme command without any pre-configured scope.",
@@ -855,10 +921,22 @@
           "markdownDescription": "Denies the get_alert_rules command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_ansible_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-ansible-config",
+          "markdownDescription": "Denies the get_ansible_config command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_autostart command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-autostart",
           "markdownDescription": "Denies the get_autostart command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_batch_tasks command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-batch-tasks",
+          "markdownDescription": "Denies the get_batch_tasks command without any pre-configured scope."
         },
         {
           "description": "Denies the get_data_path command without any pre-configured scope.",
@@ -1101,6 +1179,12 @@
           "markdownDescription": "Denies the resize_dashboard_tab command without any pre-configured scope."
         },
         {
+          "description": "Denies the run_batch command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-run-batch",
+          "markdownDescription": "Denies the run_batch command without any pre-configured scope."
+        },
+        {
           "description": "Denies the run_probe_now command without any pre-configured scope.",
           "type": "string",
           "const": "deny-run-probe-now",
@@ -1117,6 +1201,18 @@
           "type": "string",
           "const": "deny-save-alert-rule",
           "markdownDescription": "Denies the save_alert_rule command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_ansible_config command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-ansible-config",
+          "markdownDescription": "Denies the save_ansible_config command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_batch_task command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-batch-task",
+          "markdownDescription": "Denies the save_batch_task command without any pre-configured scope."
         },
         {
           "description": "Denies the save_custom_theme command without any pre-configured scope.",

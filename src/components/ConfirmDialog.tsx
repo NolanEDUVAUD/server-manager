@@ -36,7 +36,7 @@ export function ConfirmDialog({
           )}
           <div className="flex-1">
             <h3 className="text-text-primary font-semibold text-base mb-2">{title}</h3>
-            <p className="text-text-secondary text-sm leading-relaxed">{message}</p>
+            <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-line break-words max-h-64 overflow-y-auto">{message}</p>
           </div>
           <button
             onClick={onCancel}

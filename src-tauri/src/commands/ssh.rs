@@ -92,6 +92,20 @@ pub(crate) async fn execute_ssh(
     command: &str,
     timeout_secs: u64,
 ) -> Result<SshResult, String> {
+    execute_ssh_stream(ip, port, user, password, command, timeout_secs, &|_| {}).await
+}
+
+/// Comme execute_ssh, en transmettant chaque morceau de sortie dès sa réception
+/// (tâches en lot, playbooks Ansible : on voit la progression en direct).
+pub(crate) async fn execute_ssh_stream(
+    ip: &str,
+    port: u16,
+    user: &str,
+    password: &str,
+    command: &str,
+    timeout_secs: u64,
+    on_chunk: &(dyn Fn(&str) + Send + Sync),
+) -> Result<SshResult, String> {
     let session = connect_ssh(ip, port, user, password, timeout_secs).await?;
 
     let mut channel = session
@@ -109,11 +123,10 @@ pub(crate) async fn execute_ssh(
 
     loop {
         match channel.wait().await {
-            Some(russh::ChannelMsg::Data { ref data }) => {
-                output.push_str(&String::from_utf8_lossy(data));
-            }
-            Some(russh::ChannelMsg::ExtendedData { ref data, .. }) => {
-                output.push_str(&String::from_utf8_lossy(data));
+            Some(russh::ChannelMsg::Data { ref data }) | Some(russh::ChannelMsg::ExtendedData { ref data, .. }) => {
+                let chunk = String::from_utf8_lossy(data);
+                on_chunk(&chunk);
+                output.push_str(&chunk);
             }
             Some(russh::ChannelMsg::ExitStatus { exit_status }) => {
                 exit_code = Some(exit_status);

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ansible-list-playbooks"
+description = "Enables the ansible_list_playbooks command without any pre-configured scope."
+commands.allow = ["ansible_list_playbooks"]
+
+[[permission]]
+identifier = "deny-ansible-list-playbooks"
+description = "Denies the ansible_list_playbooks command without any pre-configured scope."
+commands.deny = ["ansible_list_playbooks"]

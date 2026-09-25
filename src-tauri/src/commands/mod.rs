@@ -1,4 +1,5 @@
 pub mod alerts;
+pub mod batch;
 pub mod dashboards;
 pub mod discovery;
 pub mod docker;

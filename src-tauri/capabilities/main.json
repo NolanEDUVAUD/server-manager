@@ -102,6 +102,14 @@
     "allow-network-scan",
     "allow-get-snippets",
     "allow-save-snippet",
-    "allow-delete-snippet"
+    "allow-delete-snippet",
+    "allow-get-batch-tasks",
+    "allow-save-batch-task",
+    "allow-delete-batch-task",
+    "allow-run-batch",
+    "allow-get-ansible-config",
+    "allow-save-ansible-config",
+    "allow-ansible-list-playbooks",
+    "allow-ansible-run"
   ]
 }

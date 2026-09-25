@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ansible-run"
+description = "Enables the ansible_run command without any pre-configured scope."
+commands.allow = ["ansible_run"]
+
+[[permission]]
+identifier = "deny-ansible-run"
+description = "Denies the ansible_run command without any pre-configured scope."
+commands.deny = ["ansible_run"]

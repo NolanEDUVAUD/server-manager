@@ -314,6 +314,10 @@ pub struct AppData {
     pub last_lab_running: Vec<crate::lab_power::Guest>,
     #[serde(default = "crate::commands::snippets::default_snippets")]
     pub snippets: Vec<crate::commands::snippets::Snippet>,
+    #[serde(default)]
+    pub batch_tasks: Vec<crate::batch::BatchTask>,
+    #[serde(default)]
+    pub ansible: Option<crate::batch::AnsibleConfig>,
     /// Schéma de la clé de chiffrement des secrets (voir crypto::KEY_VERSION_MASTER)
     #[serde(default = "legacy_key_version")]
     pub key_version: u8,
@@ -338,6 +342,8 @@ impl Default for AppData {
             probes: Vec::new(),
             last_lab_running: Vec::new(),
             snippets: crate::commands::snippets::default_snippets(),
+            batch_tasks: Vec::new(),
+            ansible: None,
         }
     }
 }
