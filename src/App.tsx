@@ -14,6 +14,7 @@ import { Alerts } from "./pages/Alerts";
 import { Services } from "./pages/Services";
 import { Backups } from "./pages/Backups";
 import { LabPower } from "./pages/LabPower";
+import { Network } from "./pages/Network";
 import { Settings } from "./pages/Settings";
 import { useStore } from "./stores/useStore";
 import { usePing } from "./hooks/usePing";
@@ -66,6 +67,7 @@ function AppContent() {
         <Route path="/services" element={<Services />} />
         <Route path="/backups" element={<Backups />} />
         <Route path="/lab-power" element={<LabPower />} />
+        <Route path="/network" element={<Network />} />
         {/* Rendue en permanence par Layout, la route sert juste à l'activer */}
         <Route path="/console" element={null} />
         <Route path="/proxmox" element={<Proxmox />} />

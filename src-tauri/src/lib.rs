@@ -3,6 +3,7 @@ mod commands;
 mod cron;
 mod crypto;
 mod dashboard_state;
+mod discovery;
 mod docker;
 mod events;
 mod integration_checks;
@@ -21,7 +22,7 @@ mod storage;
 mod terminal;
 mod tray;
 
-use commands::{lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use storage::AppState;
 use tauri::Manager;
 
@@ -185,6 +186,9 @@ pub fn run() {
             lab_power_cmd::lab_power_plan,
             lab_power_cmd::lab_power_execute,
             lab_power_cmd::lab_power_cancel,
+            // ── Découverte réseau ───────────────────────────────
+            discovery_cmd::detect_mac,
+            discovery_cmd::network_scan,
             // ── Console SSH ───────────────────────────────────
             terminal_cmd::terminal_open,
             terminal_cmd::terminal_write,

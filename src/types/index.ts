@@ -445,3 +445,13 @@ export interface LabPlan {
 }
 
 export interface LabProgress { step: number; status: "running" | "done" | "error" | "cancelled"; message: string }
+
+// ─── Découverte réseau ──────────────────────────────────────────────────────
+
+export interface NetworkDevice {
+  ip: string;
+  mac: string | null;
+  /** Carte réseau virtuelle (VM, conteneur) : WoL inutile */
+  virtual_nic: string | null;
+  known_server: string | null;
+}

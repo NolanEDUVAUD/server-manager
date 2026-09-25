@@ -255,6 +255,12 @@
           "markdownDescription": "Enables the delete_server command without any pre-configured scope."
         },
         {
+          "description": "Enables the detect_mac command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-detect-mac",
+          "markdownDescription": "Enables the detect_mac command without any pre-configured scope."
+        },
+        {
           "description": "Enables the docker_action command without any pre-configured scope.",
           "type": "string",
           "const": "allow-docker-action",
@@ -397,6 +403,12 @@
           "type": "string",
           "const": "allow-lab-power-plan",
           "markdownDescription": "Enables the lab_power_plan command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the network_scan command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-network-scan",
+          "markdownDescription": "Enables the network_scan command without any pre-configured scope."
         },
         {
           "description": "Enables the open_dashboard_tab command without any pre-configured scope.",
@@ -771,6 +783,12 @@
           "markdownDescription": "Denies the delete_server command without any pre-configured scope."
         },
         {
+          "description": "Denies the detect_mac command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-detect-mac",
+          "markdownDescription": "Denies the detect_mac command without any pre-configured scope."
+        },
+        {
           "description": "Denies the docker_action command without any pre-configured scope.",
           "type": "string",
           "const": "deny-docker-action",
@@ -913,6 +931,12 @@
           "type": "string",
           "const": "deny-lab-power-plan",
           "markdownDescription": "Denies the lab_power_plan command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the network_scan command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-network-scan",
+          "markdownDescription": "Denies the network_scan command without any pre-configured scope."
         },
         {
           "description": "Denies the open_dashboard_tab command without any pre-configured scope.",

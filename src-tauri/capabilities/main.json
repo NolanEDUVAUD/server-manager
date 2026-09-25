@@ -97,6 +97,8 @@
     "allow-proxmox-task-status",
     "allow-lab-power-plan",
     "allow-lab-power-execute",
-    "allow-lab-power-cancel"
+    "allow-lab-power-cancel",
+    "allow-detect-mac",
+    "allow-network-scan"
   ]
 }

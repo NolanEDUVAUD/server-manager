@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-detect-mac"
+description = "Enables the detect_mac command without any pre-configured scope."
+commands.allow = ["detect_mac"]
+
+[[permission]]
+identifier = "deny-detect-mac"
+description = "Denies the detect_mac command without any pre-configured scope."
+commands.deny = ["detect_mac"]

@@ -14,6 +14,8 @@ import { IconPicker } from "./IconPicker";
 
 interface ServerFormProps {
   initial?: ServerType;
+  /** Valeurs pré-remplies pour un nouveau serveur (ex. appareil découvert sur le réseau) */
+  prefill?: { name?: string; ip?: string; mac_address?: string };
   onSubmit: (payload: ServerPayload) => Promise<void>;
   onCancel: () => void;
 }
@@ -34,11 +36,11 @@ const OS_REBOOT_DEFAULTS: Record<OsType, string> = {
   ESXi: "reboot",
 };
 
-export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
+export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormProps) {
   const [form, setForm] = useState<ServerPayload>({
-    name: initial?.name ?? "",
-    ip: initial?.ip ?? "",
-    mac_address: initial?.mac_address ?? "",
+    name: initial?.name ?? prefill?.name ?? "",
+    ip: initial?.ip ?? prefill?.ip ?? "",
+    mac_address: initial?.mac_address ?? prefill?.mac_address ?? "",
     ssh_user: initial?.ssh_user ?? "root",
     ssh_password: "",
     ssh_port: initial?.ssh_port ?? DEFAULT_SSH_PORT,
@@ -70,6 +72,25 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
     });
     setErrors((e) => ({ ...e, [field]: "" }));
   };
+
+  const [detecting, setDetecting] = useState(false);
+  const [macHint, setMacHint] = useState("");
+
+  /** Lit la MAC de l'IP saisie (ping + table ARP) : lecture seule */
+  async function detectMac() {
+    setDetecting(true);
+    setMacHint("");
+    try {
+      const r = await invoke<{ mac: string | null; virtual_nic: string | null }>("detect_mac", { ip: form.ip });
+      if (!r.mac) setMacHint("Aucune réponse : l'appareil est éteint ou sur un autre réseau.");
+      else if (r.virtual_nic) setMacHint(`Carte virtuelle (${r.virtual_nic}) : le Wake-on-LAN est inutile, c'est Proxmox qui la démarre.`);
+      else { set("mac_address", r.mac); setMacHint("MAC détectée."); }
+    } catch (e) {
+      setMacHint(String(e));
+    } finally {
+      setDetecting(false);
+    }
+  }
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
@@ -159,13 +180,25 @@ export function ServerForm({ initial, onSubmit, onCancel }: ServerFormProps) {
             </div>
             <div>
               <label className={labelClass}>Adresse MAC (WoL)</label>
-              <input
-                className={inputClass}
-                value={form.mac_address}
-                onChange={(e) => set("mac_address", e.target.value)}
-                placeholder="AA:BB:CC:DD:EE:FF"
-              />
+              <div className="flex gap-1.5">
+                <input
+                  className={inputClass}
+                  value={form.mac_address}
+                  onChange={(e) => set("mac_address", e.target.value)}
+                  placeholder="AA:BB:CC:DD:EE:FF"
+                />
+                <button
+                  type="button"
+                  onClick={detectMac}
+                  disabled={!isValidIP(form.ip) || detecting}
+                  className="shrink-0 px-2.5 text-xs rounded-win border border-border-primary text-text-secondary hover:text-accent-primary hover:border-accent-primary/40 disabled:opacity-40"
+                  title="Lire la MAC dans la table ARP (même réseau local)"
+                >
+                  {detecting ? "…" : "Détecter"}
+                </button>
+              </div>
               {errors.mac_address && <p className={errorClass}>{errors.mac_address}</p>}
+              {macHint && <p className="text-[11px] text-text-muted mt-1">{macHint}</p>}
             </div>
           </div>
 

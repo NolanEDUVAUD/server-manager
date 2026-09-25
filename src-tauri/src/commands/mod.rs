@@ -1,5 +1,6 @@
 pub mod alerts;
 pub mod dashboards;
+pub mod discovery;
 pub mod docker;
 pub mod events;
 pub mod groups;
