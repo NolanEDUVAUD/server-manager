@@ -2,10 +2,9 @@
  * Recherche et filtres combinés des pages Serveurs et Services : fonctions pures,
  * sans état ni accès au store (testées dans filters.test.ts).
  */
-import { Folder, Probe, ProbeResult, Server, ServerStatus, Tag } from "../types";
+import { Folder, Server, ServerStatus, Tag } from "../types";
 import { currentLocale } from "../i18n";
 import { fold } from "./fuzzy";
-import { describeProbe } from "./probes";
 
 export type StatusFilter = "all" | "online" | "offline";
 export type FilterScope = "servers" | "services";
@@ -114,17 +113,6 @@ export function serverFilterable(s: Server, org: OrganisationContext, status?: S
     folderId: knownFolder(org.folders, s.folder_id),
     favorite: !!s.favorite,
     online: status?.online,
-  };
-}
-
-export function probeFilterable(p: Probe, org: OrganisationContext, result?: ProbeResult, serverName?: string): Filterable {
-  const tagIds = p.tag_ids ?? [];
-  return {
-    text: [p.name, describeProbe(p.kind), serverName ?? "", ...tagNames(org.tags, tagIds)],
-    tagIds,
-    folderId: knownFolder(org.folders, p.folder_id),
-    favorite: !!p.favorite,
-    online: p.enabled && result ? result.ok : undefined,
   };
 }
 

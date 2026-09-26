@@ -3,7 +3,7 @@ export const shortcuts = {
   groups: {
     general: "Général",
     palette: "Palette de commandes",
-    pages: "Pages Serveurs et Services",
+    pages: "Page Serveurs",
     navigation: "Navigation",
   },
   desc: {
@@ -14,10 +14,9 @@ export const shortcuts = {
     paletteRun: "Exécuter l'action choisie (les actions sur un serveur demandent confirmation)",
     lock: "Verrouiller l'application (si un verrouillage est configuré)",
     help: "Afficher cette aide",
-    search: "Aller à la recherche (pages Serveurs et Services)",
+    search: "Aller à la recherche (page Serveurs)",
     goDashboard: "Aller au tableau de bord",
     goServers: "Aller aux serveurs",
-    goServices: "Aller aux services",
     goConsole: "Aller à la console SSH",
     goSettings: "Aller aux paramètres",
   },

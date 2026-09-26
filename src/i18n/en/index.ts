@@ -5,7 +5,6 @@ import { appUpdate } from "./appUpdate";
 import { backup } from "./backup";
 import { backups } from "./backups";
 import { batch } from "./batch";
-import { catalog } from "./catalog";
 import { common } from "./common";
 import { consolePage } from "./console";
 import { dashboard } from "./dashboard";
@@ -26,14 +25,12 @@ import { onboarding } from "./onboarding";
 import { orgFields } from "./orgFields";
 import { organisation } from "./organisation";
 import { palette } from "./palette";
-import { probes } from "./probes";
 import { proxmox } from "./proxmox";
 import { resources } from "./resources";
 import { retention } from "./retention";
 import { scheduler } from "./scheduler";
 import { serverForm } from "./serverForm";
 import { servers } from "./servers";
-import { services } from "./services";
 import { settings } from "./settings";
 import { settingsPage } from "./settingsPage";
 import { shortcuts } from "./shortcuts";
@@ -49,7 +46,6 @@ export const en: Dict = {
   backup,
   backups,
   batch,
-  catalog,
   common,
   console: consolePage,
   dashboard,
@@ -70,14 +66,12 @@ export const en: Dict = {
   orgFields,
   organisation,
   palette,
-  probes,
   proxmox,
   resources,
   retention,
   scheduler,
   serverForm,
   servers,
-  services,
   settings,
   settingsPage,
   shortcuts,
