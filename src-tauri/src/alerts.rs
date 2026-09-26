@@ -182,6 +182,16 @@ impl AlertEngine {
         step(st, bad, now_ms(), i64::from(sustain_min) * 60_000, i64::from(rule.cooldown_minutes) * 60_000)
     }
 
+    /// Oublie l'état de suivi (bad_since / firing / cooldown) d'une règle.
+    /// À appeler quand une règle est désactivée, modifiée ou supprimée, sinon un état
+    /// périmé peut déclencher un « Résolu » fantôme (ou un déclenchement immédiat)
+    /// dès qu'on la réévalue, sans lien avec la situation réelle du moment.
+    pub fn clear_rule(&self, rule_id: &str) {
+        if let Ok(mut states) = self.states.lock() {
+            states.retain(|(id, _), _| id != rule_id);
+        }
+    }
+
     pub fn on_ping(&self, server_id: &str, online: bool) {
         let (name, rules) = self.rules_for(server_id);
         for rule in rules {
@@ -368,6 +378,28 @@ mod tests {
         // Pas de sonde de température : la règle ne s'applique pas
         assert!(metric_check(&Condition::TempAbove { celsius: 80.0, minutes: 1 }, &metrics(0.0, 0, None)).is_none());
         assert!(metric_check(&Condition::ActionFailed, &metrics(0.0, 0, None)).is_none());
+    }
+
+    #[test]
+    fn clear_rule_forgets_firing_state_to_avoid_ghost_resolve() {
+        // Reproduit le bug : une règle en cours de déclenchement est désactivée/modifiée,
+        // puis réactivée alors que la condition est redevenue bonne. Sans purge de l'état,
+        // `step` renvoie Resolve (car firing==true côté état périmé) alors qu'aucune alerte
+        // n'a été relancée entre-temps : c'est une notification fantôme.
+        let mut states: HashMap<(String, String), RuleState> = HashMap::new();
+        let key = ("rule-1".to_string(), "server-1".to_string());
+        let st = states.entry(key.clone()).or_default();
+        assert_eq!(step(st, true, 0, 0, 0), Decision::Fire);
+        assert!(states.get(&key).unwrap().firing);
+
+        // Désactivation / modification de la règle → on purge son état (équivalent de clear_rule)
+        states.retain(|(id, _), _| id != "rule-1");
+        assert!(states.get(&key).is_none());
+
+        // Réévaluation après réactivation, condition redevenue bonne : plus d'état périmé,
+        // donc pas de Resolve fantôme.
+        let st = states.entry(key.clone()).or_default();
+        assert_eq!(step(st, false, 10 * MIN, 0, 0), Decision::None);
     }
 
     #[test]
