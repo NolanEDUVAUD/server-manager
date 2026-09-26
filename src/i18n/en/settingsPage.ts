@@ -39,6 +39,9 @@ export const settingsPage: Dict["settingsPage"] = {
     theme: "Theme",
     themeCopy: "{name} (copy)",
     themeSaved: "Theme saved",
+    sidebarLayout: "Sidebar and layout",
+    resetFavorites: "Reset favorites",
+    resetSidebarWidth: "Reset sidebar width",
   },
   network: {
     saved: "Network settings saved",

@@ -38,6 +38,9 @@ export const settingsPage = {
     theme: "Thème",
     themeCopy: "{name} (copie)",
     themeSaved: "Thème sauvegardé",
+    sidebarLayout: "Barre latérale et mise en page",
+    resetFavorites: "Réinitialiser les favoris",
+    resetSidebarWidth: "Réinitialiser la largeur de la barre latérale",
   },
   network: {
     saved: "Paramètres réseau sauvegardés",
