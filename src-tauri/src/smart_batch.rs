@@ -446,6 +446,34 @@ fn expand_conditionals(script: &str, os: &DetectedOs) -> Result<String, String> 
     Ok(out)
 }
 
+/// Noms des variables de gabarit reconnues. Tout autre `{{…}}` est laissé tel quel :
+/// beaucoup de commandes l'emploient pour leur propre usage (`docker ps --format
+/// '{{.Names}}'`, Go templates, Ansible/Jinja…) et ne doivent pas être modifiées.
+const TEMPLATE_VARIABLES: [&str; 8] =
+    ["pkg_update", "pkg_upgrade", "pkg_install", "pkg_clean", "service_restart", "reboot_if_required", "os_id", "os_version"];
+
+fn variable_name(expr: &str) -> &str {
+    expr.trim().split(char::is_whitespace).next().unwrap_or_default()
+}
+
+/// Le script emploie-t-il une variable ou un bloc conditionnel de gabarit ? Sinon il
+/// s'exécute tel quel, sans détection d'OS.
+pub fn uses_template(script: &str) -> bool {
+    if script.contains("{{#if") {
+        return true;
+    }
+    let mut rest = script;
+    while let Some(start) = rest.find("{{") {
+        let after = &rest[start + 2..];
+        let Some(end) = after.find("}}") else { return false };
+        if TEMPLATE_VARIABLES.contains(&variable_name(&after[..end])) {
+            return true;
+        }
+        rest = &after[end + 2..];
+    }
+    false
+}
+
 fn expand_variables(script: &str, os: &DetectedOs) -> Result<String, String> {
     let mut out = String::with_capacity(script.len());
     let mut rest = script;
@@ -457,10 +485,16 @@ fn expand_variables(script: &str, os: &DetectedOs) -> Result<String, String> {
         out.push_str(&rest[..start]);
         let after = &rest[start + 2..];
         let Some(end) = after.find("}}") else {
-            return Err("Variable « {{ » sans « }} » de fermeture".into());
+            // « {{ » sans fermeture : ce n'est pas une variable, on garde le texte
+            out.push_str(&rest[start..]);
+            break;
         };
-        let expr = after[..end].trim();
-        out.push_str(&resolve_variable(expr, os)?);
+        let raw = &after[..end];
+        if TEMPLATE_VARIABLES.contains(&variable_name(raw)) {
+            out.push_str(&resolve_variable(raw.trim(), os)?);
+        } else {
+            out.push_str(&rest[start..start + 2 + end + 2]);
+        }
         rest = &after[end + 2..];
     }
     Ok(out)
@@ -662,11 +696,30 @@ mod tests {
     }
 
     #[test]
-    fn unknown_variable_or_unterminated_tag_is_a_clear_error() {
+    fn foreign_double_braces_are_kept_verbatim() {
         let os = debian();
-        assert!(expand_template("{{pkg_frobnicate}}", &os).unwrap_err().contains("inconnue"));
-        assert!(expand_template("{{pkg_update", &os).unwrap_err().contains("fermeture"));
+        // Syntaxes {{…}} d'autres outils : jamais modifiées, jamais en erreur
+        let docker = "docker ps --format '{{.Names}} {{ .Status }}'";
+        assert_eq!(expand_template(docker, &os).unwrap(), docker);
+        assert_eq!(expand_template("{{pkg_frobnicate}}", &os).unwrap(), "{{pkg_frobnicate}}");
+        assert_eq!(expand_template("echo {{ unterminated", &os).unwrap(), "echo {{ unterminated");
+        // Mélange : seules les vraies variables sont remplacées
+        assert_eq!(
+            expand_template("{{pkg_update}} && docker ps --format '{{.ID}}'", &os).unwrap(),
+            "sudo apt-get update -y && docker ps --format '{{.ID}}'"
+        );
+        // Une vraie variable mal employée reste une erreur claire
         assert!(expand_template("{{pkg_install}}", &os).unwrap_err().contains("nom de paquet"));
+    }
+
+    #[test]
+    fn uses_template_detects_only_known_variables() {
+        assert!(uses_template("{{pkg_update}}"));
+        assert!(uses_template("{{ pkg_install nginx }}"));
+        assert!(uses_template("{{#if debian}}x{{/if}}"));
+        assert!(!uses_template("docker ps --format '{{.Names}}'"));
+        assert!(!uses_template("uptime"));
+        assert!(!uses_template("echo {{ oops"));
     }
 
     #[test]

@@ -9,7 +9,7 @@ use crate::{
     commands::ssh::execute_ssh,
     events::{EventKind, EventLog},
     models::{AppData, OsType},
-    smart_batch::{self, expand_template, posix_probe_command, resolve_action, windows_probe_command, DetectedOs, OsCache, PkgFamily, SmartAction},
+    smart_batch::{self, expand_template, posix_probe_command, uses_template, resolve_action, windows_probe_command, DetectedOs, OsCache, PkgFamily, SmartAction},
     ssh_auth::resolve_ssh,
     storage::AppState,
 };
@@ -114,6 +114,16 @@ pub struct SmartPreview {
     pub skip_reason: Option<String>,
 }
 
+/// Script sans aucune variable de gabarit : exécuté tel quel (comme avant les tâches
+/// intelligentes), sans dépendre de la détection d'OS — qui peut échouer sur une cible
+/// exotique sans que cela doive empêcher d'y lancer une commande ordinaire.
+fn plain_script(source: &SmartSource) -> Option<&str> {
+    match source {
+        SmartSource::Script(script) if !uses_template(script) => Some(script.as_str()),
+        _ => None,
+    }
+}
+
 fn resolve_source(source: &SmartSource, os: &DetectedOs) -> Result<String, String> {
     match source {
         SmartSource::Action(action) => resolve_action(action, os),
@@ -147,6 +157,11 @@ pub async fn smart_batch_preview(
         let source = source.clone();
         let cache = cache.inner().clone();
         async move {
+            if let Some(script) = plain_script(&source) {
+                // L'OS n'est lu que pour l'affichage : son échec n'empêche rien
+                let os_label = detect_os(&target, os_type, &cache, false).await.ok().map(|os| os.pretty_name);
+                return SmartPreview { server_id: target.server_id, name: target.name, os_label, command: Some(wrap_script(script)), skip_reason: None };
+            }
             match detect_os(&target, os_type, &cache, false).await {
                 Ok(os) => match resolve_source(&source, &os) {
                     Ok(command) => SmartPreview {
@@ -208,6 +223,10 @@ pub fn smart_batch_run(
         let run_id = task_run_id;
         let mut smart_targets = Vec::new();
         for (target, os_type) in t.into_iter().zip(os_types) {
+            if let Some(script) = plain_script(&source) {
+                smart_targets.push(SmartTarget { command: wrap_script(script), target });
+                continue;
+            }
             match detect_os(&target, os_type, &cache, false).await {
                 Ok(os) => match resolve_source(&source, &os) {
                     Ok(command) => smart_targets.push(SmartTarget { command: finalize_command(&command, &os), target }),
