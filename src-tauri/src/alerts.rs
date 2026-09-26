@@ -262,6 +262,18 @@ impl AlertEngine {
     }
 
     fn dispatch(&self, rule: &AlertRule, server_id: Option<&str>, target: &str, detail: &str, critical: bool) {
+        // Module « Alertes » désactivé (Paramètres → Général) : plus aucune alerte, ni
+        // historique, ni notification bureau, ni push
+        let module_hidden = self
+            .app
+            .state::<AppState>()
+            .data
+            .lock()
+            .map(|d| d.settings.general.hidden_modules.iter().any(|m| m == "alerts"))
+            .unwrap_or(false);
+        if module_hidden {
+            return;
+        }
         let title = if critical {
             format!("{} — {}", rule.name, target)
         } else {
