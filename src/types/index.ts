@@ -297,6 +297,32 @@ export interface TerminalSession {
   attempt: number;
 }
 
+// ─── Explorateur de fichiers SFTP (Console) ────────────────────────────────
+
+export type SftpEntryKind = "dir" | "file" | "symlink" | "other";
+
+/** Une entrée de dossier distant, telle que renvoyée par `sftp_list` / `sftp_stat`. */
+export interface SftpEntry {
+  name: string;
+  path: string;
+  kind: SftpEntryKind;
+  /** Pour un lien symbolique dont la cible a pu être résolue */
+  linkTargetKind?: SftpEntryKind;
+  size: number;
+  /** Horodatage de modification, secondes Unix (UTC), ou `null` si inconnu */
+  modified: number | null;
+  /** Chaîne façon `ls -l`, ex. "drwxr-xr-x" */
+  permissions: string;
+  owner: number | null;
+  group: number | null;
+}
+
+/** Progression envoyée pendant `sftp_download` / `sftp_upload` */
+export interface SftpProgress {
+  transferred: number;
+  total: number;
+}
+
 // ─── Historique des événements ──────────────────────────────────────────────
 
 export type EventKind = "Offline" | "Online" | "Wake" | "Shutdown" | "Reboot" | "VmAction" | "Container" | "Failure" | "Alert";

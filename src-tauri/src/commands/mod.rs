@@ -22,6 +22,7 @@ pub mod schedules;
 pub mod proxmox;
 pub mod servers;
 pub mod settings;
+pub mod sftp;
 pub mod snippets;
 pub mod ssh;
 pub mod terminal;

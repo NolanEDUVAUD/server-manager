@@ -170,6 +170,16 @@
     "allow-set-extension-enabled",
     "allow-uninstall-extension",
     "allow-read-extension-file",
-    "allow-fetch-extension-manifest"
+    "allow-fetch-extension-manifest",
+    "allow-sftp-delete",
+    "allow-sftp-download",
+    "allow-sftp-home",
+    "allow-sftp-list",
+    "allow-sftp-mkdir",
+    "allow-sftp-read-text",
+    "allow-sftp-rename",
+    "allow-sftp-stat",
+    "allow-sftp-upload",
+    "allow-sftp-write-text"
   ]
 }
