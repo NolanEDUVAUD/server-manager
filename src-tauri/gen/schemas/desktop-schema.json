@@ -1161,6 +1161,66 @@
           "markdownDescription": "Enables the set_titlebar_colors command without any pre-configured scope."
         },
         {
+          "description": "Enables the sftp_delete command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-delete",
+          "markdownDescription": "Enables the sftp_delete command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-download",
+          "markdownDescription": "Enables the sftp_download command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_home command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-home",
+          "markdownDescription": "Enables the sftp_home command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-list",
+          "markdownDescription": "Enables the sftp_list command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_mkdir command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-mkdir",
+          "markdownDescription": "Enables the sftp_mkdir command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_read_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-read-text",
+          "markdownDescription": "Enables the sftp_read_text command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_rename command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-rename",
+          "markdownDescription": "Enables the sftp_rename command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_stat command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-stat",
+          "markdownDescription": "Enables the sftp_stat command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_upload command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-upload",
+          "markdownDescription": "Enables the sftp_upload command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sftp_write_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sftp-write-text",
+          "markdownDescription": "Enables the sftp_write_text command without any pre-configured scope."
+        },
+        {
           "description": "Enables the smart_batch_detect_os command without any pre-configured scope.",
           "type": "string",
           "const": "allow-smart-batch-detect-os",
@@ -2197,6 +2257,66 @@
           "type": "string",
           "const": "deny-set-titlebar-colors",
           "markdownDescription": "Denies the set_titlebar_colors command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_delete command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-delete",
+          "markdownDescription": "Denies the sftp_delete command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_download command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-download",
+          "markdownDescription": "Denies the sftp_download command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_home command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-home",
+          "markdownDescription": "Denies the sftp_home command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-list",
+          "markdownDescription": "Denies the sftp_list command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_mkdir command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-mkdir",
+          "markdownDescription": "Denies the sftp_mkdir command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_read_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-read-text",
+          "markdownDescription": "Denies the sftp_read_text command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_rename command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-rename",
+          "markdownDescription": "Denies the sftp_rename command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_stat command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-stat",
+          "markdownDescription": "Denies the sftp_stat command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_upload command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-upload",
+          "markdownDescription": "Denies the sftp_upload command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sftp_write_text command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sftp-write-text",
+          "markdownDescription": "Denies the sftp_write_text command without any pre-configured scope."
         },
         {
           "description": "Denies the smart_batch_detect_os command without any pre-configured scope.",

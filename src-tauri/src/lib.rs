@@ -27,6 +27,7 @@ mod organisation;
 mod probes;
 mod proxmox;
 mod scheduler;
+mod sftp;
 mod smart_batch;
 mod storage;
 mod terminal;
@@ -39,7 +40,7 @@ mod ssh_keys;
 #[cfg(test)]
 mod ssh_test_server;
 
-use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, db_admin as db_admin_cmd, events as events_cmd, external as external_cmd, extensions as extensions_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, db_admin as db_admin_cmd, events as events_cmd, external as external_cmd, extensions as extensions_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, sftp as sftp_cmd, ssh, wol};
 use commands::organisation as organisation_cmd;
 use commands::ssh_keys as ssh_keys_cmd;
 use storage::AppState;
@@ -68,6 +69,7 @@ pub fn run() {
             app.manage(db);
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
+            app.manage(commands::sftp::SftpPoolState::default());
             app.manage(batch::BatchInputs::default());
             app.manage(smart_batch::OsCache::default());
             app.manage(events::EventLog::load(app.handle()));
@@ -274,6 +276,17 @@ pub fn run() {
             terminal_cmd::terminal_write,
             terminal_cmd::terminal_resize,
             terminal_cmd::terminal_close,
+            // ── Explorateur de fichiers SFTP (Console) ──────────
+            sftp_cmd::sftp_home,
+            sftp_cmd::sftp_list,
+            sftp_cmd::sftp_stat,
+            sftp_cmd::sftp_read_text,
+            sftp_cmd::sftp_write_text,
+            sftp_cmd::sftp_download,
+            sftp_cmd::sftp_upload,
+            sftp_cmd::sftp_mkdir,
+            sftp_cmd::sftp_rename,
+            sftp_cmd::sftp_delete,
             // ── Organisation (tags, dossiers, favoris) ──────────
             organisation_cmd::get_organisation,
             organisation_cmd::save_tag,

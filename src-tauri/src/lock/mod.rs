@@ -539,6 +539,8 @@ pub fn lock_app(app: &AppHandle, reason: &str) -> Result<(), String> {
     app.state::<LockManager>().lock(&cfg)?;
     // Consoles SSH : sessions déjà authentifiées, fermées
     app.state::<crate::terminal::TerminalState>().close_all();
+    // Explorateur de fichiers SFTP : sessions déjà authentifiées, fermées
+    app.state::<crate::commands::sftp::SftpPoolState>().close_all();
     // Onglets web : webviews natives, dessinées par-dessus l'écran de verrouillage
     if let Ok(webviews) = app.state::<crate::dashboard_state::DashboardState>().webviews.lock() {
         for webview in webviews.values() {

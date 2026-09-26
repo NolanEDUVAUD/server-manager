@@ -184,6 +184,16 @@
     "allow-db-backup-database",
     "allow-db-service-action",
     "allow-db-redis-info",
-    "allow-db-redis-command"
+    "allow-db-redis-command",
+    "allow-sftp-delete",
+    "allow-sftp-download",
+    "allow-sftp-home",
+    "allow-sftp-list",
+    "allow-sftp-mkdir",
+    "allow-sftp-read-text",
+    "allow-sftp-rename",
+    "allow-sftp-stat",
+    "allow-sftp-upload",
+    "allow-sftp-write-text"
   ]
 }

@@ -170,6 +170,28 @@ serveur.
 2. Chaque session ouvre un **onglet** ; plusieurs sessions peuvent tourner en
    parallèle. *Reconnecter* relance une session fermée.
 
+### Explorateur de fichiers
+
+Le bouton **Fichiers** de la Console ouvre, à côté du terminal, l'arborescence du
+serveur de l'onglet actif (le sélecteur de serveurs propose aussi **Fichiers** pour
+l'ouvrir sans terminal). Il passe par SFTP, sur la même connexion SSH que la console
+(mêmes identifiants, même vérification de l'empreinte du serveur, même hôte de rebond) :
+aucune commande shell n'est exécutée pour parcourir les fichiers.
+
+- Navigation : double-clic sur un dossier, chemin modifiable (Entrée pour y aller),
+  précédent / suivant / dossier parent / dossier personnel, filtre, fichiers cachés.
+- Fichiers texte (1 Mio maximum) : aperçu et modification ; l'enregistrement conserve
+  les permissions et le propriétaire du fichier.
+- Menu **…** : télécharger (vers l'emplacement choisi dans la boîte de dialogue de
+  Windows), renommer, supprimer, copier le chemin, **Ouvrir ici dans le terminal**
+  (insère `cd '<chemin>'` sans l'exécuter).
+- Barre d'outils : nouveau dossier, **Envoyer un fichier**.
+
+> **Attention** : supprimer un dossier non vide demande de retaper son nom. La
+> racine `/` et les dossiers système de premier niveau (`/etc`, `/usr`, `/var`…) ne
+> peuvent jamais être supprimés en entier ; les liens symboliques sont supprimés sans
+> toucher à leur cible.
+
 ### Commandes mémorisées (snippets)
 
 Le bouton **Commandes** ouvre le menu des commandes mémorisées : elles

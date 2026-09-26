@@ -78,6 +78,10 @@ rusqlite = { version = "0.40", default-features = false, features = ["bundled", 
 # Verrouillage de l'application : Argon2id (RustCrypto, même génération que
 # aes-gcm 0.10 / sha2 0.10) pour le mot de passe maître et le hash du PIN
 argon2 = { version = "0.5", features = ["std", "zeroize"] }
+# Explorateur de fichiers SFTP (Console) : protocole binaire, sur la même connexion
+# authentifiée (canal SSH + sous-système "sftp") que la console interactive — pas de
+# commande shell à échapper. Compatible avec russh 0.63 (canaux, sous-systèmes RFC4254).
+russh-sftp = "3.0"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
