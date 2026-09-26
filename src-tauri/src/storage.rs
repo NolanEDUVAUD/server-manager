@@ -156,3 +156,67 @@ fn verify_migrated(path: &std::path::Path, master: &[u8; 32]) -> bool {
         && data.proxmox_connections.iter().all(|c| crate::crypto::decrypt(&c.token_secret, master).is_ok())
         && data.ssh_keys.iter().all(|k| crate::crypto::decrypt(&k.private_key, master).is_ok())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Chemin de test unique (répertoire temporaire du système), pour ne jamais se marcher
+    /// dessus si les tests tournent en parallèle.
+    fn temp_data_path(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "server-manager-test-{}-{}-{}.json",
+            name,
+            std::process::id(),
+            crate::events::now_ms()
+        ))
+    }
+
+    /// Reproduit le scénario du bug rapporté : une règle d'alerte désactivée doit rester
+    /// désactivée après un cycle sauvegarde (fermeture) + chargement (redémarrage) complet,
+    /// tel qu'il se produit réellement via `AppState::save` / `load_app_data`.
+    #[test]
+    fn disabled_alert_rule_survives_save_and_load() {
+        let path = temp_data_path("alert-rule");
+
+        let mut data = crate::models::AppData::default();
+        assert!(!data.alert_rules.is_empty(), "des règles par défaut doivent exister");
+        data.alert_rules[0].enabled = false;
+        let disabled_id = data.alert_rules[0].id.clone();
+
+        // Écriture identique à `AppState::save`
+        let content = serde_json::to_string_pretty(&data).expect("sérialisation");
+        std::fs::write(&path, content).expect("écriture");
+
+        // Lecture identique à celle faite au démarrage de l'app
+        let reloaded = load_app_data(&path);
+        let rule = reloaded
+            .alert_rules
+            .iter()
+            .find(|r| r.id == disabled_id)
+            .expect("la règle doit toujours exister après rechargement");
+        assert!(!rule.enabled, "la règle désactivée doit le rester après redémarrage");
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// Un data.json qui ne contient déjà plus de champ `alert_rules` (très vieux fichier,
+    /// ou fichier tronqué par un outil externe) doit tomber sur `default_rules()` — c'est
+    /// le seul cas légitime de réinitialisation, jamais un fichier v2 valide et complet.
+    #[test]
+    fn missing_alert_rules_field_falls_back_to_defaults_without_resetting_everything_else() {
+        let path = temp_data_path("missing-rules");
+        let mut data = crate::models::AppData::default();
+        data.settings.general.language = "en".into();
+        let mut value = serde_json::to_value(&data).expect("sérialisation");
+        value.as_object_mut().unwrap().remove("alert_rules");
+        std::fs::write(&path, serde_json::to_string_pretty(&value).unwrap()).expect("écriture");
+
+        let reloaded = load_app_data(&path);
+        // Le reste des données (ici : la langue) n'est pas perdu pour autant
+        assert_eq!(reloaded.settings.general.language, "en");
+        assert_eq!(reloaded.alert_rules.len(), crate::alerts::default_rules().len());
+
+        let _ = std::fs::remove_file(&path);
+    }
+}

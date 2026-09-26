@@ -111,6 +111,22 @@ pub fn step(state: &mut RuleState, bad: bool, now: i64, sustain_ms: i64, cooldow
     Decision::None
 }
 
+/// Fonction pure de « gating » : la règle doit-elle être dispatchée (notification bureau,
+/// push, entrée d'historique) au vu des réglages courants ? Centralise toutes les raisons
+/// de ne rien envoyer, pour qu'aucun futur point d'appel ne puisse en oublier une :
+/// - module « Alertes » masqué de la barre latérale (Paramètres → Général) ;
+/// - interrupteur global « Alertes activées » désactivé (Paramètres → Alertes) ;
+/// - la règle elle-même désactivée.
+pub fn should_dispatch(settings: &crate::models::AppSettings, rule: &AlertRule) -> bool {
+    if settings.general.hidden_modules.iter().any(|m| m == "alerts") {
+        return false;
+    }
+    if !settings.general.alerts_enabled {
+        return false;
+    }
+    rule.enabled
+}
+
 /// La règle s'applique-t-elle à ce serveur ?
 pub fn targets(rule: &AlertRule, server_id: &str, groups: &[crate::models::Group]) -> bool {
     match &rule.target {
@@ -170,7 +186,7 @@ impl AlertEngine {
         let rules = data
             .alert_rules
             .iter()
-            .filter(|r| r.enabled && targets(r, server_id, &data.groups))
+            .filter(|r| should_dispatch(&data.settings, r) && targets(r, server_id, &data.groups))
             .cloned()
             .collect();
         (name, rules)
@@ -227,7 +243,7 @@ impl AlertEngine {
                 .state::<AppState>()
                 .data
                 .lock()
-                .map(|d| d.alert_rules.iter().filter(|r| r.enabled && r.target == AlertTarget::All).cloned().collect())
+                .map(|d| d.alert_rules.iter().filter(|r| should_dispatch(&d.settings, r) && r.target == AlertTarget::All).cloned().collect())
                 .unwrap_or_default(),
         };
         for rule in rules.iter().filter(|r| r.condition == Condition::ActionFailed) {
@@ -246,7 +262,7 @@ impl AlertEngine {
             let Ok(data) = state.data.lock() else { return };
             data.alert_rules
                 .iter()
-                .filter(|r| r.enabled && matches!(r.condition, Condition::ProbeDown { .. }))
+                .filter(|r| should_dispatch(&data.settings, r) && matches!(r.condition, Condition::ProbeDown { .. }))
                 .filter(|r| server_id.map_or(r.target == AlertTarget::All, |id| targets(r, id, &data.groups)))
                 .cloned()
                 .collect()
@@ -262,16 +278,17 @@ impl AlertEngine {
     }
 
     fn dispatch(&self, rule: &AlertRule, server_id: Option<&str>, target: &str, detail: &str, critical: bool) {
-        // Module « Alertes » désactivé (Paramètres → Général) : plus aucune alerte, ni
-        // historique, ni notification bureau, ni push
-        let module_hidden = self
+        // Filet de sécurité final : même si un appelant amont a mal filtré, `should_dispatch`
+        // revérifie ici le module « Alertes » masqué, l'interrupteur global et la règle
+        // elle-même — plus aucune alerte, ni historique, ni notification bureau, ni push.
+        let dispatchable = self
             .app
             .state::<AppState>()
             .data
             .lock()
-            .map(|d| d.settings.general.hidden_modules.iter().any(|m| m == "alerts"))
+            .map(|d| should_dispatch(&d.settings, rule))
             .unwrap_or(false);
-        if module_hidden {
+        if !dispatchable {
             return;
         }
         let title = if critical {
@@ -412,6 +429,39 @@ mod tests {
         // donc pas de Resolve fantôme.
         let st = states.entry(key.clone()).or_default();
         assert_eq!(step(st, false, 10 * MIN, 0, 0), Decision::None);
+    }
+
+    fn settings_with(alerts_enabled: bool, hidden_modules: Vec<String>) -> crate::models::AppSettings {
+        let mut s = crate::models::AppSettings::default();
+        s.general.alerts_enabled = alerts_enabled;
+        s.general.hidden_modules = hidden_modules;
+        s
+    }
+
+    #[test]
+    fn should_dispatch_gating() {
+        let mut rule = default_rules().remove(0);
+        let settings = settings_with(true, vec![]);
+
+        // Cas nominal : alertes globales actives, module visible, règle activée
+        assert!(should_dispatch(&settings, &rule));
+
+        // Règle désactivée individuellement : jamais dispatchée, même si tout le reste est actif
+        rule.enabled = false;
+        assert!(!should_dispatch(&settings, &rule));
+        rule.enabled = true;
+
+        // Interrupteur global désactivé (Paramètres → Alertes) : plus aucune règle, même activée
+        let settings_off = settings_with(false, vec![]);
+        assert!(!should_dispatch(&settings_off, &rule));
+
+        // Module « Alertes » masqué de la barre latérale : plus aucune règle non plus
+        let settings_hidden = settings_with(true, vec!["alerts".to_string()]);
+        assert!(!should_dispatch(&settings_hidden, &rule));
+
+        // Un autre module masqué ne doit rien changer
+        let settings_other_hidden = settings_with(true, vec!["docker".to_string()]);
+        assert!(should_dispatch(&settings_other_hidden, &rule));
     }
 
     #[test]

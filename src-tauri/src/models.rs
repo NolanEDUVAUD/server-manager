@@ -233,6 +233,11 @@ pub struct GeneralSettings {
     /// « fr » (défaut) ou « en »
     #[serde(default = "default_language")]
     pub language: String,
+    /// Interrupteur global des alertes (Paramètres → Alertes) : quand désactivé, plus
+    /// aucune règle ne se déclenche (bureau, push, historique), quel que soit son état
+    /// individuel. Absent d'un ancien fichier = alertes actives (comportement historique).
+    #[serde(default = "default_true")]
+    pub alerts_enabled: bool,
 }
 
 pub const LANGUAGES: [&str; 2] = ["fr", "en"];
@@ -243,7 +248,7 @@ fn default_language() -> String {
 
 impl Default for GeneralSettings {
     fn default() -> Self {
-        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false, check_updates: true, language: default_language() }
+        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false, check_updates: true, language: default_language(), alerts_enabled: true }
     }
 }
 
