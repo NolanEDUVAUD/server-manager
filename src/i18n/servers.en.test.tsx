@@ -24,9 +24,9 @@ describe("serveurs, clés SSH et formats en anglais", () => {
     setLanguage("en");
     expect(authWarning("Key", [], null)).toMatch(/^No SSH key saved/);
     expect(deployBlockedReason("ESXi")).toMatch(/^Automatic deployment is not possible on ESXi/);
-    const server = { id: "a", name: "minipc", auth_method: "Agent", jump_host_id: "b" } as Server;
+    const server = { id: "a", name: "minipc", auth_method: "Password", jump_host_id: "b" } as Server;
     const jump = { id: "b", name: "FwNode" } as Server;
-    expect(authSummary(server, [], [server, jump])).toBe("SSH agent · via FwNode");
+    expect(authSummary(server, [], [server, jump])).toBe("Password · via FwNode");
   });
 
   it("boutons par défaut des confirmations", () => {

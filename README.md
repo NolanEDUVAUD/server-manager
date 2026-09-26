@@ -20,7 +20,7 @@ Construit avec **Tauri v2** (backend Rust) et **React + TypeScript + Tailwind** 
 - **Proxmox** : état du cluster, VM/CT, sauvegardes, migration
 - **Docker** : conteneurs et images à mettre à jour
 - **Console SSH** intégrée, snippets, tâches en lot sur plusieurs serveurs avec réponse aux questions interactives (dpkg, apt)
-- **Clés SSH** : paire ed25519 générée dans l'app ou import d'une clé OpenSSH / PuTTY (.ppk), agent SSH (OpenSSH de Windows, Pageant), déploiement de la clé sur un serveur en un clic, hôte de rebond
+- **Clés SSH** : paire ed25519 générée dans l'app ou import d'une clé OpenSSH / PuTTY (.ppk), déploiement de la clé sur un serveur en un clic, hôte de rebond
 - **Planificateur** : tâches programmées, avec création des cronjobs directement sur les serveurs Linux
 - **Mises à jour** (apt), **réseau**, **logs** (Loki), zone de notification Windows
 - **Thèmes** : One Half Dark, Fluent, Gruvbox Dark, Nord, Dracula, Catppuccin Mocha, Tokyo Night, ou thème personnalisé
@@ -140,7 +140,7 @@ Un guide utilisateur détaillé, module par module, est disponible dans
 - [Démarrage](docs/guide/demarrage.md) — installation, premier lancement, mises à jour, sauvegarde/restauration
 - [Interface](docs/guide/interface.md) — barre latérale, palette de commandes, raccourcis clavier, thèmes
 - [Fonctionnalités](docs/guide/fonctionnalites.md) — guide de chaque module (serveurs, réseau, tâches en lot, alertes, Proxmox…)
-- [Authentification SSH](docs/guide/ssh.md) — mot de passe, clé, agent SSH, hôte de rebond, dépannage
+- [Authentification SSH](docs/guide/ssh.md) — mot de passe, clé, hôte de rebond, dépannage
 - [Extensions communautaires](docs/extensions.md) — format de manifeste, création, installation
 - [Signaler un problème](docs/guide/signaler-un-probleme.md)
 - [Contribuer](docs/CONTRIBUTING.md) — compilation, tests, conventions de code

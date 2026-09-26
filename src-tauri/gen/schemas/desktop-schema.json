@@ -1095,12 +1095,6 @@
           "markdownDescription": "Enables the smart_batch_run command without any pre-configured scope."
         },
         {
-          "description": "Enables the ssh_agent_status command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-ssh-agent-status",
-          "markdownDescription": "Enables the ssh_agent_status command without any pre-configured scope."
-        },
-        {
           "description": "Enables the ssh_execute command without any pre-configured scope.",
           "type": "string",
           "const": "allow-ssh-execute",
@@ -2053,12 +2047,6 @@
           "type": "string",
           "const": "deny-smart-batch-run",
           "markdownDescription": "Denies the smart_batch_run command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the ssh_agent_status command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-ssh-agent-status",
-          "markdownDescription": "Denies the ssh_agent_status command without any pre-configured scope."
         },
         {
           "description": "Denies the ssh_execute command without any pre-configured scope.",

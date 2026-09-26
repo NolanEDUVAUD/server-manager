@@ -31,11 +31,6 @@ export const sshKeys = {
   copiedPublic: "Clé publique copiée",
   copyFailed: "Copie impossible : sélectionne la clé publique et copie-la à la main",
   deleted: "Clé « {name} » supprimée",
-  agentTitle: "Agent SSH",
-  agentHelp: "Agent OpenSSH de Windows (canal nommé) puis Pageant : méthode « Agent SSH » d'un serveur.",
-  detect: "Détecter",
-  agentNoKeys: "Agent joignable ({sources}) mais aucune clé chargée.",
-  agentUnreachable: "Aucun agent SSH joignable ({errors}).",
   deleteTitle: "Supprimer la clé « {name} »",
   deleteInUse: "Cette clé est utilisée par {servers}. Choisis d'abord une autre méthode d'authentification pour ces serveurs.",
   deleteMessage:

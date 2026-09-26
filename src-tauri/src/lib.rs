@@ -33,7 +33,6 @@ mod tray;
 mod updates;
 // ── Authentification SSH par clé (1.2) ──
 mod ppk;
-mod ssh_agent;
 mod ssh_auth;
 mod ssh_keys;
 #[cfg(test)]
@@ -316,7 +315,6 @@ pub fn run() {
             ssh_keys_cmd::ssh_key_delete,
             ssh_keys_cmd::ssh_key_deploy,
             ssh_keys_cmd::ssh_key_use_for_server,
-            ssh_keys_cmd::ssh_agent_status,
             // ── Extensions communautaires (F1) ──────────────────
             extensions_cmd::get_extensions,
             extensions_cmd::install_extension,

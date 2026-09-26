@@ -219,4 +219,38 @@ mod tests {
 
         let _ = std::fs::remove_file(&path);
     }
+
+    /// Fonctionnalité « agent SSH » retirée (v0.4.2) : un `data.json` existant avec un serveur en
+    /// `auth_method: "Agent"` doit toujours se lire comme un format v2 valide (jamais retomber sur
+    /// la migration v1, qui perdrait tout ce qui n'existe pas dans ce vieux format : Proxmox,
+    /// alertes, sondes, snippets, tâches en lot…), et le serveur doit ressortir en `Password`.
+    #[test]
+    fn app_data_with_a_legacy_agent_server_round_trips_through_load_without_the_v1_fallback() {
+        let path = temp_data_path("legacy-agent");
+
+        let mut data = crate::models::AppData::default();
+        data.settings.general.language = "en".into();
+        let mut s = crate::models::Server::new(
+            "Workstation".into(), "192.168.1.30".into(), String::new(), "root".into(), String::new(), 22,
+            crate::models::OsType::Linux, None, None,
+        );
+        // Sérialisé tel quel, un ancien fichier écrit avant le retrait de l'agent SSH
+        let mut value = serde_json::to_value(&s).expect("sérialisation du serveur");
+        value.as_object_mut().unwrap().insert("auth_method".into(), serde_json::json!("Agent"));
+        s.auth_method = crate::models::AuthMethod::Password; // peu importe : remplacé par la valeur JSON ci-dessus
+        data.servers.push(s);
+
+        let mut root = serde_json::to_value(&data).expect("sérialisation");
+        root["servers"][0] = value;
+        std::fs::write(&path, serde_json::to_string_pretty(&root).unwrap()).expect("écriture");
+
+        let reloaded = load_app_data(&path);
+        // Preuve que le format v2 a bien été lu (la migration v1 réinitialiserait la langue et les sondes)
+        assert_eq!(reloaded.settings.general.language, "en");
+        assert_eq!(reloaded.servers.len(), 1);
+        assert_eq!(reloaded.servers[0].auth_method, crate::models::AuthMethod::Password);
+        assert_eq!(reloaded.servers[0].name, "Workstation");
+
+        let _ = std::fs::remove_file(&path);
+    }
 }
