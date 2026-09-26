@@ -1,6 +1,6 @@
 /** Paramètres → Extensions : extensions communautaires (manifeste JSON déclaratif, sans code) */
 export const extensions = {
-  intro: "Ajoute des commandes mémorisées, des thèmes et des entrées de catalogue de services depuis un simple fichier JSON. Aucune extension ne peut exécuter de code : voir docs/extensions.md pour le format.",
+  intro: "Ajoute des commandes mémorisées, des thèmes et des liens web depuis un simple fichier JSON. Aucune extension ne peut exécuter de code : voir docs/extensions.md pour le format.",
   warning: "Les extensions communautaires ne sont pas vérifiées par l'éditeur de l'application. N'installe que celles dont tu connais la source.",
   installedTitle: "Extensions installées",
   none: "Aucune extension installée.",
@@ -10,7 +10,7 @@ export const extensions = {
   disable: "Désactiver",
   uninstall: "Désinstaller",
   uninstallConfirmTitle: "Désinstaller l'extension",
-  uninstallConfirmMessage: "« {name} » sera désinstallée. Ses commandes, thèmes et entrées de catalogue disparaîtront des listes.",
+  uninstallConfirmMessage: "« {name} » sera désinstallée. Ses commandes, thèmes et liens disparaîtront des listes.",
   contributes: "{count} contribution(s)",
   homepage: "Page d'accueil",
   webLinksTitle: "Liens",

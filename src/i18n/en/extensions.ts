@@ -1,7 +1,7 @@
 import type { Dict } from "..";
 
 export const extensions: Dict["extensions"] = {
-  intro: "Add snippets, themes and service catalog entries from a plain JSON file. No extension can run code: see docs/extensions.md for the format.",
+  intro: "Add snippets, themes and web links from a plain JSON file. No extension can run code: see docs/extensions.md for the format.",
   warning: "Community extensions are not vetted by the app's editor. Only install ones whose source you trust.",
   installedTitle: "Installed extensions",
   none: "No extension installed.",
@@ -11,7 +11,7 @@ export const extensions: Dict["extensions"] = {
   disable: "Disable",
   uninstall: "Uninstall",
   uninstallConfirmTitle: "Uninstall extension",
-  uninstallConfirmMessage: "«{name}» will be uninstalled. Its snippets, themes and catalog entries will disappear from the lists.",
+  uninstallConfirmMessage: "«{name}» will be uninstalled. Its snippets, themes and links will disappear from the lists.",
   contributes: "{count} contribution(s)",
   homepage: "Homepage",
   webLinksTitle: "Links",

@@ -10,6 +10,7 @@ import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { cn } from "../utils";
 import { useT } from "../i18n";
+import { ServerIconDisplay } from "../components/IconPicker";
 
 type HostState = { loading: boolean; host?: DockerHost; error?: string };
 
@@ -159,7 +160,7 @@ export function Docker() {
                   : "border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary"
               )}
             >
-              <span>{OS_ICONS[s.os_type]}</span>
+              <span>{s.icon ? <ServerIconDisplay icon={s.icon} size={14} /> : OS_ICONS[s.os_type]}</span>
               {s.name}
               <span className={cn("text-[11px]", usable ? "text-accent-success" : "text-text-muted")}>{hostBadge(s.id)}</span>
             </button>

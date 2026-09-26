@@ -7,6 +7,7 @@ import { Dropdown } from "../components/Dropdown";
 import { OS_ICONS, TerminalStatus } from "../types";
 import { cn } from "../utils";
 import { useT } from "../i18n";
+import { ServerIconDisplay } from "../components/IconPicker";
 
 const STATUS_DOT: Record<TerminalStatus, string> = {
   connecting: "bg-accent-warning animate-pulse-soft",
@@ -36,7 +37,7 @@ function ServerPicker({ onPick, compact }: { onPick: (id: string) => void; compa
                 : "p-3 rounded-win bg-bg-tertiary border border-border-primary hover:border-accent-primary/40 hover:shadow-win-hover"
             )}
           >
-            <span className="text-lg shrink-0">{OS_ICONS[s.os_type]}</span>
+            <span className="text-lg shrink-0">{s.icon ? <ServerIconDisplay icon={s.icon} size={18} /> : OS_ICONS[s.os_type]}</span>
             <span className="min-w-0 flex-1">
               <span className="block text-text-primary text-sm truncate">{s.name}</span>
               <span className="block text-text-muted text-xs truncate">{s.ssh_user}@{s.ip}</span>
