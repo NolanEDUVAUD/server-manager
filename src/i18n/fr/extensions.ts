@@ -27,5 +27,6 @@ export const extensions = {
   installed: "Extension « {name} » installée",
   uninstalled: "Extension désinstallée",
   invalidTitle: "Manifeste invalide",
+  tooOld: "Cette extension demande la version {required} de l'application ou plus récente (installée : {current}). Mets l'application à jour pour l'installer.",
   httpsOnly: "Seules les URL en https:// sont autorisées",
 };

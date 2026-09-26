@@ -3,17 +3,12 @@
 // Markdown) reste valide au regard du schéma réel. Si ce test casse, c'est
 // que le schéma a changé sans que la documentation ne soit mise à jour.
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseAndValidateManifest } from "./extensions";
-
-const HERE = dirname(fileURLToPath(import.meta.url));
-const MANIFEST_PATH = join(HERE, "..", "..", "docs", "examples", "homelab-extras", "manifest.json");
+import example from "../../docs/examples/homelab-extras/manifest.json";
 
 describe("exemple de manifeste documenté (docs/extensions.md)", () => {
   it("le fichier docs/examples/homelab-extras/manifest.json passe validateManifest", () => {
-    const raw = readFileSync(MANIFEST_PATH, "utf-8");
+    const raw = JSON.stringify(example);
     const result = parseAndValidateManifest(raw);
     if (!result.ok) {
       throw new Error(`Manifeste d'exemple invalide :\n${result.errors.join("\n")}`);

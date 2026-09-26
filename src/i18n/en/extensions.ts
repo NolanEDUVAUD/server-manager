@@ -28,5 +28,6 @@ export const extensions: Dict["extensions"] = {
   installed: "Extension «{name}» installed",
   uninstalled: "Extension uninstalled",
   invalidTitle: "Invalid manifest",
+  tooOld: "This extension requires app version {required} or later (installed: {current}). Update the app to install it.",
   httpsOnly: "Only https:// URLs are allowed",
 };

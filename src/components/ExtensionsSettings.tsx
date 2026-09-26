@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
+import { compareVersions } from "../utils/changelog";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { AlertTriangle, Copy, Download, FileJson, Link2, Package, Trash2 } from "lucide-react";
 import { useT } from "../i18n";
@@ -52,6 +54,15 @@ export function ExtensionsSettings() {
     if (!result.ok) {
       setManifestErrors(result.errors);
       return;
+    }
+    // minAppVersion : refuse une extension prévue pour une version plus récente de l'app
+    const minApp = result.manifest.minAppVersion;
+    if (minApp) {
+      const current = await getVersion().catch(() => null);
+      if (current && compareVersions(current, minApp) < 0) {
+        setManifestErrors([t("extensions.tooOld", { required: minApp, current })]);
+        return;
+      }
     }
     setInstalling(true);
     try {

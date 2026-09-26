@@ -215,13 +215,12 @@ Le champ `version` de l'extension suit le format **semver**
 (`MAJOR.MINOR.PATCH`, avec un suffixe de pré-version optionnel comme
 `-beta.1`) ; il sert à distinguer les mises à jour d'une même extension.
 
-`minAppVersion`, également en semver, documente la version minimale de
-l'application pour laquelle l'extension a été conçue. Il est **validé pour
-son format** (rejeté s'il n'est pas un semver valide), mais il est
-**informatif** : l'installation n'est aujourd'hui **pas bloquée** si la
-version installée de l'application est inférieure à `minAppVersion`. Indique
-cette valeur pour informer les utilisateurs, mais ne compte pas dessus pour
-empêcher une installation sur une version trop ancienne.
+`minAppVersion`, également en semver, indique la version minimale de
+l'application requise. Il est validé pour son format, puis **vérifié à
+l'installation** : si la version installée de l'application est plus ancienne,
+l'installation est refusée avec le message « Cette extension demande la
+version X de l'application ou plus récente ». Seuls les trois nombres
+`MAJOR.MINOR.PATCH` sont comparés (un suffixe comme `-beta.1` est ignoré).
 
 ## Publier et partager une extension
 
