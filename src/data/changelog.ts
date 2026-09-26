@@ -29,6 +29,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       { fr: "Bases de données : liste des bases et tables (taille, nombre de lignes), utilisateurs, et un éditeur de requêtes SQL avec un mode lecture seule par défaut", en: "Databases: list of databases and tables (size, row count), users, and a SQL query editor with read-only mode by default" },
       { fr: "Bases de données : création et suppression de base (confirmation par saisie du nom), sauvegarde vers un fichier horodaté, et démarrage/arrêt/redémarrage du service", en: "Databases: create and drop a database (confirm by typing its name), backup to a timestamped file, and start/stop/restart the service" },
       { fr: "Bases de données : authentification système par défaut (aucun mot de passe à saisir), ou identifiants applicatifs chiffrés comme les autres secrets de l'app", en: "Databases: system authentication by default (nothing to enter), or app credentials encrypted like the app's other secrets" },
+      { fr: "Serveurs : bouton rapide pour copier la commande SSH prête à coller, avec un message clair si le presse-papiers échoue", en: "Servers: quick button to copy a ready-to-paste SSH command, with clear feedback if the clipboard fails" },
+      { fr: "Zone de notification : le clic droit sur « Ouvrir » et « Quitter » fonctionne de nouveau", en: "System tray: right-clicking \"Open\" and \"Quit\" works again" },
     ],
   },
   {

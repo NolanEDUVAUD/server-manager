@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Plus, Server, Pencil, Trash2, Zap, Power, RotateCcw, Loader2, ChevronDown, ChevronRight, Folder as FolderIcon, Inbox, KeyRound } from "lucide-react";
+import { Plus, Server, Pencil, Trash2, Zap, Power, RotateCcw, Loader2, ChevronDown, ChevronRight, Folder as FolderIcon, Inbox, KeyRound, Copy } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { Server as ServerType, ServerPayload, OS_ICONS } from "../types";
 import { ServerForm } from "../components/ServerForm";
@@ -13,7 +13,7 @@ import { OrganisationManager } from "../components/OrganisationManager";
 import { useToast } from "../hooks/useToast";
 import { useShortcuts } from "../hooks/useShortcuts";
 import { filterItems, groupByFolder, serverFilterable } from "../utils/filters";
-import { cn } from "../utils";
+import { cn, copyToClipboard } from "../utils";
 import { DeployKeyDialog } from "../components/DeployKeyDialog";
 import { ServerIconDisplay } from "../components/IconPicker";
 import { useT } from "../i18n";
@@ -108,6 +108,13 @@ export function Servers() {
     } finally {
       setDeletingServer(null);
     }
+
+    async function handleCopySshCommand(server: ServerType) {
+      const command = `ssh ${server.ssh_user}@${server.ip} -p ${server.ssh_port}`;
+      const ok = await copyToClipboard(command);
+      if (ok) toast.success(t("servers.sshCommandCopied", { name: server.name }));
+      else toast.error(t("servers.sshCommandCopyFailed"));
+    }
   }
 
   function renderRow(server: ServerType) {
@@ -140,9 +147,20 @@ export function Servers() {
                 </span>
                 <TagList tagIds={server.tag_ids} tags={tags} />
               </div>
-              <p className="text-xs text-text-secondary font-mono">
-                {server.ssh_user}@{server.ip}:{server.ssh_port}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs text-text-secondary font-mono">
+                  {server.ssh_user}@{server.ip}:{server.ssh_port}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleCopySshCommand(server)}
+                  className="p-1 rounded text-text-muted hover:text-accent-primary hover:bg-accent-primary/10 transition-colors"
+                  title={t("servers.copySshCommand")}
+                  aria-label={t("servers.copySshCommandOf", { name: server.name })}
+                >
+                  <Copy size={11} />
+                </button>
+              </div>
             </div>
           </div>
 
