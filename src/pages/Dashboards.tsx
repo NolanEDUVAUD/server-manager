@@ -7,6 +7,7 @@ import { cn } from "../utils";
 import { webTargets, WebTarget } from "../utils/webTargets";
 import { useToast } from "../hooks/useToast";
 import { ToastContainer } from "../components/Toast";
+import { Dropdown } from "../components/Dropdown";
 import { useT } from "../i18n";
 
 /** Liste des interfaces web ouvrables (menu déroulant ou page vide). */
@@ -56,7 +57,7 @@ export function Dashboards() {
     servers, proxmoxConnections, loadProxmoxConnections,
   } = useStore();
   const containerRef = useRef<HTMLDivElement>(null);
-  const pickerRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLButtonElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const { toasts, removeToast, error } = useToast();
 
@@ -84,16 +85,6 @@ export function Dashboards() {
       invoke("set_dashboard_tab_visible", { label: activeDashboardTabLabel, visible: false }).catch(() => {});
     };
   }, [activeDashboardTabLabel, pickerOpen]);
-
-  // Fermer le menu au clic à l'extérieur
-  useEffect(() => {
-    if (!pickerOpen) return;
-    function onClick(e: MouseEvent) {
-      if (!pickerRef.current?.contains(e.target as Node)) setPickerOpen(false);
-    }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [pickerOpen]);
 
   function pick(target: WebTarget) {
     setPickerOpen(false);
@@ -140,19 +131,18 @@ export function Dashboards() {
         </div>
 
         {dashboardTabs.length > 0 && (
-          <div ref={pickerRef} className="relative shrink-0">
+          <div className="relative shrink-0">
             <button
+              ref={pickerRef}
               onClick={() => setPickerOpen((o) => !o)}
               className="p-1.5 ml-1 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
               title={t("webTabs.openWeb")}
             >
               <Plus size={14} />
             </button>
-            {pickerOpen && (
-              <div className="absolute left-0 top-full mt-1 w-72 max-h-80 overflow-y-auto z-20 bg-bg-tertiary border border-border-primary rounded-win shadow-win-hover animate-fade-in">
-                <TargetPicker targets={targets} openLabels={openLabels} onPick={pick} compact />
-              </div>
-            )}
+            <Dropdown open={pickerOpen} onClose={() => setPickerOpen(false)} anchorRef={pickerRef} className="w-72 max-h-80 overflow-y-auto bg-bg-tertiary border border-border-primary rounded-win shadow-win-hover animate-fade-in">
+              <TargetPicker targets={targets} openLabels={openLabels} onPick={pick} compact />
+            </Dropdown>
           </div>
         )}
       </div>

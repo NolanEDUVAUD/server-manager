@@ -160,7 +160,7 @@ export function ServerForm({ initial, prefill, onSubmit, onCancel }: ServerFormP
   const errorClass = "text-xs text-red-400 mt-1";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-2xl mx-4 animate-slide-in max-h-[90vh] overflow-y-auto">
         {/* Header */}

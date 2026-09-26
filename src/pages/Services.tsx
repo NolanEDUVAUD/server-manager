@@ -43,7 +43,7 @@ function ProbeForm({ initial, help, onSubmit, onCancel }: { initial: Probe; help
   const setKind = (patch: Partial<ProbeKind>) => setP((x) => ({ ...x, kind: { ...x.kind, ...patch } as ProbeKind }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-slide-in">
         <div className="flex items-center justify-between p-5 border-b border-border-primary">
@@ -185,7 +185,7 @@ function CatalogPicker({ onPick, onCancel }: { onPick: (p: Probe, preset: Servic
   const categories = [...new Set(list.map((s) => s.category))];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col animate-slide-in">
         <div className="flex items-center justify-between p-5 border-b border-border-primary">

@@ -54,7 +54,7 @@ export function MigrateModal({ vm, connectionId, onClose, onDone }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={phase.kind === "running" ? undefined : onClose} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-lg mx-4 animate-slide-in">
         <div className="flex items-center justify-between p-5 border-b border-border-primary">

@@ -36,7 +36,7 @@ function LogsModal({ serverId, container, onClose }: { serverId: string; contain
   useEffect(load, [load]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-4xl mx-4 h-[75vh] flex flex-col animate-slide-in">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border-primary shrink-0">
