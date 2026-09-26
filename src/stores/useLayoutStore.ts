@@ -64,6 +64,7 @@ interface LayoutState {
   setPageGap: (gap: PageGap) => void;
   setTabOrder: (order: string[]) => void;
   resetTabOrder: () => void;
+  resetFavorites: () => void;
   setFavorites: (favorites: string[]) => void;
   addFavorite: (route: string, before?: string | null) => void;
   removeFavorite: (route: string) => void;
@@ -111,6 +112,7 @@ export const useLayoutStore = create<LayoutState>()(
       setPageGap: (gap) => set({ pageGap: gap }),
       setTabOrder: (order) => set({ tabOrder: order }),
       resetTabOrder: () => set({ tabOrder: [] }),
+      resetFavorites: () => set({ favorites: [] }),
       setFavorites: (favorites) => set({ favorites }),
       addFavorite: (route, before) => set((s) => ({ favorites: addToFavorites(s.favorites, route, before) })),
       removeFavorite: (route) => set((s) => ({ favorites: removeFromFavorites(s.favorites, route) })),

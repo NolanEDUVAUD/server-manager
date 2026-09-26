@@ -64,19 +64,10 @@ describe("Layout", () => {
     expect(screen.getByText("Glissez un onglet ici")).toBeInTheDocument();
   });
 
-  it("ouvre le panneau de personnalisation et change la densité des pages", () => {
+  it("affiche l'onglet Paramètres en bas de la barre latérale", () => {
     renderLayout();
-    fireEvent.click(screen.getByTitle("Personnaliser"));
-    fireEvent.click(screen.getByText("Spacieux"));
-    expect(useLayoutStore.getState().pageGap).toBe("spacious");
-  });
-
-  it("réinitialise l'ordre des onglets depuis le panneau de personnalisation", () => {
-    useLayoutStore.setState({ tabOrder: ["/servers", "/"] });
-    renderLayout();
-    fireEvent.click(screen.getByTitle("Personnaliser"));
-    fireEvent.click(screen.getByText("Réinitialiser l'ordre des onglets"));
-    expect(useLayoutStore.getState().tabOrder).toEqual([]);
+    const settingsLink = screen.getAllByTitle("Paramètres").find((el) => el.tagName === "A");
+    expect(settingsLink).toBeInTheDocument();
   });
 
   // ── Glisser-déposer des onglets (au pointeur, pas en HTML5 drag & drop : voir Layout.tsx) ──

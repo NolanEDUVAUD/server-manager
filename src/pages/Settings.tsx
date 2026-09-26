@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Download, Upload, Copy } from 'lucide-react';
+import { Download, Upload, Copy, RotateCcw } from 'lucide-react';
 import { useStore } from '../stores/useStore';
 import { useTourStore } from '../stores/useTourStore';
 import { useToast } from '../hooks/useToast';
@@ -27,6 +27,8 @@ import { useT } from '../i18n';
 import { ExtensionsSettings } from '../components/ExtensionsSettings';
 import { isExtensionId, mergeThemes } from '../utils/extensions';
 import { useInstalledExtensions } from '../hooks/useInstalledExtensions';
+import { useLayoutStore, PageGap, PAGE_GAP_PX } from '../stores/useLayoutStore';
+import { cn } from '../utils';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
 type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'extensions' | 'config' | 'updates' | 'report' | 'coffee' | 'about';
@@ -284,6 +286,13 @@ function SectionAppearance() {
   const extensions = useInstalledExtensions();
   const displayedThemes = mergeThemes(extensions, allThemes);
 
+  // Layout store (densité des pages, réinitialisation)
+  const pageGap = useLayoutStore((s) => s.pageGap);
+  const setPageGap = useLayoutStore((s) => s.setPageGap);
+  const resetTabOrder = useLayoutStore((s) => s.resetTabOrder);
+  const resetFavorites = useLayoutStore((s) => s.resetFavorites);
+  const resetSidebarWidth = useLayoutStore((s) => s.resetSidebarWidth);
+
   const handleChange = async (partial: Partial<AppearanceSettings>) => {
     try {
       await updateAppearance(partial);
@@ -291,6 +300,8 @@ function SectionAppearance() {
       error(String(e));
     }
   };
+
+  const PAGE_GAP_CHOICES: PageGap[] = ["compact", "normal", "spacious"];
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -379,6 +390,57 @@ function SectionAppearance() {
             }}
           />
         )}
+      </div>
+
+      {/* Barre latérale et mise en page */}
+      <div className="space-y-3 bg-bg-tertiary rounded-win p-4">
+        <h3 className="text-text-primary text-sm font-medium">{t("settingsPage.appearance.sidebarLayout")}</h3>
+
+        {/* Densité des pages */}
+        <div>
+          <p className="text-[11px] text-text-secondary mb-1.5">{t("layout.pageGapLabel")}</p>
+          <div className="flex gap-1">
+            {PAGE_GAP_CHOICES.map((choice) => (
+              <button
+                key={choice}
+                onClick={() => setPageGap(choice)}
+                className={cn(
+                  "flex-1 px-2 py-1 rounded-win text-xs transition-colors",
+                  pageGap === choice
+                    ? "bg-accent-primary text-white"
+                    : "bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-hover"
+                )}
+              >
+                {t(`layout.pageGap.${choice}` as const)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Boutons de réinitialisation */}
+        <div className="space-y-2 pt-2 border-t border-border-secondary">
+          <button
+            onClick={resetTabOrder}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-win text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+          >
+            <RotateCcw size={13} />
+            {t("layout.resetOrder")}
+          </button>
+          <button
+            onClick={resetFavorites}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-win text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+          >
+            <RotateCcw size={13} />
+            {t("settingsPage.appearance.resetFavorites")}
+          </button>
+          <button
+            onClick={resetSidebarWidth}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-win text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+          >
+            <RotateCcw size={13} />
+            {t("settingsPage.appearance.resetSidebarWidth")}
+          </button>
+        </div>
       </div>
     </div>
   );

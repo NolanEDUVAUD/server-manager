@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getVersion } from "@tauri-apps/api/app";
 import {
   LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare,
   History, CalendarClock, Container, BellRing, Archive, PowerOff, Network, ListChecks, PackageSearch,
-  ScrollText, Lock, Pin, PinOff, SlidersHorizontal, RotateCcw,
+  ScrollText, Lock, Pin, PinOff, SlidersHorizontal, RotateCcw, Info,
 } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { useLockStore } from "../stores/useLockStore";
 import {
   useLayoutStore, mergeOrder, moveItem, PAGE_GAP_PX, PageGap,
-  SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_COLLAPSE_WIDTH,
+  SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_COLLAPSE_WIDTH, SIDEBAR_DEFAULT_WIDTH,
 } from "../stores/useLayoutStore";
 import { cn } from "../utils";
 import { isVisible } from "../utils/modules";
@@ -113,20 +114,28 @@ export function Layout({ children }: LayoutProps) {
   // ── Densité des pages ────────────────────────────────────────────────────
   const pageGap = useLayoutStore((s) => s.pageGap);
   const setPageGap = useLayoutStore((s) => s.setPageGap);
-  const [customizeOpen, setCustomizeOpen] = useState(false);
 
   // ── Ordre des onglets et favoris (glisser-déposer) ──────────────────────
   const tabOrderRaw = useLayoutStore((s) => s.tabOrder);
   const favoritesRaw = useLayoutStore((s) => s.favorites);
   const setTabOrder = useLayoutStore((s) => s.setTabOrder);
   const resetTabOrder = useLayoutStore((s) => s.resetTabOrder);
+  const resetFavorites = useLayoutStore((s) => s.resetFavorites);
   const addFavorite = useLayoutStore((s) => s.addFavorite);
   const removeFavorite = useLayoutStore((s) => s.removeFavorite);
 
-  const defaultOrder = nav.map((n) => n.to);
-  const order = mergeOrder(defaultOrder, tabOrderRaw);
-  const favorites = favoritesRaw.filter((r) => defaultOrder.includes(r));
-  const byRoute = new Map<string, NavItem>(nav.map((n) => [n.to, n]));
+  // Séparer /settings des autres onglets (ne doit pas être draggable)
+  const navWithoutSettings = nav.filter((n) => n.to !== "/settings");
+  const settingsItem = nav.find((n) => n.to === "/settings");
+
+  const defaultOrder = navWithoutSettings.map((n) => n.to);
+  // Nettoyer les ordres/favoris persistés contenant /settings
+  const cleanedTabOrder = tabOrderRaw.filter((r) => r !== "/settings");
+  const cleanedFavorites = favoritesRaw.filter((r) => r !== "/settings");
+
+  const order = mergeOrder(defaultOrder, cleanedTabOrder);
+  const favorites = cleanedFavorites.filter((r) => defaultOrder.includes(r));
+  const byRoute = new Map<string, NavItem>(navWithoutSettings.map((n) => [n.to, n]));
   const favNav = favorites.map((r) => byRoute.get(r)).filter((n): n is NavItem => !!n);
   const mainNav = order
     .filter((r) => !favorites.includes(r))
@@ -267,15 +276,72 @@ export function Layout({ children }: LayoutProps) {
     e.stopPropagation();
   }
 
-  function renderNavItem(item: NavItem, opts: { favorite: boolean }) {
+  // État des popovers d'info
+  const [openHelpPopover, setOpenHelpPopover] = useState<string | null>(null);
+  const helpPopoverRef = useRef<{ route: string; timeoutId: ReturnType<typeof setTimeout> } | null>(null);
+
+  // Mapping des routes vers les clés d'aide (pour éviter les clés dynamiques)
+  const helpKeyMap: Record<string, string> = {
+    "/": "dashboard",
+    "/servers": "servers",
+    "/groups": "groups",
+    "/lab-power": "power",
+    "/resources": "resources",
+    "/network": "network",
+    "/docker": "docker",
+    "/console": "console",
+    "/batch": "batch",
+    "/updates": "updates",
+    "/history": "history",
+    "/logs": "logs",
+    "/alerts": "alerts",
+    "/scheduler": "scheduler",
+    "/proxmox": "proxmox",
+    "/backups": "backups",
+    "/dashboards": "web",
+    "/settings": "settings",
+  };
+
+  const getHelpText = (route: string): string => {
+    const key = helpKeyMap[route];
+    const helpTexts: Record<string, string> = {
+      dashboard: t("layout.help.dashboard"),
+      servers: t("layout.help.servers"),
+      groups: t("layout.help.groups"),
+      power: t("layout.help.power"),
+      resources: t("layout.help.resources"),
+      network: t("layout.help.network"),
+      docker: t("layout.help.docker"),
+      console: t("layout.help.console"),
+      batch: t("layout.help.batch"),
+      updates: t("layout.help.updates"),
+      history: t("layout.help.history"),
+      logs: t("layout.help.logs"),
+      alerts: t("layout.help.alerts"),
+      scheduler: t("layout.help.scheduler"),
+      proxmox: t("layout.help.proxmox"),
+      backups: t("layout.help.backups"),
+      web: t("layout.help.web"),
+      settings: t("layout.help.settings"),
+    };
+    return key ? helpTexts[key] : "";
+  };
+
+  function renderNavItem(item: NavItem, opts: { favorite: boolean; isSettings?: boolean }) {
     const { to, icon: Icon, labelKey } = item;
     const dropHere = dropTarget?.route === to;
+    const isSettings = opts.isSettings ?? false;
+
+    // Pour le mode collapsed, on ajoute " — description" au titre
+    const helpText = getHelpText(to);
+    const collapsedTitle = collapsed ? `${t(labelKey)} — ${helpText}` : undefined;
+
     return (
       <div
         key={to}
         data-nav-route={to}
-        onPointerDown={onItemPointerDown(to)}
-        onClickCapture={onItemClickCapture}
+        onPointerDown={isSettings ? undefined : onItemPointerDown(to)}
+        onClickCapture={isSettings ? undefined : onItemClickCapture}
         className={cn(
           "group/nav relative touch-none",
           dragRoute === to && "opacity-50",
@@ -286,7 +352,7 @@ export function Layout({ children }: LayoutProps) {
         <NavLink
           to={to}
           end={to === "/"}
-          title={t(labelKey)}
+          title={collapsedTitle || t(labelKey)}
           // Un lien est glissable nativement : le navigateur lancerait son propre glisser
           // (et annulerait les événements pointeur, pointerup compris). On le désactive.
           draggable={false}
@@ -304,19 +370,73 @@ export function Layout({ children }: LayoutProps) {
           <Icon size={16} className="shrink-0" />
           {!collapsed && <span className="truncate">{t(labelKey)}</span>}
         </NavLink>
-        {!collapsed && (
-          <button
-            type="button"
-            title={opts.favorite ? t("layout.unpin") : t("layout.pin")}
-            onClick={() => (opts.favorite ? removeFavorite(to) : addFavorite(to))}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary opacity-0 group-hover/nav:opacity-100 hover:text-accent-primary hover:bg-bg-hover transition-opacity"
-          >
-            {opts.favorite ? <PinOff size={13} /> : <Pin size={13} />}
-          </button>
+        {!collapsed && !isSettings && (
+          <>
+            <button
+              type="button"
+              title={helpText}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setOpenHelpPopover(openHelpPopover === to ? null : to);
+              }}
+              onMouseEnter={() => {
+                if (helpPopoverRef.current) clearTimeout(helpPopoverRef.current.timeoutId);
+                setOpenHelpPopover(to);
+              }}
+              onMouseLeave={() => {
+                helpPopoverRef.current = {
+                  route: to,
+                  timeoutId: setTimeout(() => {
+                    setOpenHelpPopover((current) => (current === to ? null : current));
+                  }, 150),
+                };
+              }}
+              className="absolute right-9 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary opacity-0 group-hover/nav:opacity-100 hover:text-accent-primary hover:bg-bg-hover transition-opacity"
+            >
+              <Info size={12} />
+            </button>
+            <button
+              type="button"
+              title={opts.favorite ? t("layout.unpin") : t("layout.pin")}
+              onClick={() => (opts.favorite ? removeFavorite(to) : addFavorite(to))}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary opacity-0 group-hover/nav:opacity-100 hover:text-accent-primary hover:bg-bg-hover transition-opacity"
+            >
+              {opts.favorite ? <PinOff size={13} /> : <Pin size={13} />}
+            </button>
+          </>
         )}
       </div>
     );
   }
+
+  // Popover d'aide
+  useEffect(() => {
+    if (openHelpPopover && helpPopoverRef.current?.timeoutId) {
+      clearTimeout(helpPopoverRef.current.timeoutId);
+      helpPopoverRef.current = null;
+    }
+  }, [openHelpPopover]);
+
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpenHelpPopover(null);
+    }
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Element | null;
+      if (!target?.closest(".help-popover") && !target?.closest("[class*='group/nav']")) {
+        setOpenHelpPopover(null);
+      }
+    }
+    if (openHelpPopover) {
+      document.addEventListener("keydown", handleEscape);
+      document.addEventListener("click", handleClickOutside);
+      return () => {
+        document.removeEventListener("keydown", handleEscape);
+        document.removeEventListener("click", handleClickOutside);
+      };
+    }
+  }, [openHelpPopover]);
 
   return (
     <div
@@ -414,51 +534,12 @@ export function Layout({ children }: LayoutProps) {
           </div>
         )}
 
-        {/* Personnalisation : densité des pages, réinitialisation de l'ordre */}
-        <div className="relative px-2 py-2 border-t border-border-primary shrink-0">
-          <button
-            onClick={() => setCustomizeOpen((v) => !v)}
-            title={t("layout.customize")}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-win text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all duration-150",
-              collapsed ? "justify-center" : "justify-start"
-            )}
-          >
-            <SlidersHorizontal size={16} className="shrink-0" />
-            {!collapsed && <span className="truncate">{t("layout.customize")}</span>}
-          </button>
-          {customizeOpen && (
-            <div className="absolute bottom-full left-2 mb-2 w-64 bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover p-3 space-y-3 z-20">
-              <p className="text-xs font-semibold text-text-primary">{t("layout.customizeTitle")}</p>
-              <div>
-                <p className="text-[11px] text-text-secondary mb-1.5">{t("layout.pageGapLabel")}</p>
-                <div className="flex gap-1">
-                  {PAGE_GAP_CHOICES.map((choice) => (
-                    <button
-                      key={choice}
-                      onClick={() => setPageGap(choice)}
-                      className={cn(
-                        "flex-1 px-2 py-1 rounded-win text-xs transition-colors",
-                        pageGap === choice
-                          ? "bg-accent-primary text-white"
-                          : "bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-hover"
-                      )}
-                    >
-                      {t(`layout.pageGap.${choice}` as const)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <button
-                onClick={resetTabOrder}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-win text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
-              >
-                <RotateCcw size={13} />
-                {t("layout.resetOrder")}
-              </button>
-            </div>
-          )}
-        </div>
+        {/* Paramètres : épinglé en bas, au-dessus du compteur en ligne */}
+        {settingsItem && (
+          <div className="px-2 py-2 border-t border-border-primary shrink-0">
+            {renderNavItem(settingsItem, { favorite: false, isSettings: true })}
+          </div>
+        )}
 
         {/* Compteur en ligne */}
         {totalCount > 0 && (
@@ -495,6 +576,20 @@ export function Layout({ children }: LayoutProps) {
           className="absolute top-0 -right-0.5 h-full w-1.5 cursor-col-resize hover:bg-accent-primary/40 active:bg-accent-primary/60 z-10"
         />
       </aside>
+
+      {/* ── Popover d'aide ─────────────────────────────────────────────────── */}
+      {openHelpPopover && createPortal(
+        <div
+          className="help-popover fixed bg-bg-tertiary border border-border-primary rounded-win shadow-win-hover p-2 text-xs text-text-secondary z-[9999] max-w-xs"
+          style={{
+            right: "8px",
+            top: `${document.querySelector(`[data-nav-route="${openHelpPopover}"]`)?.getBoundingClientRect().top ?? 0}px`,
+          }}
+        >
+          {getHelpText(openHelpPopover)}
+        </div>,
+        document.body
+      )}
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
       <CommandPalette pages={nav.map((n) => ({ to: n.to, label: t(n.labelKey) }))} />
