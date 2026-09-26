@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 /** Liste des versions avec leurs modifications (ordre décroissant) */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.2",
+    date: "2026-09-26",
+    items: {
+      fr: [
+        "Serveurs : bouton rapide pour copier la commande SSH prête à coller",
+        "Serveurs : message clair si la copie presse-papiers échoue",
+      ],
+      en: [
+        "Servers: quick button to copy a ready-to-paste SSH command",
+        "Servers: clearer feedback when clipboard copy fails",
+      ],
+    },
+  },
+  {
     version: "0.4.1",
     date: "2026-09-27",
     items: {
