@@ -228,8 +228,8 @@ pub fn get_batch_tasks(state: State<AppState>) -> Result<Vec<BatchTask>, String>
 
 #[tauri::command]
 pub fn save_batch_task(state: State<AppState>, mut task: BatchTask) -> Result<BatchTask, String> {
-    if task.name.trim().is_empty() || task.script.trim().is_empty() {
-        return Err("Nom et script requis".into());
+    if task.name.trim().is_empty() || (task.script.trim().is_empty() && task.smart_action.is_none()) {
+        return Err("Nom et script (ou action) requis".into());
     }
     {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;

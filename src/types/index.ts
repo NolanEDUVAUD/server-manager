@@ -588,7 +588,17 @@ export interface Snippet { id: string; name: string; command: string }
 
 export type BatchMode = "Parallel" | "Sequential";
 
-export interface BatchTask { id: string; name: string; script: string; server_ids: string[]; mode: BatchMode; stop_on_error: boolean }
+export interface BatchTask {
+  id: string;
+  name: string;
+  /** Ignoré si `smart_action` est renseigné */
+  script: string;
+  server_ids: string[];
+  mode: BatchMode;
+  stop_on_error: boolean;
+  /** Action portable enregistrée à la place d'un script ; absente/`null` sur les anciennes tâches */
+  smart_action?: SmartAction | null;
+}
 
 export interface AnsibleConfig { server_id: string; dir: string }
 
