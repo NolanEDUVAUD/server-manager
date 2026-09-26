@@ -452,9 +452,7 @@ export function Layout({ children }: LayoutProps) {
         {/* Logo */}
         <div className={cn("py-4 border-b border-border-primary shrink-0", collapsed ? "px-2" : "px-5 py-5")}>
           <div className={cn("flex items-center gap-2.5", collapsed && "justify-center")}>
-            <div className="p-1.5 rounded-win bg-accent-primary/15">
-              <Server size={18} className="text-accent-primary" />
-            </div>
+            <img src="/app-icon.png" alt="" width={30} height={30} className="shrink-0 select-none" draggable={false} />
             {!collapsed && (
               <div title={versionLabel || undefined}>
                 <p className="text-sm font-semibold text-text-primary leading-tight">
