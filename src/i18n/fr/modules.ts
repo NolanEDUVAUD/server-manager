@@ -2,10 +2,6 @@
 export const modules = {
   power: { label: "Arrêt / démarrage", description: "Éteindre ou rallumer tout le lab dans le bon ordre" },
   resources: { label: "Ressources", description: "CPU, RAM et disques des serveurs en temps réel" },
-  services: {
-    label: "Services",
-    description: "Surveiller n'importe quel service web (catalogue Home Assistant, Jellyfin, Pi-hole…)",
-  },
   console: { label: "Console SSH", description: "Terminal SSH intégré avec onglets" },
   history: { label: "Historique", description: "Journal des coupures, redémarrages et actions" },
   alerts: { label: "Alertes", description: "Notifications ntfy, Discord, Telegram…" },

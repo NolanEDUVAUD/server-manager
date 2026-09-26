@@ -12,7 +12,6 @@ import { History } from "./pages/History";
 import { Scheduler } from "./pages/Scheduler";
 import { Docker } from "./pages/Docker";
 import { Alerts } from "./pages/Alerts";
-import { Services } from "./pages/Services";
 import { Backups } from "./pages/Backups";
 import { LabPower } from "./pages/LabPower";
 import { Network } from "./pages/Network";
@@ -74,7 +73,6 @@ function AppContent() {
         <Route path="/scheduler" element={<Scheduler />} />
         <Route path="/docker" element={<Docker />} />
         <Route path="/alerts" element={<Alerts />} />
-        <Route path="/services" element={<Services />} />
         <Route path="/backups" element={<Backups />} />
         <Route path="/lab-power" element={<LabPower />} />
         <Route path="/network" element={<Network />} />
