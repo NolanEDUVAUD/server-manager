@@ -20,6 +20,11 @@ on:
         description: "Notes de version (affichées dans l'application)"
         required: false
         default: ""
+      prerelease:
+        description: "Pré-version (bêta) : jamais proposée en mise à jour aux utilisateurs de la version stable"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -100,6 +105,25 @@ jobs:
             echo "$delimiter"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Canal de publication
+        id: channel
+        shell: bash
+        env:
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          # Une pré-version est publiée comme « pre-release » GitHub : l'API releases/latest
+          # (utilisée par l'application pour chercher les mises à jour) l'ignore, donc la
+          # bêta n'est jamais proposée aux utilisateurs de la version stable.
+          if [[ "$PRERELEASE" == "true" ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "suffix= (bêta)" >> "$GITHUB_OUTPUT"
+            # Badge « bêta » à côté du numéro de version dans l'application
+            echo "VITE_RELEASE_CHANNEL=beta" >> "$GITHUB_ENV"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Installer les dépendances npm
         run: npm ci --no-audit --no-fund
 
@@ -117,10 +141,10 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
-          releaseName: Server Power Manager v__VERSION__
+          releaseName: Server Power Manager v__VERSION__${{ steps.channel.outputs.suffix }}
           releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
-          prerelease: false
+          prerelease: ${{ steps.channel.outputs.prerelease == 'true' }}
           includeUpdaterJson: ${{ steps.updater.outputs.enabled == 'true' }}
           updaterJsonPreferNsis: true
           args: ${{ steps.updater.outputs.enabled == 'true' && '--config src-tauri/tauri.release.conf.json' || '' }}

@@ -1,6 +1,7 @@
 import type { Dict } from "..";
 
 export const layout: Dict["layout"] = {
+  beta: "beta",
   nav: {
     dashboard: "Dashboard",
     servers: "Servers",

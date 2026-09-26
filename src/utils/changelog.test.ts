@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseVersion, compareVersions, getChangesBetween, getCurrentChangelogVersion } from "./changelog";
+import pkg from "../../package.json";
 
 describe("changelog utilities", () => {
   describe("parseVersion", () => {
@@ -65,9 +66,8 @@ describe("changelog utilities", () => {
   });
 
   describe("getCurrentChangelogVersion", () => {
-    it("returns the first version in changelog", () => {
-      const version = getCurrentChangelogVersion();
-      expect(version).toBe("0.4.0");
+    it("correspond à la version de l'application (package.json) : pas de version sans notes", () => {
+      expect(getCurrentChangelogVersion()).toBe(pkg.version);
     });
   });
 });

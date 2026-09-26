@@ -1,5 +1,6 @@
 /** Barre latérale : navigation, verrouillage, compteur en ligne */
 export const layout = {
+  beta: "bêta",
   nav: {
     dashboard: "Dashboard",
     servers: "Serveurs",

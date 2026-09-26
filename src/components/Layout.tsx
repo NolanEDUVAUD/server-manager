@@ -83,6 +83,9 @@ export function Layout({ children }: LayoutProps) {
       .catch(() => {});
     return () => { alive = false; };
   }, []);
+  // Build de pré-version (défini par le workflow de release) : affiché à côté du numéro
+  const isBeta = import.meta.env.VITE_RELEASE_CHANNEL === "beta";
+  const versionLabel = version ? `v${version}${isBeta ? ` ${t("layout.beta")}` : ""}` : "";
 
   // ── Largeur de la barre latérale (redimensionnable, persistée) ─────────────
   const sidebarWidth = useLayoutStore((s) => s.sidebarWidth);
@@ -333,18 +336,23 @@ export function Layout({ children }: LayoutProps) {
               <Server size={18} className="text-accent-primary" />
             </div>
             {!collapsed && (
-              <div title={version ? `v${version}` : undefined}>
+              <div title={versionLabel || undefined}>
                 <p className="text-sm font-semibold text-text-primary leading-tight">
                   Server Manager
                 </p>
                 <p className="text-xs text-text-secondary leading-tight">
                   Power Control{version ? ` · v${version}` : ""}
+                  {version && isBeta && (
+                    <span className="ml-1 px-1 rounded bg-accent-warning/20 text-accent-warning text-[10px] font-semibold uppercase">
+                      {t("layout.beta")}
+                    </span>
+                  )}
                 </p>
               </div>
             )}
           </div>
           {collapsed && version && (
-            <div className="sr-only">v{version}</div>
+            <div className="sr-only">{versionLabel}</div>
           )}
         </div>
 
