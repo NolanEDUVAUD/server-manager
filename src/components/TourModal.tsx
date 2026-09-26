@@ -191,9 +191,12 @@ export function TourModal() {
             </button>
           </div>
 
-          <div className="rounded-win bg-bg-secondary/60 border border-border-primary/60 p-2.5">
-            <StepExample step={step} reducedMotion={reducedMotion} />
-          </div>
+          {/* L'accueil n'a pas de mini-exemple : on passe directement à la présentation */}
+          {step.id !== "welcome" && (
+            <div className="rounded-win bg-bg-secondary/60 border border-border-primary/60 p-2.5">
+              <StepExample step={step} reducedMotion={reducedMotion} />
+            </div>
+          )}
 
           {canTry && (
             <button
@@ -264,15 +267,8 @@ function StepExample({ step, reducedMotion }: { step: TourStepDef; reducedMotion
     case "settings":
       return <SettingsExample />;
     default:
-      return <WelcomeExample />;
+      return null;
   }
-}
-
-function WelcomeExample() {
-  const { t } = useT();
-  return (
-    <p className="text-[11px] text-text-secondary italic">{t("tour.examples.heading")} : {t("tour.next")} →</p>
-  );
 }
 
 function ServersExample({ reducedMotion }: { reducedMotion: boolean }) {

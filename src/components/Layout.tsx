@@ -370,11 +370,13 @@ export function Layout({ children }: LayoutProps) {
           <Icon size={16} className="shrink-0" />
           {!collapsed && <span className="truncate">{t(labelKey)}</span>}
         </NavLink>
-        {!collapsed && !isSettings && (
+        {!collapsed && (
           <>
             <button
               type="button"
               title={helpText}
+              aria-label={t("layout.aboutTab", { tab: t(labelKey) })}
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -392,22 +394,33 @@ export function Layout({ children }: LayoutProps) {
                   }, 150),
                 };
               }}
-              className="absolute right-9 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary opacity-0 group-hover/nav:opacity-100 hover:text-accent-primary hover:bg-bg-hover transition-opacity"
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary opacity-0 group-hover/nav:opacity-100 focus-visible:opacity-100 hover:text-accent-primary hover:bg-bg-hover transition-opacity",
+                isSettings ? "right-1.5" : "right-9"
+              )}
             >
               <Info size={12} />
             </button>
-            <button
+            {!isSettings && <button
               type="button"
               title={opts.favorite ? t("layout.unpin") : t("layout.pin")}
               onClick={() => (opts.favorite ? removeFavorite(to) : addFavorite(to))}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary opacity-0 group-hover/nav:opacity-100 hover:text-accent-primary hover:bg-bg-hover transition-opacity"
             >
               {opts.favorite ? <PinOff size={13} /> : <Pin size={13} />}
-            </button>
+            </button>}
           </>
         )}
       </div>
     );
+  }
+
+  /** Bulle d'aide placée juste à droite de la barre latérale, alignée sur l'onglet */
+  function helpPopoverPosition(route: string): React.CSSProperties {
+    const rect = document.querySelector(`[data-nav-route="${route}"]`)?.getBoundingClientRect();
+    if (!rect) return { left: 8, top: 8 };
+    const top = Math.min(Math.max(8, rect.top + rect.height / 2 - 16), window.innerHeight - 80);
+    return { left: rect.right + 8, top };
   }
 
   // Popover d'aide
@@ -578,11 +591,9 @@ export function Layout({ children }: LayoutProps) {
       {/* ── Popover d'aide ─────────────────────────────────────────────────── */}
       {openHelpPopover && createPortal(
         <div
-          className="help-popover fixed bg-bg-tertiary border border-border-primary rounded-win shadow-win-hover p-2 text-xs text-text-secondary z-[9999] max-w-xs"
-          style={{
-            right: "8px",
-            top: `${document.querySelector(`[data-nav-route="${openHelpPopover}"]`)?.getBoundingClientRect().top ?? 0}px`,
-          }}
+          role="tooltip"
+          className="help-popover fixed bg-bg-tertiary border border-border-primary rounded-win shadow-win-hover px-2.5 py-2 text-xs text-text-secondary z-dropdown max-w-xs pointer-events-none"
+          style={helpPopoverPosition(openHelpPopover)}
         >
           {getHelpText(openHelpPopover)}
         </div>,

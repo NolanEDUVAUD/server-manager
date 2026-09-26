@@ -55,7 +55,6 @@ export const tour = {
   try: "Essayer",
   progress: "{current} / {total}",
   examples: {
-    heading: "Exemple",
     servers: {
       name: "srv-plex",
       wol: "Réveiller (WoL)",

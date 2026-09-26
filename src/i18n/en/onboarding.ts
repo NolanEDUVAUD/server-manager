@@ -56,7 +56,6 @@ export const tour: Dict["tour"] = {
   try: "Try it",
   progress: "{current} / {total}",
   examples: {
-    heading: "Example",
     servers: {
       name: "srv-plex",
       wol: "Wake up (WoL)",
