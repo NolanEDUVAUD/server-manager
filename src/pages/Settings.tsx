@@ -17,12 +17,14 @@ import { SecuritySettings } from '../components/SecuritySettings';
 import { SshKeysSettings } from '../components/SshKeysSettings';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
+import { BugReportForm } from '../components/BugReportForm';
+import { SupportSettings } from '../components/SupportSettings';
 import { useAppUpdate } from '../stores/useAppUpdate';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useT } from '../i18n';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
-type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'config' | 'about';
+type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'config' | 'updates' | 'report' | 'coffee' | 'about';
 
 // Libellés traduits à l'affichage (settingsPage.sections.<id>)
 const SECTIONS: { id: Section }[] = [
@@ -34,6 +36,9 @@ const SECTIONS: { id: Section }[] = [
   { id: 'integrations' },
   { id: 'sshkeys' },
   { id: 'config' },
+  { id: 'updates' },
+  { id: 'report' },
+  { id: 'coffee' },
   { id: 'about' },
 ];
 
@@ -73,6 +78,9 @@ export function Settings() {
         {active === 'integrations' && <IntegrationsSettings />}
         {active === 'sshkeys'    && <SshKeysSettings />}
         {active === 'config'     && <SectionConfig />}
+        {active === 'updates'    && <SectionUpdates />}
+        {active === 'report'     && <BugReportForm />}
+        {active === 'coffee'     && <SupportSettings />}
         {active === 'about'      && <SectionAbout />}
       </div>
 
@@ -232,8 +240,6 @@ function SectionGeneral() {
           onChange={v => handleToggle('close_to_tray', v)}
         />
       </div>
-
-      <AppUpdateSettings />
 
       <h2 className="text-text-primary font-medium text-base">{t("settingsPage.general.modules")}</h2>
       <p className="text-xs text-text-secondary -mt-4">{t("settingsPage.general.modulesHelp")}</p>
@@ -612,6 +618,15 @@ function SectionConfig() {
           onCancel={() => setShowConfirmReplace(false)}
         />
       )}
+    </div>
+  );
+}
+
+// ── Section : Mise à jour ───────────────────────────────────────────────────────
+function SectionUpdates() {
+  return (
+    <div className="space-y-6 max-w-lg">
+      <AppUpdateSettings />
     </div>
   );
 }

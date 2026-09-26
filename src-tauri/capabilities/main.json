@@ -155,6 +155,7 @@
     "allow-backup-cancel",
     "allow-get-backup-settings",
     "allow-save-backup-settings",
-    "allow-backup-run-now"
+    "allow-backup-run-now",
+    "shell:allow-open"
   ]
 }

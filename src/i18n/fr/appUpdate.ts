@@ -34,5 +34,7 @@ export const appUpdate = {
     showBanner: "Afficher la bannière",
     seeBanner: ": voir la bannière en haut de la fenêtre",
     checkFailed: "Recherche impossible",
+    releaseNotes: "Notes de version",
+    viewReleases: "Voir les releases sur GitHub",
   },
 };

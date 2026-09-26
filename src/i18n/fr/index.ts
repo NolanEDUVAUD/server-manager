@@ -8,6 +8,7 @@ import { appUpdate } from "./appUpdate";
 import { backup } from "./backup";
 import { backups } from "./backups";
 import { batch } from "./batch";
+import { bugReport } from "./bugReport";
 import { common } from "./common";
 import { consolePage } from "./console";
 import { dashboard } from "./dashboard";
@@ -39,6 +40,7 @@ import { settingsPage } from "./settingsPage";
 import { shortcuts } from "./shortcuts";
 import { sshAuth } from "./sshAuth";
 import { sshKeys } from "./sshKeys";
+import { support } from "./support";
 import { themes } from "./themes";
 import { updates } from "./updates";
 import { webTabs } from "./webTabs";
@@ -49,6 +51,7 @@ export const fr = {
   backup,
   backups,
   batch,
+  bugReport,
   common,
   console: consolePage,
   dashboard,
@@ -80,6 +83,7 @@ export const fr = {
   shortcuts,
   sshAuth,
   sshKeys,
+  support,
   themes,
   updates,
   webTabs,

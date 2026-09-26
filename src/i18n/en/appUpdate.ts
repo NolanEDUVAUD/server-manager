@@ -34,5 +34,7 @@ export const appUpdate: Dict["appUpdate"] = {
     showBanner: "Show the banner",
     seeBanner: ": see the banner at the top of the window",
     checkFailed: "Check failed",
+    releaseNotes: "Release notes",
+    viewReleases: "View releases on GitHub",
   },
 };
