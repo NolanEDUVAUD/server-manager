@@ -5,7 +5,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import {
   LayoutDashboard, Server, Layers, Settings, Wifi, Boxes, LayoutPanelTop, Activity, TerminalSquare,
   History, CalendarClock, Container, BellRing, Archive, PowerOff, Network, ListChecks, PackageSearch,
-  ScrollText, Lock, Pin, PinOff, SlidersHorizontal, RotateCcw, Info,
+  ScrollText, Lock, Pin, PinOff, SlidersHorizontal, RotateCcw, Info, Database,
 } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { useLockStore } from "../stores/useLockStore";
@@ -36,6 +36,7 @@ const NAV_ITEMS: { to: string; icon: typeof Server; labelKey: TKey; module?: str
   { to: "/resources", icon: Activity, labelKey: "layout.nav.resources", module: "resources" },
   { to: "/network", icon: Network, labelKey: "layout.nav.network", module: "network" },
   { to: "/docker", icon: Container, labelKey: "layout.nav.docker", module: "docker" },
+  { to: "/databases", icon: Database, labelKey: "layout.nav.databases", module: "databases" },
   { to: "/console", icon: TerminalSquare, labelKey: "layout.nav.console", module: "console" },
   { to: "/batch", icon: ListChecks, labelKey: "layout.nav.batch", module: "batch" },
   { to: "/updates", icon: PackageSearch, labelKey: "layout.nav.updates", module: "updates" },

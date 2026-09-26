@@ -35,6 +35,7 @@ export const MODULES: AppModule[] = [
   defineModule("alerts", true),
   defineModule("network", false),
   defineModule("docker", false),
+  defineModule("databases", false),
   defineModule("batch", false),
   defineModule("updates", false),
   defineModule("logs", false),

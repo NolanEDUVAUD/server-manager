@@ -805,3 +805,68 @@ export interface DeployReport {
   verified: boolean;
   detail: string | null;
 }
+
+// ─── Bases de données (F1) ────────────────────────────────────────────────────
+
+export type DbEngine = "Mysql" | "Postgres" | "Redis";
+
+export interface DetectedEngine {
+  engine: DbEngine;
+  version: string;
+  /** running / stopped / active / unknown */
+  status: string;
+  /** Renseigné quand le moteur tourne dans ce conteneur plutôt que sur l'hôte */
+  container: string | null;
+}
+
+/** Connexion enregistrée pour un serveur + moteur ; le mot de passe n'est jamais envoyé */
+export interface DbConnectionView {
+  server_id: string;
+  engine: DbEngine;
+  username: string;
+  has_password: boolean;
+  backup_dir: string;
+}
+
+export interface DbConnectionPayload {
+  server_id: string;
+  engine: DbEngine;
+  username: string;
+  /** undefined = inchangé, "" = effacé (retombe sur l'authentification système) */
+  password?: string;
+  backup_dir: string;
+}
+
+export interface DbInfo {
+  name: string;
+  size_bytes: number;
+  table_count: number;
+}
+
+export interface TableInfo {
+  name: string;
+  row_estimate: number;
+  size_bytes: number;
+}
+
+export interface DbUser {
+  name: string;
+  detail: string;
+}
+
+export interface QueryResult {
+  columns: string[];
+  rows: string[][];
+  truncated: boolean;
+}
+
+export interface DbBackupResult {
+  path: string;
+  size_bytes: number;
+}
+
+export interface RedisInfo {
+  version: string;
+  used_memory_human: string;
+  keys_per_db: [string, number][];
+}
