@@ -7,17 +7,20 @@ Construit avec **Tauri v2** (backend Rust) et **React + TypeScript + Tailwind** 
 ## Fonctionnalités
 
 - **Serveurs & groupes** : ajout/édition avec validation, actions groupées en 1 clic (WoL, arrêt, ping), import/export JSON
-- **Organisation** : tags colorés, dossiers, favoris et champs personnalisés (emplacement, numéro de série…) pour les serveurs et les services ; recherche et filtres combinés (texte, tags, dossier, favoris, en ligne / hors ligne)
+- **Organisation** : tags colorés, dossiers, favoris et champs personnalisés (emplacement, numéro de série…) pour les serveurs ; recherche et filtres combinés (texte, tags, dossier, favoris, en ligne / hors ligne)
 - **Palette de commandes** (Ctrl+K) : pages et actions sur un serveur précis (réveiller, arrêter, redémarrer, console, ping, modifier), toujours avec confirmation pour ce qui agit sur une machine
 - **Alimentation** : Wake-on-LAN, arrêt et redémarrage par SSH avec commande personnalisable par OS
 - **Supervision** : statut et latence en temps réel, ressources (CPU, RAM, disque), historique des événements, alertes (ntfy, Discord, Telegram…)
-- **Historique persistant** : événements, disponibilité et latence des serveurs et des services, courbes de ressources conservés dans une base locale SQLite ; mesures détaillées 7 jours et agrégats horaires 90 jours par défaut (réglable dans Paramètres → Historique)
-- **Services** : catalogue d'une trentaine de services auto-hébergés (Home Assistant, Jellyfin, Plex, Pi-hole, AdGuard, Nextcloud, Grafana, Portainer, Proxmox, TrueNAS, Synology…) et service personnalisé pour n'importe quelle URL : code HTTP, mot-clé, valeur JSON, authentification Basic / jeton / clé d'API
+- **Historique persistant** : événements, disponibilité et latence des serveurs, courbes de ressources conservés dans une base locale SQLite ; mesures détaillées 7 jours et agrégats horaires 90 jours par défaut (réglable dans Paramètres → Historique)
+- **Réseau** : scan du réseau local, vue liste ou graphe interactif (passerelle, Wi-Fi, sous-réseaux VPN, traceroute), topologie éditable (Box → switch → machines)
+- **Tâches en lot intelligentes** : détection de l'OS de chaque cible et commandes adaptées (apt, dnf, pacman, apk, winget…), variables `{{pkg_update}}` & co, aperçu avant exécution
+- **Extensions communautaires** : commandes, thèmes et liens ajoutés par un simple manifeste JSON, sans exécution de code (voir [docs/extensions.md](docs/extensions.md))
+- **Interface personnalisable** : favoris, ordre des onglets par glisser-déposer, largeur de la barre latérale, densité des pages, saisies conservées entre les pages
 - **Modules** : n'affiche que ce que tu utilises (choix au premier lancement, modifiable dans Paramètres → Général)
 - **Proxmox** : état du cluster, VM/CT, sauvegardes, migration
 - **Docker** : conteneurs et images à mettre à jour
 - **Console SSH** intégrée, snippets, tâches en lot sur plusieurs serveurs avec réponse aux questions interactives (dpkg, apt)
-- **Clés SSH** : paire ed25519 générée dans l'app ou import d'une clé OpenSSH / PuTTY (.ppk), agent SSH (OpenSSH de Windows, Pageant), déploiement de la clé sur un serveur en un clic, hôte de rebond
+- **Clés SSH** : paire ed25519 générée dans l'app ou import d'une clé OpenSSH / PuTTY (.ppk), déploiement de la clé sur un serveur en un clic, hôte de rebond
 - **Planificateur** : tâches programmées, avec création des cronjobs directement sur les serveurs Linux
 - **Mises à jour** (apt), **réseau**, **logs** (Loki), zone de notification Windows
 - **Thèmes** : One Half Dark, Fluent, Gruvbox Dark, Nord, Dracula, Catppuccin Mocha, Tokyo Night, ou thème personnalisé
@@ -103,16 +106,16 @@ L'aide s'ouvre avec <kbd>?</kbd> (ou « Afficher les raccourcis clavier » dans 
 | <kbd>↑</kbd> <kbd>↓</kbd> <kbd>Entrée</kbd> | Dans la palette : choisir et exécuter une action (les actions sur un serveur demandent confirmation) |
 | <kbd>Échap</kbd> | Fermer la palette, l'aide ou la demande de confirmation |
 | <kbd>?</kbd> | Afficher l'aide des raccourcis |
-| <kbd>/</kbd> | Aller à la recherche (pages Serveurs et Services) |
-| <kbd>g</kbd> puis <kbd>d</kbd> / <kbd>s</kbd> / <kbd>v</kbd> / <kbd>c</kbd> / <kbd>p</kbd> | Aller au tableau de bord / aux serveurs / aux services / à la console / aux paramètres |
+| <kbd>/</kbd> | Aller à la recherche (page Serveurs) |
+| <kbd>g</kbd> puis <kbd>d</kbd> / <kbd>s</kbd> / <kbd>c</kbd> / <kbd>p</kbd> | Aller au tableau de bord / aux serveurs / à la console / aux paramètres |
 
 Les raccourcis à une touche sont ignorés pendant la saisie dans un champ et dans la console SSH.
 
 ## Données et sécurité
 
 - La configuration est stockée dans `%APPDATA%\com.homelab.server-manager\`.
-- L'historique (événements, pings, contrôles de services, métriques) est dans `history.db` (SQLite) au même endroit. Il ne contient aucun secret : seulement des mesures, des noms affichés et des messages d'événements.
-- Tous les secrets (mots de passe SSH, jetons Proxmox, identifiants des intégrations et des services) sont chiffrés en AES-256-GCM avec une clé maître conservée dans le **Gestionnaire d'identification Windows**. Rien n'est écrit en clair sur le disque.
+- L'historique (événements, pings, métriques) est dans `history.db` (SQLite) au même endroit. Il ne contient aucun secret : seulement des mesures, des noms affichés et des messages d'événements.
+- Tous les secrets (mots de passe SSH, jetons Proxmox, identifiants des intégrations) sont chiffrés en AES-256-GCM avec une clé maître conservée dans le **Gestionnaire d'identification Windows**. Rien n'est écrit en clair sur le disque.
 - Les secrets ne sont jamais renvoyés à l'interface (seulement « enregistré ») et ne sont déchiffrés qu'au moment de la connexion, puis effacés de la mémoire.
 - Les en-têtes d'authentification sont marqués sensibles et les redirections sont refusées pour les requêtes authentifiées. L'interface prévient si un secret passerait en HTTP ou sans vérification du certificat.
 - **Sauvegarde chiffrée `.spmbackup`** (Paramètres → Configuration) : toute la configuration, secrets compris, chiffrée par une phrase de passe (Argon2id + AES-256-GCM, en-tête authentifié). Elle se restaure sur un autre PC, où les secrets sont rechiffrés par la clé maître locale. La sauvegarde automatique vers un dossier est optionnelle (quotidienne ou hebdomadaire, rotation) ; sa phrase de passe est elle-même chiffrée par la clé maître.
@@ -128,6 +131,19 @@ Les raccourcis à une touche sont ignorés pendant la saisie dans un champ et da
 
 - **`rsa` (RUSTSEC-2023-0071, attaque « Marvin »)** : aucun correctif en amont. Ne concerne que les clés SSH **RSA** (signature). Les clés générées par l'app sont en ed25519, à préférer.
 - **`quick-xml` (RUSTSEC-2026-0194 / 0195)** : tiré par les notifications Windows. Il ne lit que les modèles de notification produits par l'app elle-même, jamais de XML venant du réseau.
+
+## Documentation
+
+Un guide utilisateur détaillé, module par module, est disponible dans
+[`docs/`](docs/README.md) :
+
+- [Démarrage](docs/guide/demarrage.md) — installation, premier lancement, mises à jour, sauvegarde/restauration
+- [Interface](docs/guide/interface.md) — barre latérale, palette de commandes, raccourcis clavier, thèmes
+- [Fonctionnalités](docs/guide/fonctionnalites.md) — guide de chaque module (serveurs, réseau, tâches en lot, alertes, Proxmox…)
+- [Authentification SSH](docs/guide/ssh.md) — mot de passe, clé, hôte de rebond, dépannage
+- [Extensions communautaires](docs/extensions.md) — format de manifeste, création, installation
+- [Signaler un problème](docs/guide/signaler-un-probleme.md)
+- [Contribuer](docs/CONTRIBUTING.md) — compilation, tests, conventions de code
 
 ## Développement
 

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-smart-batch-detect-os"
+description = "Enables the smart_batch_detect_os command without any pre-configured scope."
+commands.allow = ["smart_batch_detect_os"]
+
+[[permission]]
+identifier = "deny-smart-batch-detect-os"
+description = "Denies the smart_batch_detect_os command without any pre-configured scope."
+commands.deny = ["smart_batch_detect_os"]

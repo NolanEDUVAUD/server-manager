@@ -29,13 +29,13 @@ export interface BatchTemplate {
 
 /** Modèles proposés ; les modifiants sont identifiés par looksModifying() */
 export const TEMPLATES: BatchTemplate[] = [
-  { nameKey: "batch.templates.diskSpace", script: "df -h -x tmpfs -x devtmpfs" },
-  { nameKey: "batch.templates.availableUpdates", script: "apt list --upgradable 2>/dev/null | tail -n +2" },
-  { nameKey: "batch.templates.rebootRequired", script: "[ -f /var/run/reboot-required ] && echo 'Redémarrage requis' || echo 'Non'" },
-  { nameKey: "batch.templates.failedServices", script: "systemctl --failed --no-legend || true" },
-  { nameKey: "batch.templates.kernelVersion", script: "uname -r" },
-  { nameKey: "batch.templates.upgradePackages", script: "export DEBIAN_FRONTEND=noninteractive\napt-get update\napt-get -y full-upgrade" },
-  { nameKey: "batch.templates.pruneImages", script: "docker image prune -af" },
+  { nameKey: "batch.what.templates.diskSpace", script: "df -h -x tmpfs -x devtmpfs" },
+  { nameKey: "batch.what.templates.availableUpdates", script: "apt list --upgradable 2>/dev/null | tail -n +2" },
+  { nameKey: "batch.what.templates.rebootRequired", script: "[ -f /var/run/reboot-required ] && echo 'Redémarrage requis' || echo 'Non'" },
+  { nameKey: "batch.what.templates.failedServices", script: "systemctl --failed --no-legend || true" },
+  { nameKey: "batch.what.templates.kernelVersion", script: "uname -r" },
+  { nameKey: "batch.what.templates.upgradePackages", script: "export DEBIAN_FRONTEND=noninteractive\napt-get update\napt-get -y full-upgrade" },
+  { nameKey: "batch.what.templates.pruneImages", script: "docker image prune -af" },
 ];
 
 /** Réponse rapide proposée pour une question détectée dans la sortie */

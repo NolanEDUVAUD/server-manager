@@ -77,7 +77,7 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-md mx-4 animate-slide-in">
         <div className="flex items-center justify-between p-6 border-b border-border-primary">
@@ -116,7 +116,9 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
             <select aria-label={t("scheduler.form.target")} className={inputClass} value={target} onChange={(e) => setTarget(e.target.value)}>
               {groups.length > 0 && (
                 <optgroup label={t("scheduler.form.groups")}>
-                  {groups.map((g) => <option key={g.id} value={`Group:${g.id}`}>{g.icon ? `${g.icon} ` : ""}{g.name}</option>)}
+                  {groups.map((g) => (
+                  <option key={g.id} value={`Group:${g.id}`}>{g.name}</option>
+                ))}
                 </optgroup>
               )}
               <optgroup label={t("scheduler.form.servers")}>

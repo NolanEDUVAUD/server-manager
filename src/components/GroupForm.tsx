@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, Layers } from "lucide-react";
 import { Group, Server } from "../types";
+import { ServerIconDisplay, IconPicker } from "./IconPicker";
 import { useT } from "../i18n";
 
 interface GroupFormProps {
@@ -43,7 +44,7 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-md mx-4 animate-slide-in">
         {/* Header */}
@@ -76,12 +77,10 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
             </div>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">{t("groups.form.icon")}</label>
-              <input
-                className="w-16 bg-bg-secondary border border-border-primary rounded-win px-2 py-2 text-sm text-text-primary text-center text-lg focus:outline-none focus:border-accent-primary transition-colors"
-                value={icon}
-                onChange={(e) => setIcon(e.target.value)}
-                placeholder="🖥️"
-                maxLength={2}
+              <IconPicker
+                serverId={`group-${initial?.id || 'new'}`}
+                value={icon || null}
+                onChange={(newIcon) => setIcon(newIcon || "")}
               />
             </div>
           </div>
@@ -112,7 +111,12 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
                       onChange={() => toggleServer(s.id)}
                       className="accent-accent-primary"
                     />
-                    <span className="text-sm">{s.icon ?? "🖥️"}</span>
+                    <span className="shrink-0">
+                      {s.icon
+                        ? <ServerIconDisplay icon={s.icon} size={14} />
+                        : <span className="text-sm">🖥️</span>
+                      }
+                    </span>
                     <div className="min-w-0">
                       <p className="text-sm text-text-primary truncate">{s.name}</p>
                       <p className="text-xs text-text-secondary font-mono">{s.ip}</p>

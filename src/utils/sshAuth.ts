@@ -7,7 +7,6 @@ import { t, TKey } from "../i18n";
 export const AUTH_METHODS: { value: AuthMethod; labelKey: TKey; hintKey: TKey }[] = [
   { value: "Password", labelKey: "sshAuth.methods.password", hintKey: "sshAuth.methods.passwordHint" },
   { value: "Key", labelKey: "sshAuth.methods.key", hintKey: "sshAuth.methods.keyHint" },
-  { value: "Agent", labelKey: "sshAuth.methods.agent", hintKey: "sshAuth.methods.agentHint" },
 ];
 
 export function authMethodOf(server?: Pick<Server, "auth_method"> | null): AuthMethod {
@@ -55,7 +54,6 @@ export function deployWarning(os: OsType): string | null {
 export function authSummary(server: Server, keys: SshKeyView[], servers: Server[]): string {
   const method = authMethodOf(server);
   let text = t("sshAuth.methods.password");
-  if (method === "Agent") text = t("sshAuth.methods.agent");
   if (method === "Key") {
     const k = keys.find((x) => x.id === server.ssh_key_id);
     text = k ? t("sshAuth.summaryKey", { name: k.name }) : t("sshAuth.summaryKeyDeleted");

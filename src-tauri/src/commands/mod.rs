@@ -6,6 +6,8 @@ pub mod dashboards;
 pub mod discovery;
 pub mod docker;
 pub mod events;
+pub mod external;
+pub mod extensions;
 pub mod groups;
 pub mod history;
 pub mod integrations;

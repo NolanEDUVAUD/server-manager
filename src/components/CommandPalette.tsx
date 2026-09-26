@@ -123,7 +123,7 @@ export function CommandPalette({ pages }: { pages: { to: string; label: string }
   return (
     <>
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh]" onMouseDown={() => setOpen(false)}>
+        <div className="fixed inset-0 z-palette flex items-start justify-center pt-[15vh]" onMouseDown={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative w-full max-w-lg mx-4 bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover animate-fade-in" onMouseDown={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 px-4 border-b border-border-primary">

@@ -40,9 +40,21 @@ import {
   findTheme,
   BUILTIN_THEMES,
   ONE_HALF_DARK,
+  registerExtraThemes,
 } from "../utils/theme";
+import { extensionThemesOnly, InstalledExtension } from "../utils/extensions";
 import { appendSample, mergeSamples } from "../utils";
 import { setLanguage, t } from "../i18n";
+
+/** Recharge les thèmes contribués par les extensions activées (pour `findTheme`) */
+async function refreshExtensionThemes(): Promise<void> {
+  try {
+    const extensions = await invoke<InstalledExtension[]>("get_extensions");
+    registerExtraThemes(extensionThemesOnly(extensions));
+  } catch {
+    // Pas bloquant : les thèmes d'extension sont un bonus, pas le thème par défaut
+  }
+}
 
 /** 120 points × 15 s = 30 min d'historique par serveur */
 export const METRICS_HISTORY_MAX = 120;
@@ -190,7 +202,7 @@ interface AppStore {
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: [], onboarding_done: true, check_updates: true, language: 'fr' },
+  general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: [], onboarding_done: true, check_updates: true, language: 'fr', alerts_enabled: true },
   appearance: {
     brightness: 1.0,
     font_size: 14,
@@ -242,6 +254,10 @@ export const useStore = create<AppStore>((set, get) => ({
         invoke<Server[]>("get_servers"),
         invoke<Group[]>("get_groups"),
         invoke<AppSettings>("get_settings"),
+        // Thèmes d'extension enregistrés avant `findTheme` : un thème actif fourni par
+        // une extension doit s'appliquer dès le démarrage, pas seulement une fois
+        // Paramètres → Apparence ouvert
+        refreshExtensionThemes(),
       ]);
       // Appliquer le thème, la police, la luminosité et la densité
       const customThemes = settings.appearance.custom_themes;
@@ -771,7 +787,7 @@ export const useStore = create<AppStore>((set, get) => ({
   // ── Réinitialisation des paramètres ───────────────────────────────────
   resetSettings: async () => {
     const defaults: AppSettings = {
-      general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: [], onboarding_done: true, check_updates: true, language: 'fr' },
+      general: { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: [], onboarding_done: true, check_updates: true, language: 'fr', alerts_enabled: true },
       appearance: {
         brightness: 1.0,
         font_size: 14,

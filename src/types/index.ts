@@ -56,7 +56,7 @@ export interface ServerPayload {
   auth_method?: AuthMethod;
   ssh_key_id?: string | null;
   jump_host_id?: string | null;
-  /** Efface le mot de passe enregistré (méthode clé ou agent) */
+  /** Efface le mot de passe enregistré (méthode clé) */
   clear_password?: boolean;
 }
 
@@ -95,6 +95,9 @@ export interface GeneralSettings {
   check_updates: boolean;
   /** Langue de l'interface */
   language: "fr" | "en";
+  /** Interrupteur global des alertes (Alertes → en haut de page) : quand désactivé, plus
+   * aucune règle ne se déclenche, quel que soit son état individuel. */
+  alerts_enabled: boolean;
 }
 
 export interface AppearanceSettings {
@@ -539,12 +542,42 @@ export interface LabProgress { step: number; status: "running" | "done" | "error
 
 // ─── Découverte réseau ──────────────────────────────────────────────────────
 
+/** Type d'appareil deviné (fabricant OUI + nom) — voir `discovery::guess_device_kind` côté Rust */
+export type DeviceKind = "router" | "switch" | "access_point" | "server" | "nas" | "phone" | "tv" | "printer" | "iot" | "unknown";
+
 export interface NetworkDevice {
   ip: string;
   mac: string | null;
   /** Carte réseau virtuelle (VM, conteneur) : WoL inutile */
   virtual_nic: string | null;
   known_server: string | null;
+  /** Fabricant deviné à partir de l'OUI de la MAC (absent d'un ancien scan mis en cache) */
+  vendor?: string | null;
+  device_kind?: DeviceKind | null;
+}
+
+// ─── Routage, Wi-Fi, traceroute (topologie du graphe réseau) ────────────────
+
+export interface RouteEntry {
+  destination: string;
+  mask: string | null;
+  gateway: string | null;
+  interface: string | null;
+  metric: number | null;
+}
+
+export interface WlanInfo {
+  ssid: string | null;
+  bssid: string | null;
+  signal_percent: number | null;
+  channel: number | null;
+  band: string | null;
+}
+
+export interface TracerouteHop {
+  hop: number;
+  ip: string | null;
+  rtt_ms: number | null;
 }
 
 // ─── Commandes mémorisées ───────────────────────────────────────────────────
@@ -555,7 +588,17 @@ export interface Snippet { id: string; name: string; command: string }
 
 export type BatchMode = "Parallel" | "Sequential";
 
-export interface BatchTask { id: string; name: string; script: string; server_ids: string[]; mode: BatchMode; stop_on_error: boolean }
+export interface BatchTask {
+  id: string;
+  name: string;
+  /** Ignoré si `smart_action` est renseigné */
+  script: string;
+  server_ids: string[];
+  mode: BatchMode;
+  stop_on_error: boolean;
+  /** Action portable enregistrée à la place d'un script ; absente/`null` sur les anciennes tâches */
+  smart_action?: SmartAction | null;
+}
 
 export interface AnsibleConfig { server_id: string; dir: string }
 
@@ -565,6 +608,23 @@ export type BatchUpdate =
   | { type: "Finished"; run_id: string; server_id: string; ok: boolean; detail: string; duration_ms: number }
   | { type: "Skipped"; run_id: string; server_id: string; reason: string }
   | { type: "Done"; run_id: string; ok_count: number; failed_count: number };
+
+// ─── Lot intelligent (F2) : détection de l'OS et actions portables ─────────
+
+/** Action de haut niveau, résolue par le backend selon l'OS détecté de chaque cible */
+export type SmartAction =
+  | { type: "UpdatePackages" }
+  | { type: "UpgradeSystem" }
+  | { type: "InstallPackage"; name: string }
+  | { type: "RestartService"; name: string }
+  | { type: "CleanPackageCache" }
+  | { type: "RebootIfRequired" };
+
+export type SmartSource = { type: "Action"; value: SmartAction } | { type: "Script"; value: string };
+
+export interface TargetOsView { server_id: string; name: string; label: string | null; error: string | null }
+
+export interface SmartPreview { server_id: string; name: string; os_label: string | null; command: string | null; skip_reason: string | null }
 
 // ─── Centre de mises à jour ─────────────────────────────────────────────────
 
@@ -628,6 +688,19 @@ export interface AppUpdateCheck {
   date: string | null;
   /** Notes nettoyées et tronquées côté Rust, à afficher en texte uniquement */
   notes: string | null;
+}
+
+/** Réponse de `check_github_release` (F1) : indépendante de l'updater signé, fonctionne
+ *  même sans clé publique embarquée. */
+export interface GithubUpdateCheck {
+  current_version: string;
+  available: boolean;
+  latest_version: string;
+  name: string;
+  notes: string | null;
+  html_url: string;
+  /** Date de publication (RFC 3339 ou format GitHub), telle que renvoyée par l'API */
+  published_at: string | null;
 }
 
 export type AppUpdatePhase = "downloading" | "verifying" | "installing";
@@ -700,7 +773,7 @@ export interface BackupConfigView extends BackupConfig {
 
 // ─── Authentification SSH par clé (1.2) ─────────────────────────────────────
 
-export type AuthMethod = "Password" | "Key" | "Agent";
+export type AuthMethod = "Password" | "Key";
 
 /** Clé SSH de l'app : la clé privée n'est jamais envoyée au frontend */
 export interface SshKeyView {
@@ -731,14 +804,4 @@ export interface DeployReport {
   /** Une connexion par clé a réussi juste après */
   verified: boolean;
   detail: string | null;
-}
-
-export interface AgentKey { source: string; algorithm: string; fingerprint: string; comment: string }
-
-export interface AgentStatus {
-  available: boolean;
-  sources: string[];
-  keys: AgentKey[];
-  errors: string[];
-  hint: string;
 }

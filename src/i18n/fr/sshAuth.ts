@@ -5,8 +5,6 @@ export const sshAuth = {
     passwordHint: "Mot de passe enregistré, chiffré par la clé maître.",
     key: "Clé de l'app",
     keyHint: "Clé SSH gérée dans Paramètres → Clés SSH (la clé privée reste chiffrée dans l'app).",
-    agent: "Agent SSH",
-    agentHint: "Clés chargées dans l'agent OpenSSH de Windows (ssh-add) ou dans Pageant.",
   },
   warnNoKeys: "Aucune clé SSH enregistrée : crée ou importe une clé dans Paramètres → Clés SSH.",
   warnChooseKey: "Choisis la clé à utiliser.",
@@ -33,15 +31,11 @@ export const sshAuth = {
   jumpMissing: "Rebond indisponible — à changer",
   jumpDependents: "Ce serveur sert de rebond à {servers} : il ne peut pas passer lui-même par un rebond (un seul niveau).",
   jumpHelp: "La connexion passe par ce serveur (tunnel SSH) ; la clé d'hôte de chaque saut est vérifiée.",
-  checkAgent: "Vérifier l'agent SSH",
-  agentKeys: { one: "{count} clé disponible ({sources}).", other: "{count} clés disponibles ({sources})." },
-  agentUnreachable: "Aucun agent SSH joignable.",
   // Déploiement d'une clé
   deploy: {
     via: {
       password: "le mot de passe enregistré",
       key: "la clé de l'app actuelle",
-      agent: "l'agent SSH",
     },
     title: "Déployer une clé sur {name}",
     close: "Fermer",

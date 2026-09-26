@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Server, ShieldCheck } from "lucide-react";
 import { useStore } from "../stores/useStore";
+import { useTourStore } from "../stores/useTourStore";
 import { MODULES, hiddenExcept } from "../utils/modules";
 import { cn } from "../utils";
 import { useT } from "../i18n";
@@ -9,13 +10,15 @@ import { useT } from "../i18n";
 /** Premier lancement : choix des modules affichés, puis ajout du premier serveur */
 export function Onboarding() {
   const { settings, servers, updateGeneral } = useStore();
+  const openTour = useTourStore((s) => s.open);
   const navigate = useNavigate();
-  // Abonne l'écran à la langue : les libellés des modules sont lus à chaque rendu
   const { t } = useT();
   const [selected, setSelected] = useState<string[]>(MODULES.filter((m) => m.essential).map((m) => m.key));
   const [error, setError] = useState("");
 
-  if (settings.general.onboarding_done) return null;
+  const firstLaunch = !settings.general.onboarding_done;
+
+  if (!firstLaunch) return null;
 
   const toggle = (key: string) => setSelected((s) => (s.includes(key) ? s.filter((k) => k !== key) : [...s, key]));
 
@@ -23,13 +26,17 @@ export function Onboarding() {
     try {
       await updateGeneral({ hidden_modules: hiddenExcept(selected), onboarding_done: true });
       if (servers.length === 0) navigate("/servers");
+      // Le tour interactif ne s'ouvre qu'une fois les modules choisis : il ne présente
+      // ainsi que les onglets que la personne a effectivement gardés.
+      openTour();
     } catch (e) {
       setError(String(e));
     }
   }
 
+  // Mode sélection des modules
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col animate-slide-in">
         <div className="p-6 border-b border-border-primary space-y-2">

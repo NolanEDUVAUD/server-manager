@@ -1,4 +1,5 @@
 import { currentLocale, t } from "../i18n";
+import { invoke } from "@tauri-apps/api/core";
 // ── Validation ─────────────────────────────────────────────────────────────
 
 export function isValidIP(ip: string): boolean {
@@ -109,6 +110,25 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── Ouverture d'une adresse dans le navigateur par défaut ───────────────────
+
+/**
+ * Ouvre une adresse `https://` dans le navigateur par défaut (releases GitHub, rapport
+ * de bug, soutien du projet…) via la commande Rust `open_external_url` (voir
+ * `src-tauri/src/external.rs`), qui repose sur `tauri-plugin-opener` : la webview n'a
+ * elle-même aucune permission de ce plugin. L'adresse est validée côté Rust (schéma
+ * `https://` et hôte dans une liste blanche) ; un appel avec une autre adresse est
+ * refusé par le backend, quelle que soit sa longueur.
+ */
+export async function openExternal(url: string): Promise<boolean> {
+  try {
+    await invoke("open_external_url", { url });
     return true;
   } catch {
     return false;

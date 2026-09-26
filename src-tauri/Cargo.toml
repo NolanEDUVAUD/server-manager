@@ -1,6 +1,6 @@
 [package]
 name = "server-manager"
-version = "0.3.0"
+version = "0.4.2"
 description = "Server Power Manager - Gestionnaire d'alimentation de serveurs homelab"
 authors = []
 edition = "2021"
@@ -55,13 +55,20 @@ thiserror = "1"
 
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
+# Ouverture du navigateur par défaut (releases GitHub, rapport de bug, soutien du projet) :
+# remplace `tauri-plugin-shell` (son `open()` est dépassé côté Tauri v2). L'adresse est
+# validée en Rust avant l'appel (voir `external.rs`, `commands/external.rs`), la webview
+# n'ayant elle-même aucune permission de ce plugin.
+tauri-plugin-opener = "2"
 # Mise à jour automatique signée (minisign) depuis les releases GitHub. Sans la
 # fonctionnalité « zip » : elle ne sert qu'aux paquets de mise à jour du format Tauri v1.
 tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 chrono = { version = "0.4", features = ["serde"] }
 
-# Client HTTP pour l'intégration Proxmox VE
-reqwest = { version = "0.12", features = ["json"] }
+# Client HTTP pour l'intégration Proxmox VE. « stream » : lecture par morceaux du
+# manifeste d'une extension (fetch_extension_manifest), pour borner sa taille même si
+# le serveur ment sur Content-Length.
+reqwest = { version = "0.12", features = ["json", "stream"] }
 keyring = { version = "3", features = ["windows-native"] }
 tokio-native-tls = "0.3"
 x509-parser = "0.16"
@@ -78,8 +85,6 @@ winreg = "0.52"
 # que celle déjà tirée par Tauri, pour ne pas compiler deux fois la crate
 windows = { version = "0.61", features = ["Foundation", "Security_Credentials_UI", "Win32_Foundation", "Win32_System_RemoteDesktop", "Win32_System_WinRT"] }
 windows-future = "0.2"
-# Détection de Pageant (fenêtre WM_COPYDATA) : même version que celle tirée par russh 0.63
-pageant = "0.2"
 
 [dev-dependencies]
 wiremock = "0.6"

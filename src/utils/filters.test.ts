@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   EMPTY_FILTERS, NO_FOLDER, ItemFilters, filterItems, groupByFolder, hasActiveFilters, matchesFilters,
-  probeFilterable, serverFilterable, sortFavoritesFirst, withoutFolder, withoutTag,
+  serverFilterable, sortFavoritesFirst, withoutFolder, withoutTag,
 } from "./filters";
-import { Folder, Probe, ProbeResult, Server, ServerStatus, Tag } from "../types";
+import { Folder, Server, ServerStatus, Tag } from "../types";
 
 const tags: Tag[] = [
   { id: "t-prod", name: "Production", color: "#ef4444" },
@@ -89,21 +89,6 @@ describe("filtres combinés", () => {
     expect(run({ status: "offline", tagIds: ["t-prod"] })).toEqual([]);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, status: "offline" })).toBe(true);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, folderId: NO_FOLDER })).toBe(true);
-  });
-
-  it("services : nom, cible, serveur associé ; une sonde désactivée a un statut inconnu", () => {
-    const probe = (id: string, extra: Partial<Probe> = {}): Probe => ({
-      id, name: id, enabled: true, kind: { type: "Tcp", host: "192.168.1.20", port: 8096 }, server_id: null,
-      interval_secs: 60, verify_tls: false, auth: { type: "None" }, ...extra,
-    });
-    const ok: ProbeResult = { probe_id: "", ok: true, latency_ms: 1, detail: "", checked_at: 0, cert_days_left: null, uptime_percent: 100 };
-    const jellyfin = probeFilterable(probe("Jellyfin", { tag_ids: ["t-media"] }), { tags, folders }, ok, "DockerHost");
-    const off = probeFilterable(probe("Pi-hole", { enabled: false }), { tags, folders }, ok);
-    expect(matchesFilters(jellyfin, { ...EMPTY_FILTERS, text: "dockerhost 8096 media" })).toBe(true);
-    expect(matchesFilters(jellyfin, { ...EMPTY_FILTERS, status: "online" })).toBe(true);
-    expect(off.online).toBeUndefined();
-    expect(matchesFilters(off, { ...EMPTY_FILTERS, status: "online" })).toBe(false);
-    expect(matchesFilters(off, { ...EMPTY_FILTERS, status: "offline" })).toBe(false);
   });
 
   it("un tag ou un dossier supprimé sort des filtres", () => {

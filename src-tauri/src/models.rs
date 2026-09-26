@@ -82,12 +82,14 @@ pub struct Server {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum AuthMethod {
     /// Mot de passe enregistré (chiffré par la clé maître)
+    /// `alias = "Agent"` : anciennes données d'un serveur en agent SSH (fonctionnalité retirée),
+    /// ramenées silencieusement sur mot de passe pour ne jamais faire échouer le chargement
+    /// (un échec de désérialisation ferait retomber sur la migration v1, qui perdrait des données).
     #[default]
+    #[serde(alias = "Agent")]
     Password,
     /// Clé privée gérée par l'app (`AppData.ssh_keys`)
     Key,
-    /// Agent SSH de la machine (OpenSSH pour Windows, Pageant, SSH_AUTH_SOCK)
-    Agent,
 }
 
 impl Server {
@@ -162,7 +164,7 @@ pub struct ServerPayload {
     pub ssh_key_id: Option<String>,
     #[serde(default)]
     pub jump_host_id: Option<String>,
-    /// Efface le mot de passe enregistré (après bascule sur une clé ou l'agent)
+    /// Efface le mot de passe enregistré (après bascule sur une clé)
     #[serde(default)]
     pub clear_password: bool,
 }
@@ -233,6 +235,11 @@ pub struct GeneralSettings {
     /// « fr » (défaut) ou « en »
     #[serde(default = "default_language")]
     pub language: String,
+    /// Interrupteur global des alertes (Paramètres → Alertes) : quand désactivé, plus
+    /// aucune règle ne se déclenche (bureau, push, historique), quel que soit son état
+    /// individuel. Absent d'un ancien fichier = alertes actives (comportement historique).
+    #[serde(default = "default_true")]
+    pub alerts_enabled: bool,
 }
 
 pub const LANGUAGES: [&str; 2] = ["fr", "en"];
@@ -243,7 +250,7 @@ fn default_language() -> String {
 
 impl Default for GeneralSettings {
     fn default() -> Self {
-        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false, check_updates: true, language: default_language() }
+        Self { start_minimized: false, auto_start: false, notifications: true, close_to_tray: true, hidden_modules: Vec::new(), onboarding_done: false, check_updates: true, language: default_language(), alerts_enabled: true }
     }
 }
 
@@ -475,6 +482,11 @@ pub struct AppData {
     /// Clés SSH de l'app ; la clé privée est chiffrée par la clé maître
     #[serde(default)]
     pub ssh_keys: Vec<crate::ssh_keys::SshKey>,
+    // ── Extensions communautaires (F1) ────────────────────────────────────
+    /// Manifestes déclaratifs installés (jamais de code exécuté) ; absentes
+    /// d'un ancien fichier = aucune extension installée
+    #[serde(default)]
+    pub extensions: Vec<crate::commands::extensions::InstalledExtension>,
 }
 
 fn legacy_key_version() -> u8 {
@@ -504,6 +516,7 @@ impl Default for AppData {
             lock: crate::lock::LockConfig::default(),
             backup: crate::backup::BackupConfig::default(),
             ssh_keys: Vec::new(),
+            extensions: Vec::new(),
         }
     }
 }
@@ -570,6 +583,39 @@ mod tests {
         assert_eq!(data.settings.network.proxmox_poll_interval_secs, 15);
         assert_eq!(data.settings.network.proxmox_timeout_secs, 10);
         assert_eq!(data.settings.history, HistorySettings::default());
+    }
+
+    /// Fonctionnalité « agent SSH » retirée : une ancienne donnée `auth_method: "Agent"` doit se
+    /// lire comme `Password`, jamais échouer (un échec ferait retomber `storage::load_app_data`
+    /// sur la migration v1, qui perdrait des données absentes du format v1).
+    #[test]
+    fn legacy_agent_auth_method_is_read_as_password() {
+        let method: AuthMethod = serde_json::from_str(r#""Agent""#).expect("« Agent » doit rester lisible");
+        assert_eq!(method, AuthMethod::Password);
+        // Jamais réécrit tel quel : une future sauvegarde ne doit plus jamais contenir "Agent"
+        assert_eq!(serde_json::to_string(&method).unwrap(), r#""Password""#);
+    }
+
+    #[test]
+    fn app_data_with_a_legacy_agent_server_deserializes_and_maps_to_password() {
+        let json = r#"{
+            "servers": [{
+                "id": "a", "name": "minipc", "ip": "192.168.1.10", "mac_address": "",
+                "ssh_user": "root", "ssh_password": "", "ssh_port": 22,
+                "shutdown_command": "", "reboot_command": "", "os_type": "Linux",
+                "icon": null, "notes": null, "auth_method": "Agent"
+            }],
+            "groups": [],
+            "settings": {
+                "general": {"start_minimized": false, "auto_start": false, "notifications": true},
+                "appearance": {"brightness": 1.0, "font_size": 14, "density": "Normal", "active_theme": "one-half-dark", "custom_themes": []},
+                "network": {"ping_interval_secs": 30, "ping_timeout_ms": 2000, "ssh_timeout_secs": 30}
+            },
+            "encryption_salt": "abc123"
+        }"#;
+        let data: AppData = serde_json::from_str(json).expect("un serveur en agent SSH ne doit jamais faire échouer le chargement v2");
+        assert_eq!(data.servers.len(), 1);
+        assert_eq!(data.servers[0].auth_method, AuthMethod::Password);
     }
 
     #[test]

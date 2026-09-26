@@ -11,31 +11,32 @@ import { useT } from "../i18n";
  * disponible. Rien n'est installé sans passer par la confirmation.
  */
 export function UpdateBanner() {
-  const { status, update, error, progress, dismissed, install, dismiss } = useAppUpdate();
+  const { info, status, github, error, progress, dismissed, install, dismiss } = useAppUpdate();
   const { t } = useT();
   const [confirming, setConfirming] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
 
   const installing = status === "installing";
-  if (!update?.version || !(installing || (status === "available" && !dismissed))) return null;
+  if (!github?.available || !(installing || (status === "available" && !dismissed))) return null;
 
-  const date = formatReleaseDate(update.date);
+  const date = formatReleaseDate(github.published_at);
   const pct = progressPercent(progress);
+  const signed = info?.configured ?? false;
 
   return (
     <div role="status" aria-label={t("appUpdate.banner.label")} className="shrink-0 border-b border-accent-primary/30 bg-accent-primary/10 px-4 py-2.5 text-sm">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <ArrowUpCircle size={16} className="text-accent-primary shrink-0" />
         <p className="text-text-primary">
-          <span className="font-medium">{t("appUpdate.available", { version: update.version })}</span>
+          <span className="font-medium">{t("appUpdate.available", { version: github.latest_version })}</span>
           <span className="text-text-secondary">
-            {" "}· {t("appUpdate.banner.installed", { version: update.current_version })}
+            {" "}· {t("appUpdate.banner.installed", { version: github.current_version })}
             {date && ` · ${t("appUpdate.banner.published", { date })}`}
           </span>
         </p>
 
         <div className="ml-auto flex items-center gap-2">
-          {update.notes && (
+          {github.notes && (
             <button
               onClick={() => setShowNotes((v) => !v)}
               aria-expanded={showNotes}
@@ -54,7 +55,7 @@ export function UpdateBanner() {
                 onClick={() => setConfirming(true)}
                 className="px-3 py-1.5 rounded-win text-xs font-medium bg-accent-primary hover:bg-accent-secondary text-white transition-colors"
               >
-                {error ? t("appUpdate.banner.retry") : t("appUpdate.install")}
+                {error ? t("appUpdate.banner.retry") : t(signed ? "appUpdate.install" : "appUpdate.openDownload")}
               </button>
               <button
                 onClick={dismiss}
@@ -84,18 +85,18 @@ export function UpdateBanner() {
         </p>
       )}
 
-      {showNotes && update.notes && (
+      {showNotes && github.notes && (
         // Notes affichées en texte brut : React échappe tout, aucun HTML n'est interprété
         <div className="mt-2 max-h-48 overflow-y-auto rounded-win bg-bg-secondary border border-border-primary p-3 text-xs text-text-secondary whitespace-pre-wrap break-words select-text">
-          {update.notes}
+          {github.notes}
         </div>
       )}
 
       {confirming && (
         <ConfirmDialog
-          title={t("appUpdate.confirmTitle", { version: update.version })}
-          message={installConfirmMessage(update.version)}
-          confirmLabel={t("appUpdate.install")}
+          title={t("appUpdate.confirmTitle", { version: github.latest_version })}
+          message={installConfirmMessage(github.latest_version, signed)}
+          confirmLabel={t(signed ? "appUpdate.install" : "appUpdate.openDownload")}
           onConfirm={() => {
             setConfirming(false);
             install();

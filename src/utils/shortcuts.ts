@@ -7,7 +7,7 @@
  */
 import { t, TKey } from "../i18n";
 
-/** global : n'importe où · page : pages Serveurs et Services · palette : champ de la palette */
+/** global : n'importe où · page : page Serveurs · palette : champ de la palette */
 export type ShortcutContext = "global" | "page" | "palette";
 
 export interface ShortcutDef {
@@ -40,7 +40,6 @@ export const SHORTCUTS = [
   { id: "search", keys: ["/"], descriptionKey: "shortcuts.desc.search", groupKey: "shortcuts.groups.pages", context: "page" },
   { id: "go-dashboard", keys: ["g", "d"], descriptionKey: "shortcuts.desc.goDashboard", groupKey: "shortcuts.groups.navigation", context: "global", to: "/" },
   { id: "go-servers", keys: ["g", "s"], descriptionKey: "shortcuts.desc.goServers", groupKey: "shortcuts.groups.navigation", context: "global", to: "/servers" },
-  { id: "go-services", keys: ["g", "v"], descriptionKey: "shortcuts.desc.goServices", groupKey: "shortcuts.groups.navigation", context: "global", to: "/services" },
   { id: "go-console", keys: ["g", "c"], descriptionKey: "shortcuts.desc.goConsole", groupKey: "shortcuts.groups.navigation", context: "global", to: "/console" },
   { id: "go-settings", keys: ["g", "p"], descriptionKey: "shortcuts.desc.goSettings", groupKey: "shortcuts.groups.navigation", context: "global", to: "/settings" },
 ] as const satisfies readonly ShortcutDef[];

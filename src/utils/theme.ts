@@ -158,9 +158,20 @@ export function applyDensity(density: string): void {
   document.body.classList.add(`density-${density.toLowerCase()}`);
 }
 
-/** Retourne le thème par son id dans la liste complète (builtins + customs). */
+// Thèmes contribués par les extensions activées (voir utils/extensions.ts). Registre
+// à part plutôt qu'un import direct : évite un cycle (extensions.ts importe déjà
+// BUILTIN_THEMES d'ici) et permet à `findTheme` de les retrouver même quand
+// l'appelant (ex. le store à l'initialisation) n'a que l'id en main.
+let extraThemes: Theme[] = [];
+
+/** Enregistre les thèmes actuellement contribués par les extensions activées. */
+export function registerExtraThemes(themes: Theme[]): void {
+  extraThemes = themes;
+}
+
+/** Retourne le thème par son id dans la liste complète (builtins + customs + extensions). */
 export function findTheme(id: string, customThemes: Theme[]): Theme {
-  const all = [...BUILTIN_THEMES, ...customThemes];
+  const all = [...BUILTIN_THEMES, ...customThemes, ...extraThemes];
   return all.find(t => t.id === id) ?? ONE_HALF_DARK;
 }
 

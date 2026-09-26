@@ -1,7 +1,6 @@
 //! Serveur SSH minimal (russh) lancé dans les tests, sur 127.0.0.1 : mot de passe, clés
 //! autorisées, exécution factice (« ran: <commande> »), commande interactive « question »
 //! (attend une réponse), shell en écho (console) et canaux direct-tcpip (rebond).
-//! Plus un agent SSH (socket Unix) pour tester l'authentification par agent.
 use russh::keys::{ssh_key, PrivateKey};
 use russh::server::{self, Auth, Msg, Session};
 use russh::{Channel, ChannelId, Pty};
@@ -200,23 +199,4 @@ pub async fn start(password: Option<&str>, authorized: Vec<ssh_key::PublicKey>) 
         }
     });
     TestServer { port, fingerprint, log }
-}
-
-#[derive(Clone)]
-struct TestAgent;
-impl russh::keys::agent::server::Agent for TestAgent {}
-
-/// Agent SSH sur une socket Unix temporaire, chargé avec `key` ; renvoie le chemin de la socket
-#[cfg(unix)]
-pub async fn start_agent(key: &PrivateKey) -> std::path::PathBuf {
-    let path = std::env::temp_dir().join(format!("spm-agent-{}.sock", uuid::Uuid::new_v4()));
-    let listener = tokio::net::UnixListener::bind(&path).expect("socket de l'agent");
-    let connections = Box::pin(futures::stream::unfold(listener, |l| async move {
-        let next = l.accept().await.map(|(stream, _)| stream);
-        Some((next, l))
-    }));
-    tokio::spawn(russh::keys::agent::server::serve(connections, TestAgent));
-    let mut client = russh::keys::agent::client::AgentClient::connect_uds(&path).await.expect("connexion à l'agent");
-    client.add_identity(key, &[]).await.expect("clé ajoutée à l'agent");
-    path
 }

@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Plus, X, TerminalSquare, RotateCw } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { TerminalView } from "../components/TerminalView";
 import { SnippetMenu } from "../components/SnippetMenu";
+import { Dropdown } from "../components/Dropdown";
 import { OS_ICONS, TerminalStatus } from "../types";
 import { cn } from "../utils";
 import { useT } from "../i18n";
+import { ServerIconDisplay } from "../components/IconPicker";
 
 const STATUS_DOT: Record<TerminalStatus, string> = {
   connecting: "bg-accent-warning animate-pulse-soft",
@@ -35,7 +37,7 @@ function ServerPicker({ onPick, compact }: { onPick: (id: string) => void; compa
                 : "p-3 rounded-win bg-bg-tertiary border border-border-primary hover:border-accent-primary/40 hover:shadow-win-hover"
             )}
           >
-            <span className="text-lg shrink-0">{OS_ICONS[s.os_type]}</span>
+            <span className="text-lg shrink-0">{s.icon ? <ServerIconDisplay icon={s.icon} size={18} /> : OS_ICONS[s.os_type]}</span>
             <span className="min-w-0 flex-1">
               <span className="block text-text-primary text-sm truncate">{s.name}</span>
               <span className="block text-text-muted text-xs truncate">{s.ssh_user}@{s.ip}</span>
@@ -54,18 +56,8 @@ export function Console() {
     terminalSessions, activeTerminalKey, openTerminal, closeTerminal, setActiveTerminal, reconnectTerminal,
   } = useStore();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLButtonElement>(null);
   const active = terminalSessions.find((x) => x.key === activeTerminalKey);
-
-  // Fermer le menu « nouvelle session » au clic à l'extérieur
-  useEffect(() => {
-    if (!pickerOpen) return;
-    function onClick(e: MouseEvent) {
-      if (!pickerRef.current?.contains(e.target as Node)) setPickerOpen(false);
-    }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [pickerOpen]);
 
   function pick(serverId: string) {
     setPickerOpen(false);
@@ -122,19 +114,18 @@ export function Console() {
           ))}
         </div>
 
-        <div ref={pickerRef} className="relative shrink-0">
+        <div className="relative shrink-0">
           <button
+            ref={pickerRef}
             onClick={() => setPickerOpen((o) => !o)}
             className="p-1.5 ml-1 rounded text-text-secondary hover:text-accent-primary hover:bg-accent-primary/10 transition-all"
             title={t("console.newSession")}
           >
             <Plus size={14} />
           </button>
-          {pickerOpen && (
-            <div className="absolute right-0 top-full mt-1 w-64 max-h-80 overflow-y-auto z-20 bg-bg-tertiary border border-border-primary rounded-win shadow-win-hover animate-fade-in">
-              <ServerPicker onPick={pick} compact />
-            </div>
-          )}
+          <Dropdown open={pickerOpen} onClose={() => setPickerOpen(false)} anchorRef={pickerRef} align="right" className="w-64 max-h-80 overflow-y-auto bg-bg-tertiary border border-border-primary rounded-win shadow-win-hover animate-fade-in">
+            <ServerPicker onPick={pick} compact />
+          </Dropdown>
         </div>
 
         <div className="ml-auto" />

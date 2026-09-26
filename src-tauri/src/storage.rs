@@ -98,6 +98,7 @@ pub fn load_app_data(path: &std::path::Path) -> crate::models::AppData {
             lock: crate::lock::LockConfig::default(),
             backup: crate::backup::BackupConfig::default(),
             ssh_keys: Vec::new(),
+            extensions: Vec::new(),
         };
         // Sauvegarder immédiatement en format v2
         if let Ok(json) = serde_json::to_string_pretty(&data) {
@@ -154,4 +155,102 @@ fn verify_migrated(path: &std::path::Path, master: &[u8; 32]) -> bool {
         && data.servers.iter().all(|s| crate::crypto::decrypt(&s.ssh_password, master).is_ok())
         && data.proxmox_connections.iter().all(|c| crate::crypto::decrypt(&c.token_secret, master).is_ok())
         && data.ssh_keys.iter().all(|k| crate::crypto::decrypt(&k.private_key, master).is_ok())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Chemin de test unique (répertoire temporaire du système), pour ne jamais se marcher
+    /// dessus si les tests tournent en parallèle.
+    fn temp_data_path(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "server-manager-test-{}-{}-{}.json",
+            name,
+            std::process::id(),
+            crate::events::now_ms()
+        ))
+    }
+
+    /// Reproduit le scénario du bug rapporté : une règle d'alerte désactivée doit rester
+    /// désactivée après un cycle sauvegarde (fermeture) + chargement (redémarrage) complet,
+    /// tel qu'il se produit réellement via `AppState::save` / `load_app_data`.
+    #[test]
+    fn disabled_alert_rule_survives_save_and_load() {
+        let path = temp_data_path("alert-rule");
+
+        let mut data = crate::models::AppData::default();
+        assert!(!data.alert_rules.is_empty(), "des règles par défaut doivent exister");
+        data.alert_rules[0].enabled = false;
+        let disabled_id = data.alert_rules[0].id.clone();
+
+        // Écriture identique à `AppState::save`
+        let content = serde_json::to_string_pretty(&data).expect("sérialisation");
+        std::fs::write(&path, content).expect("écriture");
+
+        // Lecture identique à celle faite au démarrage de l'app
+        let reloaded = load_app_data(&path);
+        let rule = reloaded
+            .alert_rules
+            .iter()
+            .find(|r| r.id == disabled_id)
+            .expect("la règle doit toujours exister après rechargement");
+        assert!(!rule.enabled, "la règle désactivée doit le rester après redémarrage");
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// Un data.json qui ne contient déjà plus de champ `alert_rules` (très vieux fichier,
+    /// ou fichier tronqué par un outil externe) doit tomber sur `default_rules()` — c'est
+    /// le seul cas légitime de réinitialisation, jamais un fichier v2 valide et complet.
+    #[test]
+    fn missing_alert_rules_field_falls_back_to_defaults_without_resetting_everything_else() {
+        let path = temp_data_path("missing-rules");
+        let mut data = crate::models::AppData::default();
+        data.settings.general.language = "en".into();
+        let mut value = serde_json::to_value(&data).expect("sérialisation");
+        value.as_object_mut().unwrap().remove("alert_rules");
+        std::fs::write(&path, serde_json::to_string_pretty(&value).unwrap()).expect("écriture");
+
+        let reloaded = load_app_data(&path);
+        // Le reste des données (ici : la langue) n'est pas perdu pour autant
+        assert_eq!(reloaded.settings.general.language, "en");
+        assert_eq!(reloaded.alert_rules.len(), crate::alerts::default_rules().len());
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// Fonctionnalité « agent SSH » retirée (v0.4.2) : un `data.json` existant avec un serveur en
+    /// `auth_method: "Agent"` doit toujours se lire comme un format v2 valide (jamais retomber sur
+    /// la migration v1, qui perdrait tout ce qui n'existe pas dans ce vieux format : Proxmox,
+    /// alertes, sondes, snippets, tâches en lot…), et le serveur doit ressortir en `Password`.
+    #[test]
+    fn app_data_with_a_legacy_agent_server_round_trips_through_load_without_the_v1_fallback() {
+        let path = temp_data_path("legacy-agent");
+
+        let mut data = crate::models::AppData::default();
+        data.settings.general.language = "en".into();
+        let mut s = crate::models::Server::new(
+            "Workstation".into(), "192.168.1.30".into(), String::new(), "root".into(), String::new(), 22,
+            crate::models::OsType::Linux, None, None,
+        );
+        // Sérialisé tel quel, un ancien fichier écrit avant le retrait de l'agent SSH
+        let mut value = serde_json::to_value(&s).expect("sérialisation du serveur");
+        value.as_object_mut().unwrap().insert("auth_method".into(), serde_json::json!("Agent"));
+        s.auth_method = crate::models::AuthMethod::Password; // peu importe : remplacé par la valeur JSON ci-dessus
+        data.servers.push(s);
+
+        let mut root = serde_json::to_value(&data).expect("sérialisation");
+        root["servers"][0] = value;
+        std::fs::write(&path, serde_json::to_string_pretty(&root).unwrap()).expect("écriture");
+
+        let reloaded = load_app_data(&path);
+        // Preuve que le format v2 a bien été lu (la migration v1 réinitialiserait la langue et les sondes)
+        assert_eq!(reloaded.settings.general.language, "en");
+        assert_eq!(reloaded.servers.len(), 1);
+        assert_eq!(reloaded.servers[0].auth_method, crate::models::AuthMethod::Password);
+        assert_eq!(reloaded.servers[0].name, "Workstation");
+
+        let _ = std::fs::remove_file(&path);
+    }
 }

@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { KeyRound, Loader2, AlertTriangle } from "lucide-react";
-import { AgentStatus, AuthMethod, Server, SshKeyView } from "../types";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { AuthMethod, Server, SshKeyView } from "../types";
 import { AUTH_METHODS, authWarning, jumpCandidates, jumpDependents } from "../utils/sshAuth";
 import { cn } from "../utils";
 import { useT } from "../i18n";
@@ -40,7 +38,9 @@ export function ServerAuthFields({ serverId, servers, keys, keysError, value, on
   return (
     <div className="space-y-3 rounded-win border border-border-primary p-3">
       <div>
-        <span className={labelClass}>{t("sshAuth.title")}</span>
+        <span className={cn(labelClass, "flex items-center gap-1.5")}>
+          {t("sshAuth.title")}
+        </span>
         <div role="radiogroup" aria-label={t("sshAuth.methodAria")} className="flex gap-2 flex-wrap">
           {AUTH_METHODS.map((m) => (
             <button
@@ -48,6 +48,7 @@ export function ServerAuthFields({ serverId, servers, keys, keysError, value, on
               type="button"
               role="radio"
               aria-checked={method === m.value}
+              title={t(m.hintKey)}
               onClick={() => onChange({ auth_method: m.value, ...(m.value === "Password" ? { clear_password: false } : {}) })}
               className={cn(
                 "px-3 py-1.5 rounded-win text-sm border transition-all duration-150",
@@ -95,8 +96,6 @@ export function ServerAuthFields({ serverId, servers, keys, keysError, value, on
         </p>
       )}
 
-      {method === "Agent" && <AgentCheck />}
-
       {serverId && method !== "Password" && (
         <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
           <input
@@ -134,48 +133,6 @@ export function ServerAuthFields({ serverId, servers, keys, keysError, value, on
           </p>
         )}
       </div>
-    </div>
-  );
-}
-
-/** Vérifie à la demande qu'un agent SSH est joignable et contient des clés */
-function AgentCheck() {
-  const { t } = useT();
-  const [status, setStatus] = useState<AgentStatus | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  async function check() {
-    setLoading(true);
-    setError("");
-    try {
-      setStatus(await invoke<AgentStatus>("ssh_agent_status"));
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="text-xs space-y-1">
-      <button
-        type="button"
-        onClick={check}
-        disabled={loading}
-        className="flex items-center gap-1.5 text-accent-primary hover:underline disabled:opacity-50"
-      >
-        {loading ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />} {t("sshAuth.checkAgent")}
-      </button>
-      {error && <p className="text-red-400">{error}</p>}
-      {status && status.available && (
-        <p className="text-text-secondary">
-          {t("sshAuth.agentKeys", { count: status.keys.length, sources: status.sources.join(", ") })}
-        </p>
-      )}
-      {status && !status.available && (
-        <p className="text-yellow-400">{t("sshAuth.agentUnreachable")} {status.hint}</p>
-      )}
     </div>
   );
 }

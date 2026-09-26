@@ -10,6 +10,7 @@ mod db;
 mod discovery;
 mod docker;
 mod events;
+mod external;
 mod integration_checks;
 mod integrations;
 mod keystore;
@@ -25,19 +26,19 @@ mod organisation;
 mod probes;
 mod proxmox;
 mod scheduler;
+mod smart_batch;
 mod storage;
 mod terminal;
 mod tray;
 mod updates;
 // ── Authentification SSH par clé (1.2) ──
 mod ppk;
-mod ssh_agent;
 mod ssh_auth;
 mod ssh_keys;
 #[cfg(test)]
 mod ssh_test_server;
 
-use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, external as external_cmd, extensions as extensions_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use commands::organisation as organisation_cmd;
 use commands::ssh_keys as ssh_keys_cmd;
 use storage::AppState;
@@ -67,6 +68,7 @@ pub fn run() {
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
             app.manage(batch::BatchInputs::default());
+            app.manage(smart_batch::OsCache::default());
             app.manage(events::EventLog::load(app.handle()));
             app.manage(alerts::AlertEngine::new(app.handle()));
             let probe_state = probes::ProbeState::default();
@@ -119,6 +121,10 @@ pub fn run() {
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        // Ouverture du navigateur par défaut (releases, rapport de bug, soutien du projet) :
+        // la webview n'a aucune permission de ce plugin, seule la commande
+        // `open_external_url` (qui valide l'adresse, voir `external.rs`) peut l'appeler.
+        .plugin(tauri_plugin_opener::init())
         // ── Mise à jour automatique de l'application (1.5) ──
         .plugin(commands::app_update::plugin())
         .manage(commands::app_update::AppUpdateState::default())
@@ -206,6 +212,7 @@ pub fn run() {
             integrations_cmd::test_integration,
             // ── Zone de notification ────────────────────────────
             tray_cmd::update_tray_status,
+            tray_cmd::quit_app,
             // ── Alertes ─────────────────────────────────────────
             alerts_cmd::get_alert_rules,
             alerts_cmd::save_alert_rule,
@@ -233,6 +240,10 @@ pub fn run() {
             // ── Découverte réseau ───────────────────────────────
             discovery_cmd::detect_mac,
             discovery_cmd::network_scan,
+            discovery_cmd::get_routes,
+            discovery_cmd::get_extra_subnets,
+            discovery_cmd::get_wlan_info,
+            discovery_cmd::traceroute_lite,
             // ── Commandes mémorisées ────────────────────────────
             snippets_cmd::get_snippets,
             snippets_cmd::save_snippet,
@@ -247,6 +258,9 @@ pub fn run() {
             batch_cmd::save_ansible_config,
             batch_cmd::ansible_list_playbooks,
             batch_cmd::ansible_run,
+            batch_cmd::smart_batch_detect_os,
+            batch_cmd::smart_batch_preview,
+            batch_cmd::smart_batch_run,
             // ── Mises à jour ────────────────────────────────────
             updates_cmd::updates_scan,
             // ── Logs Loki ───────────────────────────────────────
@@ -269,6 +283,9 @@ pub fn run() {
             commands::app_update::app_update_info,
             commands::app_update::app_update_check,
             commands::app_update::app_update_install,
+            commands::app_update::check_github_release,
+            // ── Ouverture d'adresses externes (B4) ──────────────
+            external_cmd::open_external_url,
             // ── Verrouillage de l'application (1.3) ───────────
             lock_cmd::lock_status,
             lock_cmd::lock_now,
@@ -298,7 +315,13 @@ pub fn run() {
             ssh_keys_cmd::ssh_key_delete,
             ssh_keys_cmd::ssh_key_deploy,
             ssh_keys_cmd::ssh_key_use_for_server,
-            ssh_keys_cmd::ssh_agent_status,
+            // ── Extensions communautaires (F1) ──────────────────
+            extensions_cmd::get_extensions,
+            extensions_cmd::install_extension,
+            extensions_cmd::set_extension_enabled,
+            extensions_cmd::uninstall_extension,
+            extensions_cmd::read_extension_file,
+            extensions_cmd::fetch_extension_manifest,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

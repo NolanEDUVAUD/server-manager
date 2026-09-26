@@ -1,0 +1,45 @@
+{
+  "id": "io.github.alice.homelab-extras",
+  "name": "Homelab Extras",
+  "version": "1.2.0",
+  "author": "Alice",
+  "description": "Quelques commandes et un thème pour mon homelab Proxmox + ZFS.",
+  "homepage": "https://github.com/alice/homelab-extras",
+  "minAppVersion": "0.3.0",
+  "contributes": {
+    "snippets": [
+      { "name": "ZFS ARC", "command": "arcstat", "description": "Statistiques du cache ARC ZFS" },
+      { "name": "Températures NVMe", "command": "nvme smart-log /dev/nvme0" }
+    ],
+    "themes": [
+      {
+        "id": "homelab-extras-sunset",
+        "name": "Sunset",
+        "colors": {
+          "--bg-primary": "#1a1025",
+          "--bg-secondary": "#140c1c",
+          "--bg-tertiary": "#221530",
+          "--bg-input": "#140c1c",
+          "--bg-hover": "#2b1a3d",
+          "--bg-active": "#35204a",
+          "--text-primary": "#f4e9ff",
+          "--text-secondary": "#c9b8db",
+          "--text-muted": "#8a7599",
+          "--accent-primary": "#ff7a59",
+          "--accent-secondary": "#ffb26b",
+          "--accent-success": "#7ee081",
+          "--accent-warning": "#ffd166",
+          "--accent-error": "#ff5d5d",
+          "--accent-info": "#7ac3ff",
+          "--border-primary": "#3a2650",
+          "--border-secondary": "#221530",
+          "--scrollbar-thumb": "#3a2650",
+          "--scrollbar-track": "#140c1c"
+        }
+      }
+    ],
+    "webLinks": [
+      { "name": "Documentation", "url": "https://github.com/alice/homelab-extras#readme" }
+    ]
+  }
+}
