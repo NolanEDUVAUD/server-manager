@@ -131,17 +131,20 @@ export function IconPicker({ serverId, value, onChange }: Props) {
 export function ServerIconDisplay({ icon, size = 16 }: { icon: string | null | undefined; size?: number }) {
   if (!icon) return <Server size={size} />;
 
-  if (icon.startsWith('lucide:')) {
-    const name = icon.replace('lucide:', '');
-    const found = LUCIDE_ICONS.find(i => i.name === `lucide:${name}`);
+  // Lucide icons: case-insensitive prefix matching
+  if (icon.toLowerCase().startsWith('lucide:')) {
+    const name = icon.slice(7); // Remove 'lucide:' prefix (preserving case for lookup)
+    const found = LUCIDE_ICONS.find(i => i.name.toLowerCase() === `lucide:${name}`.toLowerCase());
     if (found) return <found.Icon size={size} />;
+    // Unknown lucide name: fallback to Server icon instead of rendering raw string
+    return <Server size={size} />;
   }
 
-  if (icon.startsWith('file:')) {
-    return <UploadedIcon fileName={icon.replace('file:', '')} size={size} />;
+  if (icon.toLowerCase().startsWith('file:')) {
+    return <UploadedIcon fileName={icon.replace(/^file:/i, '')} size={size} />;
   }
 
-  // Rétrocompatibilité : icône texte/emoji
+  // Rétrocompatibilité : icône texte/emoji (anything without lucide: or file: prefix)
   return <span style={{ fontSize: size }}>{icon}</span>;
 }
 

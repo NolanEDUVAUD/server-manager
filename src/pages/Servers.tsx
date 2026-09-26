@@ -15,6 +15,7 @@ import { useShortcuts } from "../hooks/useShortcuts";
 import { filterItems, groupByFolder, serverFilterable } from "../utils/filters";
 import { cn } from "../utils";
 import { DeployKeyDialog } from "../components/DeployKeyDialog";
+import { ServerIconDisplay } from "../components/IconPicker";
 import { useT } from "../i18n";
 
 type PowerAction = "shutdown" | "reboot";
@@ -125,7 +126,12 @@ export function Servers() {
               name={server.name}
               onToggle={() => toggleFavorite("server", server.id).catch((e) => toast.error(String(e)))}
             />
-            <span className="text-2xl shrink-0">{server.icon || OS_ICONS[server.os_type]}</span>
+            <span className="shrink-0">
+              {server.icon
+                ? <ServerIconDisplay icon={server.icon} size={20} />
+                : <span className="text-xl">{OS_ICONS[server.os_type]}</span>
+              }
+            </span>
             <div className="min-w-0">
               <div className="flex items-center gap-2 min-w-0">
                 <h3 className="text-text-primary font-semibold text-sm truncate">{server.name}</h3>

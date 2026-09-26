@@ -6,6 +6,7 @@ import { GroupForm } from "../components/GroupForm";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { StatusBadge } from "../components/StatusBadge";
 import { ToastContainer } from "../components/Toast";
+import { ServerIconDisplay } from "../components/IconPicker";
 import { useToast } from "../hooks/useToast";
 import { useT } from "../i18n";
 
@@ -140,7 +141,12 @@ export function Groups() {
                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                   </button>
 
-                  <span className="text-xl">{group.icon ?? "🗂️"}</span>
+                  <span className="shrink-0">
+                    {group.icon
+                      ? <ServerIconDisplay icon={group.icon} size={20} />
+                      : <span className="text-xl">🗂️</span>
+                    }
+                  </span>
 
                   <div className="flex-1 min-w-0">
                     <h3 className="text-text-primary font-semibold text-sm">{group.name}</h3>
@@ -215,7 +221,12 @@ export function Groups() {
                   <div className="border-t border-border-primary px-4 py-3 space-y-2">
                     {groupServers.map((s) => (
                       <div key={s.id} className="flex items-center gap-3 px-3 py-2 rounded-win bg-bg-secondary">
-                        <span className="text-base">{s.icon ?? "🖥️"}</span>
+                        <span className="shrink-0">
+                          {s.icon
+                            ? <ServerIconDisplay icon={s.icon} size={16} />
+                            : <span className="text-base">🖥️</span>
+                          }
+                        </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-text-primary truncate">{s.name}</p>
                           <p className="text-xs text-text-secondary font-mono">{s.ip}</p>

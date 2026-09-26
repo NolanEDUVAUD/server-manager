@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, Layers } from "lucide-react";
 import { Group, Server } from "../types";
+import { ServerIconDisplay } from "./IconPicker";
 import { useT } from "../i18n";
 
 interface GroupFormProps {
@@ -112,7 +113,12 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
                       onChange={() => toggleServer(s.id)}
                       className="accent-accent-primary"
                     />
-                    <span className="text-sm">{s.icon ?? "🖥️"}</span>
+                    <span className="shrink-0">
+                      {s.icon
+                        ? <ServerIconDisplay icon={s.icon} size={14} />
+                        : <span className="text-sm">🖥️</span>
+                      }
+                    </span>
                     <div className="min-w-0">
                       <p className="text-sm text-text-primary truncate">{s.name}</p>
                       <p className="text-xs text-text-secondary font-mono">{s.ip}</p>
