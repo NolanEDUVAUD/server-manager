@@ -274,6 +274,7 @@ pub fn run() {
             commands::app_update::app_update_info,
             commands::app_update::app_update_check,
             commands::app_update::app_update_install,
+            commands::app_update::check_github_release,
             // ── Ouverture d'adresses externes (B4) ──────────────
             external_cmd::open_external_url,
             // ── Verrouillage de l'application (1.3) ───────────

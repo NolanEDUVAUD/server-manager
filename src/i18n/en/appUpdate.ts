@@ -15,6 +15,8 @@ export const appUpdate: Dict["appUpdate"] = {
   confirmTitle: "Install version {version}?",
   confirmMessage:
     "Version {version} will be downloaded from GitHub, then its signature will be checked against the public key built into the application: an unsigned or modified package is rejected.\n\nIf the signature is valid, the installer will replace the application and restart it automatically. Your servers and configuration are kept.\n\nTasks running in the application (SSH consoles, batch tasks, lab shutdown or startup…) will be interrupted.",
+  confirmMessageUnsigned:
+    "Automatic updates aren't available for this build: the page for version {version} will open in your browser, where you can download and install it yourself. Nothing is downloaded or changed automatically.",
   progress: {
     preparing: "Preparing download…",
     downloadingPercent: "Downloading… {percent} %",
@@ -27,7 +29,7 @@ export const appUpdate: Dict["appUpdate"] = {
     installedVersion: "Installed version",
     checkOnStartup: "Check for updates at startup",
     checkOnStartupHelp: "Nothing is installed without your confirmation; every version is signed and verified before installation.",
-    checkNow: "Check now",
+    checkNow: "Check for updates",
     checking: "Checking…",
     upToDate: "The application is up to date",
     upToDateVersion: "The application is up to date (version {version})",
@@ -36,5 +38,10 @@ export const appUpdate: Dict["appUpdate"] = {
     checkFailed: "Check failed",
     releaseNotes: "Release notes",
     viewReleases: "View releases on GitHub",
+    lastChecked: "Last checked: {time}",
+    neverChecked: "No check yet",
+    openFailed: "Could not open the browser",
+    autoInstallAvailable: "Automatic, signed installation available",
+    autoInstallUnavailable: "The version will open on GitHub: manual installation",
   },
 };

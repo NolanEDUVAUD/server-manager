@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { invoke } from "@tauri-apps/api/core";
 import { UpdateBanner } from "./UpdateBanner";
 import { useAppUpdate } from "../stores/useAppUpdate";
-import { AppUpdateCheck } from "../types";
+import { GithubUpdateCheck } from "../types";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -16,12 +16,13 @@ vi.mock("@tauri-apps/api/event", () => ({
   }),
 }));
 
-const available: AppUpdateCheck = {
-  configured: true,
-  available: true,
-  version: "0.3.0",
+const available: GithubUpdateCheck = {
   current_version: "0.2.0",
-  date: "2026-09-21T14:13:20+00:00",
+  available: true,
+  latest_version: "0.3.0",
+  name: "0.3.0",
+  html_url: "https://github.com/NolanEDUVAUD/server-manager/releases/tag/v0.3.0",
+  published_at: "2026-09-21T14:13:20+00:00",
   notes: "<img src=x onerror=alert(1)>\n- Correction du ping",
 };
 
@@ -32,12 +33,12 @@ describe("UpdateBanner", () => {
   beforeEach(() => {
     vi.mocked(invoke).mockReset();
     progressHandler = null;
-    useAppUpdate.setState({ info: null, status: "idle", update: null, error: null, progress: null, dismissed: false });
+    useAppUpdate.setState({ info: { configured: true, current_version: "0.2.0" }, status: "idle", github: null, lastCheckedAt: null, error: null, progress: null, dismissed: false });
   });
 
   it("ne s'affiche pas sans version disponible", () => {
-    for (const status of ["idle", "checking", "up-to-date", "not-configured", "error"] as const) {
-      useAppUpdate.setState({ status });
+    for (const status of ["idle", "checking", "up-to-date", "error"] as const) {
+      useAppUpdate.setState({ status, github: null });
       const { container, unmount } = render(<UpdateBanner />);
       expect(container).toBeEmptyDOMElement();
       unmount();
@@ -45,7 +46,7 @@ describe("UpdateBanner", () => {
   });
 
   it("affiche la version disponible et ses notes en texte, jamais en HTML", () => {
-    useAppUpdate.setState({ status: "available", update: available });
+    useAppUpdate.setState({ status: "available", github: available });
     const { container } = render(<UpdateBanner />);
 
     expect(screen.getByText("Version 0.3.0 disponible")).toBeInTheDocument();
@@ -59,7 +60,7 @@ describe("UpdateBanner", () => {
 
   it("n'installe qu'après confirmation, en disant ce qui va se passer", async () => {
     vi.mocked(invoke).mockResolvedValue(undefined);
-    useAppUpdate.setState({ status: "available", update: available });
+    useAppUpdate.setState({ status: "available", github: available });
     render(<UpdateBanner />);
 
     fireEvent.click(installButtons()[0]);
@@ -74,16 +75,38 @@ describe("UpdateBanner", () => {
     fireEvent.click(screen.getByRole("button", { name: "Annuler" }));
     expect(invoke).not.toHaveBeenCalled();
 
-    // Confirmer : installation de la version exacte affichée
+    // Confirmer : l'updater signé propose la même version, elle est installée
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === "app_update_check") {
+        return Promise.resolve({ configured: true, available: true, version: "0.3.0", current_version: "0.2.0", date: null, notes: null });
+      }
+      return Promise.resolve(undefined);
+    });
     fireEvent.click(installButtons()[0]);
     fireEvent.click(installButtons()[1]);
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("app_update_install", { version: "0.3.0" }));
   });
 
+  it("ouvre la release dans le navigateur si l'updater signé n'est pas configuré", async () => {
+    useAppUpdate.setState({ info: { configured: false, current_version: "0.2.0" }, status: "available", github: available });
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    render(<UpdateBanner />);
+
+    fireEvent.click(installButtons()[0]);
+    expect(screen.getByText(/navigateur/)).toBeInTheDocument();
+    fireEvent.click(installButtons()[1]);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("open_external_url", { url: available.html_url }));
+  });
+
   it("affiche la progression puis une erreur lisible avec un nouvel essai", async () => {
     let fail: (e: unknown) => void = () => {};
-    vi.mocked(invoke).mockImplementation(() => new Promise((_, reject) => { fail = reject; }));
-    useAppUpdate.setState({ status: "available", update: available });
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === "app_update_check") {
+        return Promise.resolve({ configured: true, available: true, version: "0.3.0", current_version: "0.2.0", date: null, notes: null });
+      }
+      return new Promise((_, reject) => { fail = reject; });
+    });
+    useAppUpdate.setState({ status: "available", github: available });
     render(<UpdateBanner />);
 
     fireEvent.click(installButtons()[0]);
@@ -103,7 +126,7 @@ describe("UpdateBanner", () => {
   });
 
   it("« Plus tard » masque la bannière", () => {
-    useAppUpdate.setState({ status: "available", update: available });
+    useAppUpdate.setState({ status: "available", github: available });
     const { container } = render(<UpdateBanner />);
     fireEvent.click(screen.getByRole("button", { name: "Plus tard" }));
     expect(container).toBeEmptyDOMElement();

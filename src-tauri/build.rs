@@ -71,6 +71,7 @@ fn app_manifest() -> tauri_build::AppManifest {
         "batch_send_input",
         "clear_events",
         "close_dashboard_tab",
+        "check_github_release",
         "cron_list",
         "cron_remove_managed",
         "delete_alert_rule",

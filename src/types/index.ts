@@ -630,6 +630,19 @@ export interface AppUpdateCheck {
   notes: string | null;
 }
 
+/** Réponse de `check_github_release` (F1) : indépendante de l'updater signé, fonctionne
+ *  même sans clé publique embarquée. */
+export interface GithubUpdateCheck {
+  current_version: string;
+  available: boolean;
+  latest_version: string;
+  name: string;
+  notes: string | null;
+  html_url: string;
+  /** Date de publication (RFC 3339 ou format GitHub), telle que renvoyée par l'API */
+  published_at: string | null;
+}
+
 export type AppUpdatePhase = "downloading" | "verifying" | "installing";
 
 /** Événement `app-update-progress` */

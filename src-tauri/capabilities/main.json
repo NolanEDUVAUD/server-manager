@@ -20,6 +20,7 @@
     "allow-apply-import-config",
     "allow-clear-events",
     "allow-close-dashboard-tab",
+    "allow-check-github-release",
     "allow-cron-list",
     "allow-cron-remove-managed",
     "allow-delete-custom-theme",
