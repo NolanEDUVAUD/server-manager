@@ -180,6 +180,7 @@ fn app_manifest() -> tauri_build::AppManifest {
         "set_autostart",
         "set_dashboard_tab_visible",
         "set_extension_enabled",
+        "set_titlebar_colors",
         "ssh_execute",
         "ssh_key_delete",
         "ssh_key_deploy",

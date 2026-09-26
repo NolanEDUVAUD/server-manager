@@ -19,6 +19,14 @@ export interface ChangelogEntry {
 /** Liste des versions avec leurs modifications (ordre décroissant) */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.0",
+    date: "2026-09-29",
+    items: [
+      { fr: "Bêta 0.5.0 : merci de signaler tout problème depuis Paramètres → Signaler un problème", en: "0.5.0 beta: please report any issue from Settings → Report a problem" },
+      { fr: "La barre de titre de la fenêtre prend les couleurs du thème choisi (Windows 11 ; mode clair ou sombre sous Windows 10)", en: "The window title bar follows the chosen theme's colors (Windows 11; light or dark mode on Windows 10)" },
+    ],
+  },
+  {
     version: "0.4.2",
     date: "2026-09-28",
     items: [

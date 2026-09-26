@@ -165,6 +165,7 @@
     "allow-save-backup-settings",
     "allow-backup-run-now",
     "allow-quit-app",
+    "allow-set-titlebar-colors",
     "allow-get-extensions",
     "allow-install-extension",
     "allow-set-extension-enabled",

@@ -471,14 +471,18 @@ export function Layout({ children }: LayoutProps) {
                 <p className="text-sm font-semibold text-text-primary leading-tight">
                   Server Manager
                 </p>
-                <p className="text-xs text-text-secondary leading-tight">
-                  Power Control{version ? ` · v${version}` : ""}
-                  {version && isBeta && (
-                    <span className="ml-1 px-1 rounded bg-accent-warning/20 text-accent-warning text-[10px] font-semibold uppercase">
-                      {t("layout.beta")}
-                    </span>
-                  )}
-                </p>
+                {version ? (
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs leading-tight whitespace-nowrap">
+                    <span className="font-mono font-medium text-text-primary">v{version}</span>
+                    {isBeta && (
+                      <span className="px-1 rounded bg-accent-warning/20 text-accent-warning text-[10px] font-semibold uppercase">
+                        {t("layout.beta")}
+                      </span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-secondary leading-tight">Power Control</p>
+                )}
               </div>
             )}
           </div>

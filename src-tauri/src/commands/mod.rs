@@ -27,6 +27,7 @@ pub mod ssh;
 pub mod terminal;
 pub mod tray;
 pub mod updates;
+pub mod window;
 pub mod wol;
 // Authentification SSH par clé (1.2)
 pub mod ssh_keys;

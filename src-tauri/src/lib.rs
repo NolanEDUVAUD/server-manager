@@ -213,6 +213,7 @@ pub fn run() {
             // ── Zone de notification ────────────────────────────
             tray_cmd::update_tray_status,
             tray_cmd::quit_app,
+            commands::window::set_titlebar_colors,
             // ── Alertes ─────────────────────────────────────────
             alerts_cmd::get_alert_rules,
             alerts_cmd::save_alert_rule,

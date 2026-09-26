@@ -1,4 +1,5 @@
 // src/utils/theme.ts
+import { invoke } from '@tauri-apps/api/core';
 import { Theme } from '../types';
 
 // ─── Thèmes builtin ───────────────────────────────────────────────────────────
@@ -138,6 +139,42 @@ export function applyTheme(theme: Theme): void {
     if (key === '--font-size-base') return;
     root.style.setProperty(key, value);
   });
+  syncTitleBar(theme);
+}
+
+/** Luminance relative (0 = noir, 1 = blanc) d'une couleur « #rrggbb », ou null si illisible */
+export function relativeLuminance(hex: string): number | null {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const [r, g, b] = [0, 2, 4].map((i) => {
+    const c = parseInt(m[1].slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Couleurs de la barre de titre native pour un thème : celles de la barre latérale */
+export function titleBarColors(theme: Theme): { background: string; text: string; dark: boolean } | null {
+  const background = theme.colors['--bg-secondary'];
+  const text = theme.colors['--text-primary'];
+  const lum = background ? relativeLuminance(background) : null;
+  if (!text || lum === null || !/^#[0-9a-f]{6}$/i.test(text.trim())) return null;
+  return { background: background.trim(), text: text.trim(), dark: lum < 0.5 };
+}
+
+/**
+ * Barre de titre Windows (et ses boutons) aux couleurs du thème. Hors application
+ * (tests, navigateur) ou sous un autre système, l'appel échoue ou n'a aucun effet :
+ * on l'ignore.
+ */
+function syncTitleBar(theme: Theme): void {
+  const colors = titleBarColors(theme);
+  if (!colors) return;
+  try {
+    invoke('set_titlebar_colors', colors).catch(() => {});
+  } catch {
+    // Pas de pont Tauri (tests, navigateur)
+  }
 }
 
 /** Applique la taille de police sur :root et body. */
