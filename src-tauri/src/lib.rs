@@ -209,6 +209,7 @@ pub fn run() {
             integrations_cmd::test_integration,
             // ── Zone de notification ────────────────────────────
             tray_cmd::update_tray_status,
+            tray_cmd::quit_app,
             // ── Alertes ─────────────────────────────────────────
             alerts_cmd::get_alert_rules,
             alerts_cmd::save_alert_rule,

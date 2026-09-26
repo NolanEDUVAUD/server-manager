@@ -116,10 +116,9 @@ export function ScheduleForm({ initial, servers, groups, onSubmit, onCancel }: S
             <select aria-label={t("scheduler.form.target")} className={inputClass} value={target} onChange={(e) => setTarget(e.target.value)}>
               {groups.length > 0 && (
                 <optgroup label={t("scheduler.form.groups")}>
-                  {groups.map((g) => {
-                    const iconPrefix = g.icon && !g.icon.toLowerCase().startsWith('lucide:') && !g.icon.toLowerCase().startsWith('file:') ? `${g.icon} ` : "";
-                    return <option key={g.id} value={`Group:${g.id}`}>{iconPrefix}{g.name}</option>;
-                  })}
+                  {groups.map((g) => (
+                  <option key={g.id} value={`Group:${g.id}`}>{g.name}</option>
+                ))}
                 </optgroup>
               )}
               <optgroup label={t("scheduler.form.servers")}>

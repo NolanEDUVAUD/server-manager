@@ -20,9 +20,11 @@ import { CommandPalette } from "./CommandPalette";
 import { ShortcutsHelp } from "./ShortcutsHelp";
 import { TourModal } from "./TourModal";
 import { WhatsNewModal } from "./WhatsNewModal";
+import { EulaModal } from "./EulaModal";
 import { useShortcuts, ShortcutHandlers } from "../hooks/useShortcuts";
 import { NAV_SHORTCUTS } from "../utils/shortcuts";
 import { UpdateBanner } from "./UpdateBanner";
+import { SupportBanner } from "./SupportBanner";
 import { TKey, useT } from "../i18n";
 
 const NAV_ITEMS: { to: string; icon: typeof Server; labelKey: TKey; module?: string }[] = [
@@ -372,12 +374,15 @@ export function Layout({ children }: LayoutProps) {
       {/* ── Main Content ─────────────────────────────────────────────────── */}
       <CommandPalette pages={nav.map((n) => ({ to: n.to, label: t(n.labelKey) }))} />
       <ShortcutsHelp />
+      <EulaModal />
       <Onboarding />
       <TourModal />
       <WhatsNewModal />
       <main className="flex-1 min-w-0 relative overflow-hidden flex flex-col">
         {/* Nouvelle version signée disponible (au-dessus du contenu, qu'elle pousse vers le bas) */}
         <UpdateBanner />
+        {/* Bannière d'invitation à soutenir le projet */}
+        <SupportBanner />
         <div
           className={cn("flex-1 min-h-0 overflow-y-auto", onConsole && "hidden")}
           style={{ padding: "var(--page-gap)" }}

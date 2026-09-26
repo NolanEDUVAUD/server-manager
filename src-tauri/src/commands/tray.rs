@@ -12,3 +12,10 @@ pub fn update_tray_status(app: AppHandle, online: u32, total: u32) -> Result<(),
     tray.set_menu(Some(build_menu(&app).map_err(|e| e.to_string())?)).map_err(|e| e.to_string())?;
     Ok(())
 }
+
+/// Quitte réellement l'application (la fermeture de la fenêtre la réduit seulement
+/// dans la zone de notification). Utilisée par le refus de l'EULA.
+#[tauri::command]
+pub fn quit_app(app: AppHandle) {
+    app.exit(0);
+}

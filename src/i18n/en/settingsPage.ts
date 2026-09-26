@@ -84,5 +84,6 @@ export const settingsPage: Dict["settingsPage"] = {
     storage: "Storage",
     storageValue: "Encrypted JSON + local SQLite (AppData)",
     reviewTour: "Review the tour",
+    eula: "License Agreement (EULA)",
   },
 };

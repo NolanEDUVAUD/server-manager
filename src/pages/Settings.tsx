@@ -20,6 +20,7 @@ import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
 import { BugReportForm } from '../components/BugReportForm';
 import { SupportSettings } from '../components/SupportSettings';
+import { EulaViewer } from '../components/EulaViewer';
 import { useAppUpdate } from '../stores/useAppUpdate';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useT } from '../i18n';
@@ -646,6 +647,7 @@ function SectionAbout() {
   const { t } = useT();
   const { info, loadInfo } = useAppUpdate();
   const openTour = useTourStore((s) => s.open);
+  const [showEula, setShowEula] = useState(false);
   useEffect(() => {
     if (!info) loadInfo();
   }, [info, loadInfo]);
@@ -666,10 +668,16 @@ function SectionAbout() {
           <span className="text-text-secondary">{t("settingsPage.about.encryption")}</span>
           <span className="text-text-primary">AES-256-GCM</span>
         </div>
-        <div className="flex justify-between py-1">
+        <div className="flex justify-between py-1 border-b border-border-secondary">
           <span className="text-text-secondary">{t("settingsPage.about.storage")}</span>
           <span className="text-text-primary">{t("settingsPage.about.storageValue")}</span>
         </div>
+        <button
+          onClick={() => setShowEula(true)}
+          className="mt-2 px-3 py-1.5 text-xs rounded-win bg-bg-active text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+        >
+          {t("settingsPage.about.eula") || "License Agreement (EULA)"}
+        </button>
       </div>
       <button
         onClick={openTour}
@@ -677,6 +685,7 @@ function SectionAbout() {
       >
         {t("settingsPage.about.reviewTour")}
       </button>
+      {showEula && <EulaViewer onClose={() => setShowEula(false)} />}
     </div>
   );
 }

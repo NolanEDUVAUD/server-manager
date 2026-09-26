@@ -156,6 +156,7 @@
     "allow-get-backup-settings",
     "allow-save-backup-settings",
     "allow-backup-run-now",
+    "allow-quit-app",
     "shell:allow-open",
     "allow-get-extensions",
     "allow-install-extension",

@@ -84,5 +84,6 @@ export const settingsPage = {
     storage: "Stockage",
     storageValue: "JSON chiffré + SQLite local (AppData)",
     reviewTour: "Revoir le tutoriel",
+    eula: "Contrat de licence (EULA)",
   },
 };
