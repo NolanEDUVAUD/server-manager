@@ -95,6 +95,9 @@ export interface GeneralSettings {
   check_updates: boolean;
   /** Langue de l'interface */
   language: "fr" | "en";
+  /** Interrupteur global des alertes (Alertes → en haut de page) : quand désactivé, plus
+   * aucune règle ne se déclenche, quel que soit son état individuel. */
+  alerts_enabled: boolean;
 }
 
 export interface AppearanceSettings {

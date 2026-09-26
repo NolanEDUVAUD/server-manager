@@ -130,49 +130,136 @@ export function Layout({ children }: LayoutProps) {
     .map((r) => byRoute.get(r))
     .filter((n): n is NavItem => !!n);
 
+  // Glisser-déposer des onglets, implémenté au pointeur plutôt qu'avec l'API HTML5
+  // drag & drop : sous Tauri/WebView2 (Windows), quand `dragDropEnabled` de la fenêtre
+  // intercepte le drag-drop natif de l'OS, les événements `dragstart`/`dragover`/`drop`
+  // du navigateur ne se déclenchent jamais correctement — le HTML5 DnD ne fonctionne
+  // qu'en environnement Chromium « pur » (tests, devtools), pas dans l'app réelle.
+  type DropTarget = { route: string | null; zone: "main" | "favorites"; before: boolean } | null;
   const [dragRoute, setDragRoute] = useState<string | null>(null);
+  const [dropTarget, setDropTargetState] = useState<DropTarget>(null);
+  // Les gestionnaires window (pointermove/pointerup) sont attachés une seule fois, au
+  // pointerdown : ce sont des fonctions fraîches à chaque rendu qui ne « voient » jamais
+  // les mises à jour d'état suivantes (fermeture figée). `dropTarget` doit donc aussi
+  // vivre dans une ref, seule source fiable pour `onPointerUp` ; l'état ne sert qu'au rendu
+  // (indicateur visuel de la position de dépôt).
+  const dropTargetRef = useRef<DropTarget>(null);
+  function setDropTarget(target: DropTarget) {
+    dropTargetRef.current = target;
+    setDropTargetState(target);
+  }
+  const dragCandidate = useRef<{ route: string; pointerId: number; startX: number; startY: number; dragging: boolean } | null>(null);
+  const suppressClick = useRef(false);
+  const navRef = useRef<HTMLElement>(null);
 
-  function onItemDragStart(route: string) {
-    return (e: React.DragEvent) => {
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", route);
-      setDragRoute(route);
+  /** Distance (px) au-delà de laquelle un appui devient un glissement (sinon : un simple clic) */
+  const DRAG_THRESHOLD = 5;
+
+  function computeDropTarget(clientX: number, clientY: number): { route: string | null; zone: "main" | "favorites"; before: boolean } | null {
+    const el = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+    if (!el || !navRef.current?.contains(el)) return null;
+    const zoneEl = el.closest("[data-nav-zone]") as HTMLElement | null;
+    const zone = (zoneEl?.getAttribute("data-nav-zone") as "main" | "favorites" | null) ?? "main";
+    const itemEl = el.closest("[data-nav-route]") as HTMLElement | null;
+    if (!itemEl) return { route: null, zone, before: true };
+    const rect = itemEl.getBoundingClientRect();
+    return { route: itemEl.getAttribute("data-nav-route"), zone, before: clientY < rect.top + rect.height / 2 };
+  }
+
+  /** Route juste après `target` dans `list`, pour transformer un dépôt « après X » en « avant Y » */
+  function routeAfter(list: string[], target: string): string | undefined {
+    const idx = list.indexOf(target);
+    return idx >= 0 ? list[idx + 1] : undefined;
+  }
+
+  function commitDrop(route: string, target: { route: string | null; zone: "main" | "favorites"; before: boolean } | null) {
+    if (!target) return;
+    if (target.zone === "favorites") {
+      const before = target.route ? (target.before ? target.route : routeAfter(favorites, target.route)) : undefined;
+      addFavorite(route, before ?? null);
+      return;
+    }
+    if (favorites.includes(route)) removeFavorite(route);
+    const to = target.route ? (target.before ? target.route : routeAfter(order, target.route)) : undefined;
+    setTabOrder(to ? moveItem(order, route, to) : [...order.filter((r) => r !== route), route]);
+  }
+
+  function endDrag() {
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    window.removeEventListener("keydown", onKeyDown);
+  }
+
+  function onPointerMove(e: PointerEvent) {
+    const candidate = dragCandidate.current;
+    if (!candidate) return;
+    if (!candidate.dragging) {
+      const dx = e.clientX - candidate.startX;
+      const dy = e.clientY - candidate.startY;
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+      candidate.dragging = true;
+      suppressClick.current = true;
+      setDragRoute(candidate.route);
+    }
+    setDropTarget(computeDropTarget(e.clientX, e.clientY));
+  }
+
+  function onPointerUp() {
+    const candidate = dragCandidate.current;
+    dragCandidate.current = null;
+    endDrag();
+    if (candidate?.dragging) {
+      commitDrop(candidate.route, dropTargetRef.current);
+      // Le clic de fin de glissement ne doit pas déclencher la navigation du lien ;
+      // on relâche la garde juste après pour ne pas gêner le prochain vrai clic.
+      requestAnimationFrame(() => { suppressClick.current = false; });
+    }
+    setDragRoute(null);
+    setDropTarget(null);
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (e.key !== "Escape" || !dragCandidate.current) return;
+    dragCandidate.current = null;
+    endDrag();
+    setDragRoute(null);
+    setDropTarget(null);
+  }
+
+  function onItemPointerDown(route: string) {
+    return (e: React.PointerEvent) => {
+      // e.button vaut 0 pour le bouton principal (clic gauche / doigt / stylet) ; on ignore
+      // clic droit et clic milieu. Certains environnements (jsdom en test) ne renseignent
+      // pas la propriété : on ne bloque alors pas le geste.
+      if (e.button !== undefined && e.button !== 0) return;
+      dragCandidate.current = { route, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, dragging: false };
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+      window.addEventListener("keydown", onKeyDown);
     };
   }
 
-  function dropOnMain(target: string | null) {
-    return (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const route = dragRoute ?? e.dataTransfer.getData("text/plain");
-      if (!route) return;
-      if (favorites.includes(route)) removeFavorite(route);
-      setTabOrder(target ? moveItem(order, route, target) : [...order.filter((r) => r !== route), route]);
-      setDragRoute(null);
-    };
+  function onItemClickCapture(e: React.MouseEvent) {
+    if (!suppressClick.current) return;
+    e.preventDefault();
+    e.stopPropagation();
   }
 
-  function dropOnFavorites(target: string | null) {
-    return (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const route = dragRoute ?? e.dataTransfer.getData("text/plain");
-      if (!route) return;
-      addFavorite(route, target ?? undefined);
-      setDragRoute(null);
-    };
-  }
-
-  function renderNavItem(item: NavItem, opts: { favorite: boolean; onDrop: (e: React.DragEvent) => void }) {
+  function renderNavItem(item: NavItem, opts: { favorite: boolean }) {
     const { to, icon: Icon, labelKey } = item;
+    const dropHere = dropTarget?.route === to;
     return (
       <div
         key={to}
-        draggable
-        onDragStart={onItemDragStart(to)}
-        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        onDrop={opts.onDrop}
-        className={cn("group/nav relative", dragRoute === to && "opacity-50")}
+        data-nav-route={to}
+        onPointerDown={onItemPointerDown(to)}
+        onClickCapture={onItemClickCapture}
+        className={cn(
+          "group/nav relative touch-none",
+          dragRoute === to && "opacity-50",
+          dropHere && dropTarget?.before && "before:absolute before:inset-x-1 before:top-0 before:h-0.5 before:rounded-full before:bg-accent-primary",
+          dropHere && !dropTarget?.before && "after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent-primary"
+        )}
       >
         <NavLink
           to={to}
@@ -240,16 +327,23 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Navigation : défile quand la fenêtre est trop basse pour tous les onglets */}
         <nav
-          className={cn("flex-1 min-h-0 overflow-y-auto space-y-0.5", collapsed ? "p-2" : "p-3")}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={dropOnMain(null)}
+          ref={navRef}
+          data-nav-zone="main"
+          className={cn(
+            "flex-1 min-h-0 overflow-y-auto space-y-0.5",
+            collapsed ? "p-2" : "p-3",
+            dragRoute && dropTarget?.zone === "main" && !dropTarget.route && "bg-bg-hover/40"
+          )}
         >
           {/* Favoris : toujours visibles (même vides) pour servir de zone de dépôt */}
           {(!collapsed || favNav.length > 0) && (
             <div
-              className={cn("mb-1", !collapsed && "pb-2 mb-2 border-b border-border-primary")}
-              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              onDrop={dropOnFavorites(null)}
+              data-nav-zone="favorites"
+              className={cn(
+                "mb-1 rounded-win",
+                !collapsed && "pb-2 mb-2 border-b border-border-primary",
+                dragRoute && dropTarget?.zone === "favorites" && !dropTarget.route && "bg-bg-hover/40"
+              )}
             >
               {!collapsed && (
                 <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary/70">
@@ -262,13 +356,13 @@ export function Layout({ children }: LayoutProps) {
                 </p>
               )}
               <div className="space-y-0.5">
-                {favNav.map((item) => renderNavItem(item, { favorite: true, onDrop: dropOnFavorites(item.to) }))}
+                {favNav.map((item) => renderNavItem(item, { favorite: true }))}
               </div>
             </div>
           )}
 
           <div className="space-y-0.5">
-            {mainNav.map((item) => renderNavItem(item, { favorite: false, onDrop: dropOnMain(item.to) }))}
+            {mainNav.map((item) => renderNavItem(item, { favorite: false }))}
           </div>
         </nav>
 

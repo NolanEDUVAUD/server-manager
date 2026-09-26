@@ -20,9 +20,13 @@ interface DropdownProps {
  * ni recouvert par un contexte d'empilement local (ex. le rendu WebGL/canvas d'xterm
  * dans la Console) : sa position dans le DOM ne dépend plus de celle du déclencheur.
  *
- * Se ferme au clic extérieur, à Échap, et au scroll/redimensionnement (sa position
- * calculée une fois à l'ouverture ne suivrait pas la page, mieux vaut refermer que
- * laisser le menu se détacher visuellement de son déclencheur).
+ * Se ferme au clic extérieur et à Échap. Un scroll ou un redimensionnement NE le ferme
+ * plus : un scroll qui a lieu à l'intérieur du menu (ex. une longue liste, un sélecteur
+ * de serveur) ne doit jamais le fermer, et un scroll ailleurs sur la page (ou un
+ * redimensionnement de la fenêtre) recalcule simplement sa position à partir du
+ * rectangle du déclencheur — le menu suit son ancre au lieu de se détacher d'elle.
+ * Il ne se ferme que si le déclencheur sort entièrement de la zone visible (repère
+ * disparu, plus aucune position sensée à calculer).
  */
 export function Dropdown({ open, onClose, anchorRef, align = "left", className, children }: DropdownProps) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -58,9 +62,7 @@ export function Dropdown({ open, onClose, anchorRef, align = "left", className, 
 
   useEffect(() => {
     if (!open) return;
-    function close() {
-      onClose();
-    }
+
     function onDown(e: MouseEvent) {
       const target = e.target as Node;
       if (menuRef.current?.contains(target)) return;
@@ -70,15 +72,56 @@ export function Dropdown({ open, onClose, anchorRef, align = "left", className, 
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
+
+    // Recalcule la position à partir de l'ancre, sans repasser par React tant que rien
+    // n'a changé — au plus une fois par frame, pour rester fluide pendant un scroll.
+    let rafId: number | null = null;
+    function reposition() {
+      rafId = null;
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const fullyOutOfView =
+        rect.bottom <= 0 || rect.top >= window.innerHeight || rect.right <= 0 || rect.left >= window.innerWidth;
+      if (fullyOutOfView) {
+        // Le déclencheur a totalement disparu de la zone visible (page ou panneau
+        // défilé) : plus aucun repère pour positionner le menu, on referme.
+        onClose();
+        return;
+      }
+      const menu = menuRef.current;
+      const menuHeight = menu?.offsetHeight ?? 0;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const flipUp = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+      const top = flipUp ? Math.max(4, rect.top - menuHeight - 4) : rect.bottom + 4;
+      setPos({ top, left: rect.left, right: window.innerWidth - rect.right });
+    }
+    function onScroll(e: Event) {
+      // Un scroll survenu à l'intérieur même du menu (liste longue, sélecteur défilant)
+      // ne doit ni le fermer ni le repositionner : seul un scroll ailleurs sur la page
+      // (potentiellement un parent qui déplace le déclencheur) doit le suivre.
+      if (e.target instanceof Node && menuRef.current?.contains(e.target)) return;
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(reposition);
+    }
+    function onResize() {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(reposition);
+    }
+
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
+    // capture: true pour intercepter le scroll de n'importe quel ancêtre défilant, pas
+    // seulement window (ex. un panneau interne avec overflow-y-auto).
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
     };
   }, [open, onClose, anchorRef]);
 

@@ -109,7 +109,7 @@ function RuleForm({ initial, onSubmit, onCancel }: { initial: AlertRule; onSubmi
 
 export function Alerts() {
   const { t, locale } = useT();
-  const { servers, groups, events, settings } = useStore();
+  const { servers, groups, events, settings, updateGeneral } = useStore();
   const { toasts, removeToast, success, error } = useToast();
   const [rules, setRules] = useState<AlertRule[]>([]);
   const [channels, setChannels] = useState<IntegrationView[]>([]);
@@ -166,6 +166,24 @@ export function Alerts() {
             <Plus size={15} /> {t("alerts.newRule")}
           </button>
         </div>
+      </div>
+
+      {/* ── Interrupteur global : coupe tout déclenchement, quel que soit l'état
+          de chaque règle (bureau, push, historique) ──────────────────────── */}
+      <div className={cn("flex items-center gap-4 bg-bg-tertiary border rounded-win p-4", settings.general.alerts_enabled ? "border-border-primary" : "border-accent-warning/50")}>
+        <BellRing size={18} className={settings.general.alerts_enabled ? "text-accent-success" : "text-text-muted"} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-text-primary">{t("alerts.masterSwitch")}</p>
+          <p className="text-xs text-text-muted">{settings.general.alerts_enabled ? t("alerts.masterSwitchOn") : t("alerts.masterSwitchOff")}</p>
+        </div>
+        <button
+          onClick={() => updateGeneral({ alerts_enabled: !settings.general.alerts_enabled }).catch((e) => error(String(e)))}
+          className={cn("relative w-10 h-6 rounded-full transition-colors shrink-0", settings.general.alerts_enabled ? "bg-accent-primary" : "bg-bg-hover")}
+          title={settings.general.alerts_enabled ? t("alerts.disable") : t("alerts.enable")}
+          aria-label={t("alerts.masterSwitch")}
+        >
+          <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all", settings.general.alerts_enabled ? "left-[18px]" : "left-0.5")} />
+        </button>
       </div>
 
       {/* ── Canaux ─────────────────────────────────────────────────────── */}

@@ -5,6 +5,9 @@ export const alerts: Dict["alerts"] = {
   subtitle: "Get notified when something goes wrong, even with the window closed (notification area)",
   test: "Test",
   newRule: "New rule",
+  masterSwitch: "Alerts enabled",
+  masterSwitchOn: "All active rules can fire",
+  masterSwitchOff: "No alert will be sent, whatever each rule's own state",
   conditions: {
     offline: "Server offline",
     cpuAbove: "High CPU",
