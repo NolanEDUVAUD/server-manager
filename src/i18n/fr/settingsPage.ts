@@ -11,6 +11,7 @@ export const settingsPage = {
     config: "Configuration",
     updates: "Mise à jour",
     report: "Signaler un problème",
+    coffee: "Soutenir le développement",
     about: "À propos",
   },
   saved: "Sauvegardé",

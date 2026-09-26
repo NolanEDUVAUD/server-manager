@@ -43,6 +43,7 @@ import { settingsPage } from "./settingsPage";
 import { shortcuts } from "./shortcuts";
 import { sshAuth } from "./sshAuth";
 import { sshKeys } from "./sshKeys";
+import { support } from "./support";
 import { themes } from "./themes";
 import { updates } from "./updates";
 import { webTabs } from "./webTabs";
@@ -88,6 +89,7 @@ export const fr = {
   shortcuts,
   sshAuth,
   sshKeys,
+  support,
   themes,
   updates,
   webTabs,

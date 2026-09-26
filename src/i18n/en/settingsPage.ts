@@ -12,6 +12,7 @@ export const settingsPage: Dict["settingsPage"] = {
     config: "Configuration",
     updates: "Updates",
     report: "Report an issue",
+    coffee: "Buy me a coffee",
     about: "About",
   },
   saved: "Saved",
