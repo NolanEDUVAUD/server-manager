@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   BugReportInput,
   MAX_BODY_CHARS,
+  MAX_ISSUE_URL_CHARS,
   buildBugReportBody,
   buildBugReportIssueUrl,
   buildBugReportText,
@@ -115,5 +116,26 @@ describe("buildBugReportIssueUrl", () => {
   it("accepte un dépôt de test explicite", () => {
     const url = buildBugReportIssueUrl(report(), "https://github.com/example/repo");
     expect(url.startsWith("https://github.com/example/repo/issues/new?")).toBe(true);
+  });
+
+  it("ne dépasse jamais la longueur maximale même avec un corps de MAX_BODY_CHARS caractères", () => {
+    // Corps déjà tronqué à MAX_BODY_CHARS par buildBugReportBody, mais l'encodage
+    // (accents, retours à la ligne…) peut à lui seul dépasser MAX_ISSUE_URL_CHARS.
+    const url = buildBugReportIssueUrl(report({ description: "é\n".repeat(MAX_BODY_CHARS) }));
+    expect(url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_CHARS);
+    expect(decodeURIComponent(new URL(url).search)).toContain("tronqué");
+  });
+
+  it("ne tronque pas un rapport qui tient dans la limite", () => {
+    const url = buildBugReportIssueUrl(report());
+    expect(url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_CHARS);
+    expect(new URL(url).searchParams.get("body")).not.toContain("tronqué");
+  });
+
+  it("reste sous la limite même avec un titre très long en plus d'un corps long", () => {
+    const url = buildBugReportIssueUrl(
+      report({ title: "T".repeat(500), description: "x".repeat(MAX_BODY_CHARS * 3) })
+    );
+    expect(url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_CHARS);
   });
 });

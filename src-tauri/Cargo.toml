@@ -56,8 +56,10 @@ thiserror = "1"
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 # Ouverture du navigateur par défaut (releases GitHub, rapport de bug, soutien du projet) :
-# l'adresse autorisée est restreinte dans tauri.conf.json (plugins.shell.open)
-tauri-plugin-shell = "2"
+# remplace `tauri-plugin-shell` (son `open()` est dépassé côté Tauri v2). L'adresse est
+# validée en Rust avant l'appel (voir `external.rs`, `commands/external.rs`), la webview
+# n'ayant elle-même aucune permission de ce plugin.
+tauri-plugin-opener = "2"
 # Mise à jour automatique signée (minisign) depuis les releases GitHub. Sans la
 # fonctionnalité « zip » : elle ne sert qu'aux paquets de mise à jour du format Tauri v1.
 tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }

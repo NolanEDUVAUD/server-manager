@@ -21,5 +21,8 @@ export const bugReport = {
   copy: "Copier le rapport",
   copied: "Rapport copié dans le presse-papier",
   openFailed: "Impossible d'ouvrir le navigateur",
+  openFailedFallback: "Copie l'adresse ci-dessous et ouvre-la toi-même dans ton navigateur :",
+  copyUrl: "Copier l'adresse",
+  urlCopied: "Adresse copiée",
   titleRequired: "Le titre est obligatoire",
 };

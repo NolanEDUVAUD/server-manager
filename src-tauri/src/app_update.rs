@@ -224,9 +224,11 @@ pub fn manifest_url_from_release(body: &[u8]) -> Result<Url, String> {
     Ok(url)
 }
 
-/// Interroge l'API GitHub (`api_url`) et renvoie l'adresse du manifeste de la dernière
-/// release. La réponse est lue par morceaux, au plus `MAX_RELEASE_METADATA_BYTES`.
-pub async fn fetch_manifest_url(api_url: &str, timeout: Duration) -> Result<Url, String> {
+/// Requête GET commune à `fetch_manifest_url` et `fetch_github_release` : en-tête
+/// `User-Agent` (exigé par l'API GitHub), délai `timeout`, réponse lue par morceaux et
+/// bornée à `MAX_RELEASE_METADATA_BYTES` (annoncés ou reçus), erreurs lisibles pour les
+/// cas courants (hors ligne, 404, limite de requêtes).
+async fn get_bounded_github_json(api_url: &str, timeout: Duration) -> Result<Vec<u8>, String> {
     let client = reqwest::Client::builder()
         .timeout(timeout)
         .user_agent(concat!("server-power-manager/", env!("CARGO_PKG_VERSION")))
@@ -256,7 +258,126 @@ pub async fn fetch_manifest_url(api_url: &str, timeout: Duration) -> Result<Url,
         }
         body.extend_from_slice(&chunk);
     }
+    Ok(body)
+}
+
+/// Interroge l'API GitHub (`api_url`) et renvoie l'adresse du manifeste de la dernière
+/// release. La réponse est lue par morceaux, au plus `MAX_RELEASE_METADATA_BYTES`.
+pub async fn fetch_manifest_url(api_url: &str, timeout: Duration) -> Result<Url, String> {
+    let body = get_bounded_github_json(api_url, timeout).await?;
     manifest_url_from_release(&body)
+}
+
+// ── Dernière release GitHub (F1 : « Rechercher des mises à jour ») ─────────
+
+/// Adresse de l'API REST « dernière release » du dépôt, indépendante du manifeste
+/// `latest.json` de l'updater signé : utilisée pour afficher la version, le nom et les
+/// notes de la dernière release même quand aucune clé publique n'est configurée
+/// (auquel cas l'installation se fait en ouvrant `html_url` dans le navigateur).
+pub fn latest_release_repo_api_url() -> String {
+    "https://api.github.com/repos/NolanEDUVAUD/server-manager/releases/latest".to_string()
+}
+
+/// Ce que l'API `GET /repos/.../releases/latest` renvoie, une fois nettoyé
+#[derive(Debug, Clone, PartialEq)]
+pub struct GithubReleaseInfo {
+    /// `tag_name` sans le préfixe `v`
+    pub version: String,
+    pub name: String,
+    pub notes: Option<String>,
+    pub html_url: String,
+    pub published_at: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct GithubReleaseResponse {
+    tag_name: String,
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    body: Option<String>,
+    html_url: String,
+    #[serde(default)]
+    published_at: Option<String>,
+}
+
+/// Analyse la réponse de l'API. Seule une adresse `https://github.com/...` est acceptée
+/// pour `html_url` (ouverte plus tard dans le navigateur via `open_external_url`).
+pub fn parse_github_release(body: &[u8]) -> Result<GithubReleaseInfo, String> {
+    if body.len() > MAX_RELEASE_METADATA_BYTES {
+        return Err(RESPONSE_TOO_LARGE.to_string());
+    }
+    let release: GithubReleaseResponse =
+        serde_json::from_slice(body).map_err(|e| format!("Réponse de GitHub illisible : {e}"))?;
+    let version = release.tag_name.strip_prefix('v').unwrap_or(&release.tag_name).trim().to_string();
+    if version.is_empty() {
+        return Err("Numéro de version de la release illisible".to_string());
+    }
+    let html_url = Url::parse(&release.html_url).map_err(|_| "Adresse de la release invalide".to_string())?;
+    if html_url.scheme() != "https" || html_url.host_str() != Some("github.com") {
+        return Err("Adresse de la release refusée".to_string());
+    }
+    Ok(GithubReleaseInfo {
+        version,
+        name: release.name.unwrap_or_default(),
+        notes: sanitize_notes(release.body.as_deref()),
+        html_url: html_url.to_string(),
+        published_at: release.published_at,
+    })
+}
+
+/// Interroge `GET /repos/{owner}/{repo}/releases/latest` et renvoie la release nettoyée.
+pub async fn fetch_github_release(api_url: &str, timeout: Duration) -> Result<GithubReleaseInfo, String> {
+    let body = get_bounded_github_json(api_url, timeout).await?;
+    parse_github_release(&body)
+}
+
+/// Composantes numériques d'une version « semver-like » (`X.Y.Z…`) : le suffixe
+/// pré-release/build (après `-` ou `+`) est ignoré pour l'ordre, comme les composantes
+/// manquantes (`"1.2"` devient `[1, 2]`, comparé à `[1, 2, 0]`).
+fn numeric_components(version: &str) -> Vec<u64> {
+    let core = version.split(['-', '+']).next().unwrap_or(version);
+    core.split('.').map(|part| part.trim().parse::<u64>().unwrap_or(0)).collect()
+}
+
+/// `candidate` est-elle une version plus récente que `current` ? Comparaison numérique
+/// composante par composante (`1.9.0` < `1.10.0`), les composantes manquantes valant 0.
+pub fn is_newer_version(current: &str, candidate: &str) -> bool {
+    let current = numeric_components(current);
+    let candidate = numeric_components(candidate);
+    let len = current.len().max(candidate.len());
+    for i in 0..len {
+        let a = current.get(i).copied().unwrap_or(0);
+        let b = candidate.get(i).copied().unwrap_or(0);
+        if a != b {
+            return b > a;
+        }
+    }
+    false
+}
+
+/// Réponse de la commande `check_github_release`
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct GithubUpdateCheck {
+    pub current_version: String,
+    pub available: bool,
+    pub latest_version: String,
+    pub name: String,
+    pub notes: Option<String>,
+    pub html_url: String,
+    pub published_at: Option<String>,
+}
+
+pub fn build_github_update_check(current_version: &str, release: GithubReleaseInfo) -> GithubUpdateCheck {
+    GithubUpdateCheck {
+        available: is_newer_version(current_version, &release.version),
+        current_version: current_version.to_string(),
+        latest_version: release.version,
+        name: release.name,
+        notes: release.notes,
+        html_url: release.html_url,
+        published_at: release.published_at,
+    }
 }
 
 // ── Validation et nettoyage ────────────────────────────────────────────────
@@ -616,6 +737,130 @@ mod tests {
         let api = format!("{}/repositories/1/releases/latest", server.uri());
         let url = fetch_manifest_url(&api, Duration::from_secs(5)).await.unwrap();
         assert_eq!(url.as_str(), MANIFEST);
+    }
+
+    // ── Dernière release GitHub (F1) ──
+
+    fn github_release_json(html_url: &str) -> String {
+        serde_json::json!({
+            "tag_name": "v0.5.0",
+            "name": "0.5.0",
+            "body": "Corrections\r\net nouveautés",
+            "html_url": html_url,
+            "published_at": "2026-09-21T14:13:20Z",
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn github_api_url_targets_the_project_repository() {
+        assert_eq!(
+            latest_release_repo_api_url(),
+            "https://api.github.com/repos/NolanEDUVAUD/server-manager/releases/latest"
+        );
+    }
+
+    #[test]
+    fn github_release_is_parsed_and_cleaned() {
+        let html = "https://github.com/NolanEDUVAUD/server-manager/releases/tag/v0.5.0";
+        let release = parse_github_release(github_release_json(html).as_bytes()).unwrap();
+        assert_eq!(release.version, "0.5.0");
+        assert_eq!(release.name, "0.5.0");
+        assert_eq!(release.notes.as_deref(), Some("Corrections\net nouveautés"));
+        assert_eq!(release.html_url, html);
+        assert_eq!(release.published_at.as_deref(), Some("2026-09-21T14:13:20Z"));
+    }
+
+    #[test]
+    fn github_release_without_v_prefix_is_accepted() {
+        let json = serde_json::json!({
+            "tag_name": "0.5.0",
+            "html_url": "https://github.com/owner/repo/releases/tag/0.5.0",
+        })
+        .to_string();
+        assert_eq!(parse_github_release(json.as_bytes()).unwrap().version, "0.5.0");
+    }
+
+    #[test]
+    fn github_release_refuses_non_github_or_unreadable_html_url() {
+        for bad in [
+            serde_json::json!({ "tag_name": "v1", "html_url": "https://evil.com/x" }).to_string(),
+            serde_json::json!({ "tag_name": "v1", "html_url": "not a url" }).to_string(),
+            serde_json::json!({ "tag_name": "v1", "html_url": "http://github.com/x" }).to_string(),
+            serde_json::json!({ "tag_name": "", "html_url": "https://github.com/x" }).to_string(),
+            "{}".to_string(),
+        ] {
+            assert!(parse_github_release(bad.as_bytes()).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn version_comparison_is_numeric_not_lexicographic() {
+        assert!(is_newer_version("0.9.0", "0.10.0"));
+        assert!(is_newer_version("0.4.0", "0.4.1"));
+        assert!(is_newer_version("0.4", "0.4.1"));
+        assert!(!is_newer_version("0.4.1", "0.4"));
+        assert!(!is_newer_version("0.4.0", "0.4.0"));
+        assert!(!is_newer_version("0.5.0", "0.4.9"));
+        assert!(is_newer_version("1.2.3", "2.0.0"));
+        // Composante non numérique : traitée comme 0, ne fait jamais planter la comparaison
+        assert!(!is_newer_version("0.4.0", "0.4.x"));
+    }
+
+    #[test]
+    fn github_update_check_reports_availability_against_current_version() {
+        let release = GithubReleaseInfo {
+            version: "0.5.0".into(),
+            name: "0.5.0".into(),
+            notes: Some("notes".into()),
+            html_url: "https://github.com/owner/repo/releases/tag/v0.5.0".into(),
+            published_at: Some("2026-09-21T14:13:20Z".into()),
+        };
+        let check = build_github_update_check("0.4.0", release.clone());
+        assert!(check.available);
+        assert_eq!(check.latest_version, "0.5.0");
+        assert_eq!(check.current_version, "0.4.0");
+
+        let up_to_date = build_github_update_check("0.5.0", release);
+        assert!(!up_to_date.available);
+    }
+
+    #[tokio::test]
+    async fn fetch_github_release_reads_the_latest_release() {
+        use wiremock::matchers::{header, header_exists, method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        let html = "https://github.com/owner/repo/releases/tag/v0.5.0";
+        Mock::given(method("GET"))
+            .and(path("/repos/owner/repo/releases/latest"))
+            .and(header("accept", "application/vnd.github+json"))
+            .and(header_exists("user-agent"))
+            .respond_with(ResponseTemplate::new(200).set_body_raw(github_release_json(html), "application/json"))
+            .expect(1)
+            .mount(&server)
+            .await;
+        let api = format!("{}/repos/owner/repo/releases/latest", server.uri());
+        let release = fetch_github_release(&api, Duration::from_secs(5)).await.unwrap();
+        assert_eq!(release.version, "0.5.0");
+        assert_eq!(release.html_url, html);
+    }
+
+    #[tokio::test]
+    async fn fetch_github_release_reports_readable_errors() {
+        use wiremock::matchers::path;
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        Mock::given(path("/none")).respond_with(ResponseTemplate::new(404)).mount(&server).await;
+        Mock::given(path("/limited")).respond_with(ResponseTemplate::new(429)).mount(&server).await;
+        let uri = server.uri();
+        let err = |route: &str| {
+            let url = format!("{uri}{route}");
+            async move { fetch_github_release(&url, Duration::from_secs(5)).await.unwrap_err() }
+        };
+        assert!(err("/none").await.contains("Aucune release publiée"));
+        assert!(err("/limited").await.contains("Limite de requêtes"));
     }
 
     #[tokio::test]
