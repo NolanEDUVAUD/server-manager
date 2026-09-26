@@ -742,7 +742,7 @@ function SectionAbout() {
         </button>
       </div>
       <button
-        onClick={openTour}
+        onClick={() => openTour()}
         className="px-4 py-2 text-sm bg-bg-active text-text-primary rounded-win hover:bg-bg-hover transition-colors duration-150"
       >
         {t("settingsPage.about.reviewTour")}

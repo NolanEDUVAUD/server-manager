@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Server, ShieldCheck } from "lucide-react";
 import { useStore } from "../stores/useStore";
@@ -16,11 +16,7 @@ export function Onboarding() {
   const [selected, setSelected] = useState<string[]>(MODULES.filter((m) => m.essential).map((m) => m.key));
   const [error, setError] = useState("");
 
-  // Ouvrir automatiquement le tour au premier lancement (avant tout return : règle des hooks)
   const firstLaunch = !settings.general.onboarding_done;
-  useEffect(() => {
-    if (firstLaunch) openTour();
-  }, [firstLaunch, openTour]);
 
   if (!firstLaunch) return null;
 
@@ -30,6 +26,9 @@ export function Onboarding() {
     try {
       await updateGeneral({ hidden_modules: hiddenExcept(selected), onboarding_done: true });
       if (servers.length === 0) navigate("/servers");
+      // Le tour interactif ne s'ouvre qu'une fois les modules choisis : il ne présente
+      // ainsi que les onglets que la personne a effectivement gardés.
+      openTour();
     } catch (e) {
       setError(String(e));
     }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { useStore } from "../stores/useStore";
-import { getChangesBetween, getCurrentChangelogVersion } from "../utils/changelog";
+import { useTourStore } from "../stores/useTourStore";
+import { getChangesBetween } from "../utils/changelog";
 import { useT } from "../i18n";
 import { cn } from "../utils";
 
@@ -13,14 +14,19 @@ const LAST_SEEN_VERSION_KEY = "spm.lastSeenVersion";
  * Montée en permanence mais affichée seulement si :
  * - onboarding_done === true
  * - version actuelle > version stockée
+ * - aucun autre écran de premier lancement (EULA, choix des modules, tutoriel) n'est ouvert
  */
 export function WhatsNewModal() {
   const { settings } = useStore();
   const { t, lang } = useT();
+  const openTour = useTourStore((s) => s.open);
+  const tourOpen = useTourStore((s) => s.isOpen);
   const [visible, setVisible] = useState(false);
   const [currentVersion, setCurrentVersion] = useState("");
   const [lastSeenVersion, setLastSeenVersion] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+
+  const firstLaunch = !settings.general.onboarding_done;
 
   // Lecture de la version actuelle et de la dernière vue
   useEffect(() => {
@@ -85,7 +91,9 @@ export function WhatsNewModal() {
     return () => { alive = false; };
   }, [settings.general.onboarding_done]);
 
-  if (isLoading || !visible || !currentVersion || !lastSeenVersion) {
+  // Ne jamais se superposer à l'EULA, au choix des modules ou au tutoriel : ce sont des
+  // écrans bloquants qui doivent chacun rester seuls à l'écran.
+  if (isLoading || !visible || !currentVersion || !lastSeenVersion || firstLaunch || tourOpen) {
     return null;
   }
 
@@ -99,33 +107,60 @@ export function WhatsNewModal() {
     setVisible(false);
   };
 
+  const discover = (tourStep: string) => {
+    handleClose();
+    openTour([tourStep]);
+  };
+
   return (
     <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col animate-slide-in">
         <div className="p-6 border-b border-border-primary flex items-center justify-between">
-          <h2 className="text-text-primary font-semibold text-lg">
-            {t("whatsNew.title")} {changes[0]?.version}
+          <h2 className="text-text-primary font-semibold text-lg flex items-center gap-2">
+            <Sparkles size={18} className="text-accent-primary" />
+            {t("whatsNew.title", { version: changes[0]?.version ?? currentVersion })}
           </h2>
           <button
             onClick={handleClose}
+            title={t("whatsNew.close")}
             className="text-text-secondary hover:text-text-primary transition-colors"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
-          {changes.map((entry) => (
+        <div className="p-6 overflow-y-auto flex-1 space-y-5">
+          {changes.map((entry, entryIdx) => (
             <div key={entry.version} className="space-y-2">
-              <h3 className="text-text-primary font-medium text-sm">
-                v{entry.version} — {entry.date}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-text-primary font-medium text-sm">
+                  v{entry.version} — {entry.date}
+                </h3>
+                {entryIdx === 0 && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-accent-primary/15 text-accent-primary">
+                    {t("whatsNew.newBadge")}
+                  </span>
+                )}
+              </div>
               <ul className="space-y-1.5 text-sm text-text-secondary">
-                {entry.items[language].map((item, idx) => (
-                  <li key={idx} className="flex gap-2 ml-2">
-                    <span className="text-accent-primary shrink-0">•</span>
-                    <span>{item}</span>
+                {entry.items.map((item, idx) => (
+                  <li key={idx} className="flex items-start justify-between gap-3 ml-2">
+                    <span className="flex gap-2">
+                      <span className="text-accent-primary shrink-0">•</span>
+                      <span>{item[language]}</span>
+                    </span>
+                    {item.tourStep && (
+                      <button
+                        onClick={() => discover(item.tourStep as string)}
+                        className={cn(
+                          "shrink-0 px-2 py-0.5 text-xs rounded-win border border-border-primary text-text-secondary",
+                          "hover:text-accent-primary hover:border-accent-primary transition-colors"
+                        )}
+                      >
+                        {t("whatsNew.discover")}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
