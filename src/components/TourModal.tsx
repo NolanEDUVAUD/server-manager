@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Server } from "lucide-react";
 import { useTourStore } from "../stores/useTourStore";
 import { useT } from "../i18n";
@@ -47,6 +47,18 @@ export function TourModal() {
     setCurrentStep(0);
     close();
   };
+
+  // Clavier : flèches pour naviguer, Échap pour fermer
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") setCurrentStep((c) => Math.min(c + 1, TOUR_STEPS.length - 1));
+      else if (e.key === "ArrowLeft") setCurrentStep((c) => Math.max(c - 1, 0));
+      else if (e.key === "Escape") { setCurrentStep(0); close(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, close]);
 
   if (!isOpen) return null;
 

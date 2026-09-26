@@ -16,12 +16,13 @@ export function Onboarding() {
   const [selected, setSelected] = useState<string[]>(MODULES.filter((m) => m.essential).map((m) => m.key));
   const [error, setError] = useState("");
 
-  if (settings.general.onboarding_done) return null;
-
-  // Ouvrir automatiquement le tour au premier lancement
+  // Ouvrir automatiquement le tour au premier lancement (avant tout return : règle des hooks)
+  const firstLaunch = !settings.general.onboarding_done;
   useEffect(() => {
-    openTour();
-  }, [openTour]);
+    if (firstLaunch) openTour();
+  }, [firstLaunch, openTour]);
+
+  if (!firstLaunch) return null;
 
   const toggle = (key: string) => setSelected((s) => (s.includes(key) ? s.filter((k) => k !== key) : [...s, key]));
 
