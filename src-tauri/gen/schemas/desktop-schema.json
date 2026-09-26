@@ -471,6 +471,12 @@
           "markdownDescription": "Enables the batch_send_input command without any pre-configured scope."
         },
         {
+          "description": "Enables the check_github_release command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-check-github-release",
+          "markdownDescription": "Enables the check_github_release command without any pre-configured scope."
+        },
+        {
           "description": "Enables the clear_events command without any pre-configured scope.",
           "type": "string",
           "const": "allow-clear-events",
@@ -843,6 +849,12 @@
           "markdownDescription": "Enables the open_dashboard_tab command without any pre-configured scope."
         },
         {
+          "description": "Enables the open_external_url command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-external-url",
+          "markdownDescription": "Enables the open_external_url command without any pre-configured scope."
+        },
+        {
           "description": "Enables the ping_all command without any pre-configured scope.",
           "type": "string",
           "const": "allow-ping-all",
@@ -969,6 +981,12 @@
           "markdownDescription": "Enables the prune_history command without any pre-configured scope."
         },
         {
+          "description": "Enables the quit_app command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-quit-app",
+          "markdownDescription": "Enables the quit_app command without any pre-configured scope."
+        },
+        {
           "description": "Enables the read_extension_file command without any pre-configured scope.",
           "type": "string",
           "const": "allow-read-extension-file",
@@ -1081,6 +1099,24 @@
           "type": "string",
           "const": "allow-set-extension-enabled",
           "markdownDescription": "Enables the set_extension_enabled command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the smart_batch_detect_os command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-smart-batch-detect-os",
+          "markdownDescription": "Enables the smart_batch_detect_os command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the smart_batch_preview command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-smart-batch-preview",
+          "markdownDescription": "Enables the smart_batch_preview command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the smart_batch_run command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-smart-batch-run",
+          "markdownDescription": "Enables the smart_batch_run command without any pre-configured scope."
         },
         {
           "description": "Enables the ssh_agent_status command without any pre-configured scope.",
@@ -1369,6 +1405,12 @@
           "type": "string",
           "const": "deny-batch-send-input",
           "markdownDescription": "Denies the batch_send_input command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the check_github_release command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-check-github-release",
+          "markdownDescription": "Denies the check_github_release command without any pre-configured scope."
         },
         {
           "description": "Denies the clear_events command without any pre-configured scope.",
@@ -1743,6 +1785,12 @@
           "markdownDescription": "Denies the open_dashboard_tab command without any pre-configured scope."
         },
         {
+          "description": "Denies the open_external_url command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-external-url",
+          "markdownDescription": "Denies the open_external_url command without any pre-configured scope."
+        },
+        {
           "description": "Denies the ping_all command without any pre-configured scope.",
           "type": "string",
           "const": "deny-ping-all",
@@ -1869,6 +1917,12 @@
           "markdownDescription": "Denies the prune_history command without any pre-configured scope."
         },
         {
+          "description": "Denies the quit_app command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-quit-app",
+          "markdownDescription": "Denies the quit_app command without any pre-configured scope."
+        },
+        {
           "description": "Denies the read_extension_file command without any pre-configured scope.",
           "type": "string",
           "const": "deny-read-extension-file",
@@ -1981,6 +2035,24 @@
           "type": "string",
           "const": "deny-set-extension-enabled",
           "markdownDescription": "Denies the set_extension_enabled command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the smart_batch_detect_os command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-smart-batch-detect-os",
+          "markdownDescription": "Denies the smart_batch_detect_os command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the smart_batch_preview command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-smart-batch-preview",
+          "markdownDescription": "Denies the smart_batch_preview command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the smart_batch_run command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-smart-batch-run",
+          "markdownDescription": "Denies the smart_batch_run command without any pre-configured scope."
         },
         {
           "description": "Denies the ssh_agent_status command without any pre-configured scope.",

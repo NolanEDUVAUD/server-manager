@@ -566,6 +566,23 @@ export type BatchUpdate =
   | { type: "Skipped"; run_id: string; server_id: string; reason: string }
   | { type: "Done"; run_id: string; ok_count: number; failed_count: number };
 
+// ─── Lot intelligent (F2) : détection de l'OS et actions portables ─────────
+
+/** Action de haut niveau, résolue par le backend selon l'OS détecté de chaque cible */
+export type SmartAction =
+  | { type: "UpdatePackages" }
+  | { type: "UpgradeSystem" }
+  | { type: "InstallPackage"; name: string }
+  | { type: "RestartService"; name: string }
+  | { type: "CleanPackageCache" }
+  | { type: "RebootIfRequired" };
+
+export type SmartSource = { type: "Action"; value: SmartAction } | { type: "Script"; value: string };
+
+export interface TargetOsView { server_id: string; name: string; label: string | null; error: string | null }
+
+export interface SmartPreview { server_id: string; name: string; os_label: string | null; command: string | null; skip_reason: string | null }
+
 // ─── Centre de mises à jour ─────────────────────────────────────────────────
 
 export interface UpdateReport {
