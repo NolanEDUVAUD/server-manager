@@ -80,7 +80,6 @@
     "allow-save-tag",
     "allow-set-autostart",
     "allow-set-dashboard-tab-visible",
-    "allow-ssh-agent-status",
     "allow-ssh-execute",
     "allow-ssh-key-delete",
     "allow-ssh-key-deploy",

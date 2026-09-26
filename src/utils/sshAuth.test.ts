@@ -28,7 +28,6 @@ describe("sshAuth", () => {
     expect(authWarning("Key", [key("k1", "Portable")], "supprimée")).toMatch(/a été supprimée/);
     expect(authWarning("Key", [key("k1", "Portable")], "k1")).toBeNull();
     expect(authWarning("Password", [], null)).toBeNull();
-    expect(authWarning("Agent", [], null)).toBeNull();
   });
 
   it("ne propose comme rebond ni le serveur lui-même ni un serveur qui a déjà un rebond", () => {
@@ -54,7 +53,6 @@ describe("sshAuth", () => {
     expect(authSummary(servers[0], keys, servers)).toBe("Mot de passe");
     expect(authSummary(servers[1], keys, servers)).toBe("Clé « Portable » · via minipc");
     expect(authSummary(srv("c", "x", { auth_method: "Key", ssh_key_id: "absente" }), keys, servers)).toBe("Clé supprimée");
-    expect(authSummary(srv("d", "y", { auth_method: "Agent" }), keys, servers)).toBe("Agent SSH");
   });
 
   it("liste les serveurs qui utilisent une clé et propose un nom d'import", () => {

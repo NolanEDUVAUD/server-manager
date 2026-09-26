@@ -366,7 +366,7 @@ mod tests {
         let jump = |j: &str| payload(Some(AuthMethod::Password), None, Some(j));
         assert!(auth_update(&data, "a", AuthMethod::Password, &jump("a")).is_err());
         assert!(auth_update(&data, "a", AuthMethod::Password, &jump("absent")).is_err());
-        assert!(auth_update(&data, "a", AuthMethod::Password, &payload(Some(AuthMethod::Agent), None, Some("b"))).is_ok());
+        assert!(auth_update(&data, "a", AuthMethod::Password, &payload(Some(AuthMethod::Password), None, Some("b"))).is_ok());
         // a passe par b : b ne peut pas passer par a (boucle) ni par un autre rebond
         data.servers[0].jump_host_id = Some("b".into());
         assert!(auth_update(&data, "b", AuthMethod::Password, &jump("a")).unwrap_err().contains("Boucle"));

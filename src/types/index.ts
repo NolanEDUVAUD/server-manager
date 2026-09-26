@@ -56,7 +56,7 @@ export interface ServerPayload {
   auth_method?: AuthMethod;
   ssh_key_id?: string | null;
   jump_host_id?: string | null;
-  /** Efface le mot de passe enregistré (méthode clé ou agent) */
+  /** Efface le mot de passe enregistré (méthode clé) */
   clear_password?: boolean;
 }
 
@@ -763,7 +763,7 @@ export interface BackupConfigView extends BackupConfig {
 
 // ─── Authentification SSH par clé (1.2) ─────────────────────────────────────
 
-export type AuthMethod = "Password" | "Key" | "Agent";
+export type AuthMethod = "Password" | "Key";
 
 /** Clé SSH de l'app : la clé privée n'est jamais envoyée au frontend */
 export interface SshKeyView {
@@ -794,14 +794,4 @@ export interface DeployReport {
   /** Une connexion par clé a réussi juste après */
   verified: boolean;
   detail: string | null;
-}
-
-export interface AgentKey { source: string; algorithm: string; fingerprint: string; comment: string }
-
-export interface AgentStatus {
-  available: boolean;
-  sources: string[];
-  keys: AgentKey[];
-  errors: string[];
-  hint: string;
 }

@@ -78,8 +78,8 @@ pub(crate) async fn connect_ssh(target: &SshTarget, timeout_secs: u64) -> Result
 /// `host:port` de la cible, puis session SSH sur ce canal. La clé d'hôte de chaque saut est
 /// vérifiée sous sa propre identité avant tout envoi de secret.
 pub(crate) async fn connect_with(target: &SshTarget, timeout_secs: u64, verify: HostVerifier) -> Result<SshSession, String> {
-    // Point de passage de toute connexion SSH, quelle que soit l'authentification
-    // (y compris l'agent, qui ne déchiffre rien) : refusée tant que l'app est verrouillée
+    // Point de passage de toute connexion SSH, quelle que soit l'authentification :
+    // refusée tant que l'app est verrouillée
     crate::crypto::ensure_unlocked()?;
     let Some(jump) = target.jump.as_deref() else {
         let tcp = tokio::net::TcpStream::connect((target.host.as_str(), target.port));
@@ -181,9 +181,6 @@ async fn authenticate(session: &mut client::Handle<SshHandler>, target: &SshTarg
                 ));
             }
         }
-        SshAuth::Agent => crate::ssh_agent::authenticate(session, user)
-            .await
-            .map_err(|e| format!("{} ({}@{})", e, user, host))?,
     }
     Ok(())
 }
@@ -616,32 +613,8 @@ mod tests {
 
         // Rebond injoignable : l'erreur le nomme
         let mut dead = t.clone();
-        dead.jump = Some(Box::new(SshTarget { port: 1, ..target(&jump, SshAuth::Agent) }));
+        dead.jump = Some(Box::new(SshTarget { port: 1, ..target(&jump, SshAuth::Password(Zeroizing::new("rebond".into()))) }));
         let err = run(&dead, verify).await.unwrap_err();
         assert!(err.starts_with("Hôte de rebond 127.0.0.1:1"), "{}", err);
-    }
-
-    #[cfg(unix)]
-    #[tokio::test]
-    async fn agent_auth_uses_ssh_auth_sock() {
-        let key = crate::ssh_keys::generate_ed25519("agent-test").unwrap();
-        let public = key.public_key().clone();
-        let socket = ssh_test_server::start_agent(&key).await;
-        // Seul test à toucher SSH_AUTH_SOCK
-        std::env::set_var("SSH_AUTH_SOCK", &socket);
-        let status = crate::ssh_agent::status().await;
-        assert!(status.available, "{:?}", status);
-        assert_eq!(status.keys.len(), 1);
-        assert_eq!(status.keys[0].fingerprint, public.fingerprint(HashAlg::Sha256).to_string());
-        assert_eq!(status.keys[0].algorithm, "ssh-ed25519");
-
-        let server = ssh_test_server::start(None, vec![public]).await;
-        let (verify, _) = recording_verifier();
-        assert!(run(&target(&server, SshAuth::Agent), verify.clone()).await.unwrap().success);
-        // Agent sans la bonne clé : refus explicite
-        let other = ssh_test_server::start(None, vec![]).await;
-        let err = run(&target(&other, SshAuth::Agent), verify).await.unwrap_err();
-        assert!(err.contains("aucune clé acceptée"), "{}", err);
-        let _ = std::fs::remove_file(&socket);
     }
 }

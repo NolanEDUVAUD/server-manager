@@ -5,8 +5,6 @@ export const sshAuth = {
     passwordHint: "Mot de passe enregistré, chiffré par la clé maître.",
     key: "Clé de l'app",
     keyHint: "Clé SSH gérée dans Paramètres → Clés SSH (la clé privée reste chiffrée dans l'app).",
-    agent: "Agent SSH",
-    agentHint: "Clés chargées dans l'agent OpenSSH de Windows (ssh-add) ou dans Pageant.",
   },
   warnNoKeys: "Aucune clé SSH enregistrée : crée ou importe une clé dans Paramètres → Clés SSH.",
   warnChooseKey: "Choisis la clé à utiliser.",
@@ -33,31 +31,11 @@ export const sshAuth = {
   jumpMissing: "Rebond indisponible — à changer",
   jumpDependents: "Ce serveur sert de rebond à {servers} : il ne peut pas passer lui-même par un rebond (un seul niveau).",
   jumpHelp: "La connexion passe par ce serveur (tunnel SSH) ; la clé d'hôte de chaque saut est vérifiée.",
-  checkAgent: "Tester l'agent",
-  agentTesting: "Test en cours…",
-  agentSource: "{source} : {count} clé",
-  agentSourcePlural: "{source} : {count} clés",
-  agentNoKeysInSource: "{source} : joignable, mais aucune clé chargée (ssh-add)",
-  agentKeys: { one: "{count} clé disponible ({sources}).", other: "{count} clés disponibles ({sources})." },
-  agentUnreachable: "Aucun agent SSH joignable.",
-  agentInfoLabel: "Qu'est-ce qu'un agent SSH ?",
-  agentInfo:
-    "Un agent SSH garde tes clés privées déchiffrées en mémoire et signe l'authentification à ta place : l'app ne voit ni ne stocke jamais la clé elle-même.\n\n" +
-    "Windows — agent OpenSSH (PowerShell, en administrateur) :\n" +
-    "  Get-Service ssh-agent | Set-Service -StartupType Automatic\n" +
-    "  Start-Service ssh-agent\n" +
-    "  ssh-add C:\\chemin\\vers\\ta_cle\n\n" +
-    "Pageant (PuTTY) : lance Pageant, puis dans son icône de la zone de notification → Add Key, choisis ta clé .ppk (ou convertis une clé OpenSSH avec PuTTYgen).\n\n" +
-    "Que choisir ?\n" +
-    "• Agent SSH : pratique si tu as déjà un agent avec tes clés (partagé avec d'autres outils comme Git ou WinSCP) ; l'app ne stocke rien.\n" +
-    "• Clé de l'app : la clé est chiffrée par la clé maître et gérée ici (Paramètres → Clés SSH) — le plus simple si tu n'as pas déjà d'agent.\n" +
-    "• Mot de passe : le plus rapide à mettre en place, mais le moins sûr (rejouable, dépend de la politique du serveur).",
   // Déploiement d'une clé
   deploy: {
     via: {
       password: "le mot de passe enregistré",
       key: "la clé de l'app actuelle",
-      agent: "l'agent SSH",
     },
     title: "Déployer une clé sur {name}",
     close: "Fermer",

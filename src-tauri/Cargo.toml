@@ -85,8 +85,6 @@ winreg = "0.52"
 # que celle déjà tirée par Tauri, pour ne pas compiler deux fois la crate
 windows = { version = "0.61", features = ["Foundation", "Security_Credentials_UI", "Win32_Foundation", "Win32_System_RemoteDesktop", "Win32_System_WinRT"] }
 windows-future = "0.2"
-# Détection de Pageant (fenêtre WM_COPYDATA) : même version que celle tirée par russh 0.63
-pageant = "0.2"
 
 [dev-dependencies]
 wiremock = "0.6"
