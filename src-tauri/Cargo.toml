@@ -1,6 +1,6 @@
 [package]
 name = "server-manager"
-version = "0.4.1"
+version = "0.4.2"
 description = "Server Power Manager - Gestionnaire d'alimentation de serveurs homelab"
 authors = []
 edition = "2021"

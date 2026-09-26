@@ -19,24 +19,33 @@ export interface ChangelogEntry {
 /** Liste des versions avec leurs modifications (ordre décroissant) */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.2",
+    date: "2026-09-28",
+    items: [
+      { fr: "Bêta : merci de signaler tout problème depuis Paramètres → Signaler un problème", en: "Beta: please report any issue from Settings → Report a problem" },
+      { fr: "Tutoriel interactif au premier lancement, avec un mini-exemple pour chaque onglet", en: "Interactive tour on first launch, with a mini example for each tab" },
+      { fr: "Icône « i » sur chaque onglet : survole-la pour savoir à quoi il sert", en: "\"i\" icon on each tab: hover it to learn what the tab is for" },
+      { fr: "Paramètres déplacés en bas de la barre latérale ; la mise en page se règle dans Paramètres → Apparence", en: "Settings moved to the bottom of the sidebar; layout options are in Settings → Appearance", tourStep: "settings" },
+      { fr: "Tâches en lot repensées : un seul écran en 3 étapes (cibles, quoi exécuter, lancement) avec aperçu avant exécution", en: "Redesigned batch tasks: a single 3-step screen (targets, what to run, launch) with a preview before running", tourStep: "batch" },
+      { fr: "Authentification SSH simplifiée : mot de passe ou clé gérée par l'application (l'agent SSH est retiré)", en: "Simplified SSH authentication: password or an app-managed key (SSH agent removed)" },
+      { fr: "Nouvelle icône de l'application", en: "New application icon" },
+      { fr: "Contrat de licence réécrit en anglais, à accepter de nouveau", en: "License agreement rewritten in English, to be accepted again" },
+    ],
+  },
+  {
     version: "0.4.1",
     date: "2026-09-27",
     items: [
-      { fr: "Bêta : merci de signaler tout problème depuis Paramètres → Signaler un problème", en: "Beta: please report any issue from Settings → Report a problem" },
       { fr: "Glisser-déposer des onglets et des favoris réparé sous Windows", en: "Tab and favorites drag & drop fixed on Windows", tourStep: "customization" },
       { fr: "Menus déroulants : ne se ferment plus quand on fait défiler leur contenu", en: "Dropdown menus no longer close when scrolling their content" },
       { fr: "Alertes : interrupteur général « Alertes activées »", en: "Alerts: global \"Alerts enabled\" switch", tourStep: "alerts" },
       { fr: "Mise à jour : recherche sur GitHub et confirmation avant toute installation", en: "Updates: GitHub check and confirmation before any install", tourStep: "settings" },
       { fr: "Signaler un problème : ouverture du navigateur réparée", en: "Report a problem: opening the browser fixed" },
-      { fr: "Authentification SSH simplifiée : mot de passe ou clé gérée par l'application", en: "Simplified SSH authentication: password or an app-managed key" },
-      { fr: "Tâches en lot repensées : un seul écran en 3 étapes (cibles, quoi exécuter, lancement), OS détecté sur chaque cible, commandes adaptées et aperçu avant exécution", en: "Redesigned batch tasks: a single 3-step screen (targets, what to run, launch), OS detected on each target, adapted commands and preview before running", tourStep: "batch" },
+      { fr: "Tâches en lot intelligentes : OS détecté sur chaque cible et commandes adaptées", en: "Smart batch tasks: OS detected on each target and adapted commands", tourStep: "batch" },
       { fr: "Graphe réseau : Wi-Fi, sous-réseaux, traceroute, détails des appareils et topologie éditable", en: "Network graph: Wi-Fi, subnets, traceroute, device details and editable topology", tourStep: "network" },
       { fr: "Icônes de serveur : recherche, catégories et couleurs", en: "Server icons: search, categories and colors" },
-      { fr: "Tutoriel interactif au premier lancement, avec un mini-exemple pour chaque onglet", en: "Interactive tour on first launch, with a mini example for each tab" },
-      { fr: "Icône « i » sur chaque onglet : survole-la pour savoir à quoi il sert", en: "\"i\" icon on each tab: hover it to learn what the tab is for" },
-      { fr: "Paramètres déplacés en bas de la barre latérale ; la mise en page se règle dans Paramètres → Apparence", en: "Settings moved to the bottom of the sidebar; layout options are in Settings → Appearance", tourStep: "settings" },
-      { fr: "Nouvelle icône de l'application", en: "New application icon" },
-      { fr: "Contrat de licence (en anglais) à accepter dans l'application", en: "License agreement (in English) to accept in the app" },
+      { fr: "Fenêtre des nouveautés après une mise à jour", en: "What's new window after an update" },
+      { fr: "Contrat de licence à accepter dans l'application", en: "License agreement to accept in the app" },
     ],
   },
   {
