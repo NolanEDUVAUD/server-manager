@@ -11,8 +11,10 @@ nouvelle commande Tauri.
 > produit payant, monétisation publicitaire…) **sans l'accord écrit préalable
 > de l'auteur**. Toute contribution doit respecter cette condition. Pour
 > toute question de licence, ouvre une issue sur le dépôt GitHub. Le texte
-> complet est dans `src-tauri/EULA.txt` (et `src/legal/eula.ts` pour la
-> version affichée dans l'app).
+> complet (en anglais) est dans `src-tauri/EULA.txt` : l'installateur l'affiche et
+> l'application l'importe tel quel (`src/legal/eula.ts`). Il doit rester anonyme
+> (aucun nom de personne ni adresse de dépôt, un test le vérifie) ; après toute
+> modification, augmente `EULA_VERSION` pour que l'app redemande l'acceptation.
 
 ## Construire depuis les sources
 

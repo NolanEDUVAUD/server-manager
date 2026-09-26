@@ -1,80 +1,89 @@
 ===============================================================================
-ACCORD DE LICENCE UTILISATEUR FINAL (EULA)
-Server Power Manager
-===============================================================================
-
-LICENCE ET CONDITIONS
-
-Ce logiciel, "Server Power Manager" (le "Logiciel"), est fourni par Nolan
-EDUVAUD (l'« Auteur »). En installant ou en utilisant ce Logiciel, vous
-acceptez les présentes conditions.
-
-1. UTILISATION PERSONNELLE
-
-Vous êtes libre d'utiliser et de modifier ce Logiciel pour votre usage
-personnel uniquement.
-
-2. INTERDICTIONS DE MONÉTISATION
-
-Toute monétisation du Logiciel est strictement interdite sans accord écrit
-préalable de l'Auteur. Cela comprend, sans limitation :
-- La vente du Logiciel ou de versions modifiées
-- La redistribution payante
-- L'hébergement rémunéré ou l'offre en tant que SaaS
-- L'intégration dans un produit ou service payant
-- La monétisation par publicités ou autres revenus
-
-Pour toute autorisation de monétisation, contactez l'Auteur via le dépôt
-GitHub : https://github.com/NolanEDUVAUD/server-manager (section Issues)
-
-3. LIMITATION DE RESPONSABILITÉ
-
-Le Logiciel est fourni « TEL QUEL », sans aucune garantie, explicite ou
-implicite. L'Auteur n'assume aucune responsabilité pour les dommages directs,
-indirects, accessoires, spéciaux ou consécutifs découlant de l'utilisation
-ou de l'impossibilité d'utiliser ce Logiciel.
-
-4. ACCEPTATION
-
-L'installation ou l'utilisation de ce Logiciel signifie votre acceptation
-complète de ces conditions.
-
-===============================================================================
 END-USER LICENSE AGREEMENT (EULA)
 Server Power Manager
 ===============================================================================
 
-LICENSE AND TERMS
+PLEASE READ THIS AGREEMENT CAREFULLY BEFORE INSTALLING OR USING THE SOFTWARE.
 
-This software, "Server Power Manager" (the "Software"), is provided by Nolan
-EDUVAUD (the "Author"). By installing or using this Software, you agree to
-these terms.
+This End-User License Agreement (the "Agreement") is a legal agreement between
+you (the "User") and the author and copyright holder of Server Power Manager
+(the "Author") regarding the Server Power Manager software, including its
+installers, updates, documentation and any associated files (the "Software").
 
-1. PERSONAL USE
+By installing, copying or otherwise using the Software, you agree to be bound
+by the terms of this Agreement. If you do not agree, do not install or use the
+Software.
 
-You are free to use and modify this Software for personal use only.
+1. LICENSE GRANT
+
+Subject to the terms of this Agreement, the Author grants you a free,
+non-exclusive, non-transferable and revocable license to install and use the
+Software for your own personal or internal, non-commercial purposes, and to
+modify it for those same purposes.
 
 2. MONETIZATION RESTRICTIONS
 
-Any monetization of the Software is strictly prohibited without prior written
-agreement from the Author. This includes, without limitation:
-- Selling the Software or modified versions
-- Paid redistribution
-- Paid hosting or offering as SaaS
-- Integration into a paid product or service
-- Monetization through ads or other revenue
+Any form of monetization of the Software, in whole or in part, modified or
+unmodified, is strictly prohibited without the prior written agreement of the
+Author. This includes, without limitation:
+  a) selling, renting or licensing the Software or any derivative work;
+  b) distributing the Software or any derivative work for a fee;
+  c) offering the Software as a paid hosted service, SaaS or managed service;
+  d) bundling the Software into a paid product, service or subscription;
+  e) generating revenue from the Software through advertising, paid features,
+     donations collected in your own name or any other means.
 
-For any monetization authorization, contact the Author via the GitHub
-repository: https://github.com/NolanEDUVAUD/server-manager (Issues section)
+Anyone wishing to monetize the Software must contact the Author and obtain
+written permission BEFORE doing so. The Author can be contacted through the
+issue tracker of the Software's official source code repository.
 
-3. LIMITATION OF LIABILITY
+3. REDISTRIBUTION
 
-The Software is provided "AS IS" without any warranty, express or implied.
-The Author assumes no liability for any direct, indirect, incidental, special
-or consequential damages arising from the use or inability to use this
-Software.
+You may share unmodified copies of the Software free of charge, provided that
+this Agreement is included and that no fee of any kind is charged. You must not
+remove or alter any copyright, license or attribution notices.
 
-4. ACCEPTANCE
+4. OWNERSHIP
 
-Installation or use of this Software signifies your complete acceptance of
-these terms.
+The Software is licensed, not sold. The Author retains all rights, title and
+interest in and to the Software, including all intellectual property rights.
+All rights not expressly granted in this Agreement are reserved.
+
+5. THIRD-PARTY COMPONENTS
+
+The Software includes open-source components that remain subject to their own
+licenses. Nothing in this Agreement limits your rights under those licenses.
+
+6. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. The Software can power
+off, restart or run commands on your machines: you are solely responsible for
+its configuration and for the actions performed with it.
+
+7. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY OR
+CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF DATA, SERVICE INTERRUPTION OR LOSS OF
+PROFITS) ARISING IN ANY WAY OUT OF THE USE OF, OR INABILITY TO USE, THE
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+8. TERMINATION
+
+This Agreement is effective until terminated. It terminates automatically if
+you fail to comply with any of its terms. Upon termination, you must stop
+using the Software and destroy all copies in your possession.
+
+9. CHANGES TO THIS AGREEMENT
+
+The Author may update this Agreement in future versions of the Software. The
+version of the Agreement accepted when installing or updating the Software
+applies to that version.
+
+10. ACCEPTANCE
+
+By clicking "I Agree" or by installing or using the Software, you acknowledge
+that you have read this Agreement, understand it and agree to be bound by its
+terms.

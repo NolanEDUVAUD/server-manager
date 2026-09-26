@@ -1,53 +1,28 @@
-import { describe, it, expect } from 'vitest';
-import { eulaFr, eulaEn, EULA_VERSION } from './eula';
+import { describe, it, expect } from "vitest";
+import { eulaText, EULA_VERSION } from "./eula";
 
-describe('EULA', () => {
-  describe('French EULA', () => {
-    it('should contain the key clause about forbidding monetization', () => {
-      expect(eulaFr).toContain('INTERDICTIONS DE MONÉTISATION');
-      expect(eulaFr).toContain('strictement interdite');
-      expect(eulaFr).toContain('accord écrit');
-      expect(eulaFr).toContain('préalable');
-    });
-
-    it('should contain section headers', () => {
-      expect(eulaFr).toContain('ACCORD DE LICENCE UTILISATEUR FINAL');
-      expect(eulaFr).toContain('LICENCE ET CONDITIONS');
-      expect(eulaFr).toContain('UTILISATION PERSONNELLE');
-      expect(eulaFr).toContain('LIMITATION DE RESPONSABILITÉ');
-      expect(eulaFr).toContain('ACCEPTATION');
-    });
-
-    it('should have meaningful content', () => {
-      expect(eulaFr.length).toBeGreaterThan(500);
-    });
+describe("EULA", () => {
+  it("est rédigée en anglais et interdit la monétisation sans accord écrit préalable", () => {
+    expect(eulaText).toContain("END-USER LICENSE AGREEMENT");
+    expect(eulaText).toContain("MONETIZATION RESTRICTIONS");
+    expect(eulaText).toContain("strictly prohibited without the prior written agreement");
+    expect(eulaText).toContain("must contact the Author");
+    expect(eulaText).toContain("LIMITATION OF LIABILITY");
+    expect(eulaText).toContain("ACCEPTANCE");
   });
 
-  describe('English EULA', () => {
-    it('should contain the key clause about forbidding monetization', () => {
-      expect(eulaEn).toContain('MONETIZATION RESTRICTIONS');
-      expect(eulaEn).toContain('strictly prohibited');
-      expect(eulaEn).toContain('prior written');
-      expect(eulaEn).toContain('agreement');
-    });
-
-    it('should contain section headers', () => {
-      expect(eulaEn).toContain('END-USER LICENSE AGREEMENT');
-      expect(eulaEn).toContain('LICENSE AND TERMS');
-      expect(eulaEn).toContain('PERSONAL USE');
-      expect(eulaEn).toContain('LIMITATION OF LIABILITY');
-      expect(eulaEn).toContain('ACCEPTANCE');
-    });
-
-    it('should have meaningful content', () => {
-      expect(eulaEn.length).toBeGreaterThan(500);
-    });
+  it("est anonyme : aucun nom de personne, aucune adresse menant à un compte", () => {
+    // Le nom du développeur apparaît dans l'adresse du dépôt : aucune URL n'est permise
+    expect(eulaText).not.toMatch(/nolan|eduvaud/i);
+    expect(eulaText).not.toMatch(/https?:\/\//i);
+    expect(eulaText).not.toMatch(/github\.com|@/i);
   });
 
-  describe('Version', () => {
-    it('should have a defined version', () => {
-      expect(EULA_VERSION).toBeDefined();
-      expect(EULA_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
-    });
+  it("ne contient que de l'ASCII (page de licence de l'installateur)", () => {
+    expect(/^[\x09\x0a\x0d\x20-\x7e]*$/.test(eulaText)).toBe(true);
+  });
+
+  it("a une version semver", () => {
+    expect(EULA_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });

@@ -85,5 +85,8 @@ export const settingsPage = {
     storageValue: "JSON chiffré + SQLite local (AppData)",
     reviewTour: "Revoir le tutoriel",
     eula: "Contrat de licence (EULA)",
+    eulaAccept: "J'accepte",
+    eulaQuit: "Quitter",
+    eulaEnglishOnly: "Le contrat de licence est rédigé en anglais.",
   },
 };

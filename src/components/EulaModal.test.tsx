@@ -22,16 +22,16 @@ describe('EulaModal', () => {
     localStorage.removeItem('eula.accepted.version');
     render(<EulaModal />);
 
-    expect(screen.getAllByText(/Accord de licence|License Agreement/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Contrat de licence|License Agreement/i).length).toBeGreaterThan(0);
   });
 
-  it('should show EULA text in French by default', () => {
+  it('affiche le texte anglais de l\'EULA', () => {
     localStorage.removeItem('eula.accepted.version');
     const { container } = render(<EulaModal />);
 
     const eulaText = container.querySelector('pre');
     expect(eulaText).toBeTruthy();
-    expect(eulaText?.textContent).toContain('ACCORD DE LICENCE');
+    expect(eulaText?.textContent).toContain('END-USER LICENSE AGREEMENT');
   });
 
   it('should not show modal when EULA already accepted for current version', () => {
@@ -45,7 +45,7 @@ describe('EulaModal', () => {
     localStorage.setItem('eula.accepted.version', '0.0.1');
     render(<EulaModal />);
 
-    expect(screen.getAllByText(/Accord de licence|License Agreement/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Contrat de licence|License Agreement/i).length).toBeGreaterThan(0);
   });
 
   it('should accept EULA and store version', async () => {
@@ -70,7 +70,7 @@ describe('EulaModal', () => {
     await user.click(acceptButton);
 
     await waitFor(() => {
-      expect(screen.queryByText(/Accord de licence|License Agreement/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Contrat de licence|License Agreement/i)).not.toBeInTheDocument();
     });
   });
 
@@ -78,7 +78,7 @@ describe('EulaModal', () => {
     localStorage.removeItem('eula.accepted.version');
     render(<EulaModal />);
     // Modal should render successfully
-    expect(screen.getAllByText(/Accord de licence|License Agreement/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Contrat de licence|License Agreement/i).length).toBeGreaterThan(0);
   });
 
   it('should display both buttons', () => {

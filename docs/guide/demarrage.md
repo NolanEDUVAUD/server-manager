@@ -27,8 +27,9 @@ la [dernière version](https://github.com/NolanEDUVAUD/server-manager/releases/l
    [CONTRIBUTING.md](../CONTRIBUTING.md)).
 3. Laisse l'installation se terminer, puis lance l'application.
 
-L'EULA est également accessible dans l'application, à tout moment, depuis
-**Paramètres → À propos → Contrat de licence (EULA)**.
+Le contrat est rédigé en anglais. L'application le fait aussi accepter au premier
+lancement (et à nouveau si son texte change) ; il reste consultable à tout moment
+depuis **Paramètres → À propos → Contrat de licence (EULA)**.
 
 ## Premier lancement
 
