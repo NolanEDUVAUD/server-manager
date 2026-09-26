@@ -129,6 +129,19 @@ Les raccourcis à une touche sont ignorés pendant la saisie dans un champ et da
 - **`rsa` (RUSTSEC-2023-0071, attaque « Marvin »)** : aucun correctif en amont. Ne concerne que les clés SSH **RSA** (signature). Les clés générées par l'app sont en ed25519, à préférer.
 - **`quick-xml` (RUSTSEC-2026-0194 / 0195)** : tiré par les notifications Windows. Il ne lit que les modèles de notification produits par l'app elle-même, jamais de XML venant du réseau.
 
+## Documentation
+
+Un guide utilisateur détaillé, module par module, est disponible dans
+[`docs/`](docs/README.md) :
+
+- [Démarrage](docs/guide/demarrage.md) — installation, premier lancement, mises à jour, sauvegarde/restauration
+- [Interface](docs/guide/interface.md) — barre latérale, palette de commandes, raccourcis clavier, thèmes
+- [Fonctionnalités](docs/guide/fonctionnalites.md) — guide de chaque module (serveurs, réseau, tâches en lot, alertes, Proxmox…)
+- [Authentification SSH](docs/guide/ssh.md) — mot de passe, clé, agent SSH, hôte de rebond, dépannage
+- [Extensions communautaires](docs/extensions.md) — format de manifeste, création, installation
+- [Signaler un problème](docs/guide/signaler-un-probleme.md)
+- [Contribuer](docs/CONTRIBUTING.md) — compilation, tests, conventions de code
+
 ## Développement
 
 ```powershell
