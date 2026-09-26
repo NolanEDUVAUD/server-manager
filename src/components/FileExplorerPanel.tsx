@@ -52,6 +52,9 @@ export function FileExplorerPanel({ serverId, terminalSessionId, onClose }: File
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  // Largeur réelle du panneau (et non de la fenêtre) : les colonnes secondaires ne
+  // s'affichent que s'il reste de la place, le nom du fichier passant toujours en premier
+  const [listWidth, setListWidth] = useState(0);
   const [history, setHistory] = useState<{ back: string[]; forward: string[] }>({ back: [], forward: [] });
   const [menuFor, setMenuFor] = useState<SftpEntry | null>(null);
   const [renaming, setRenaming] = useState<SftpEntry | null>(null);
@@ -65,7 +68,17 @@ export function FileExplorerPanel({ serverId, terminalSessionId, onClose }: File
   const [transfer, setTransfer] = useState<{ label: string; progress: SftpProgress } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  const listRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const resizeObserver = useRef<ResizeObserver | null>(null);
+  function setListEl(el: HTMLDivElement | null) {
+    resizeObserver.current?.disconnect();
+    listRef.current = el;
+    if (!el) return;
+    setListWidth(el.clientWidth);
+    if (typeof ResizeObserver === "undefined") return;
+    resizeObserver.current = new ResizeObserver((entries) => setListWidth(entries[0]?.contentRect.width ?? 0));
+    resizeObserver.current.observe(el);
+  }
   const menuAnchorRef = useRef<HTMLButtonElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -368,7 +381,8 @@ export function FileExplorerPanel({ serverId, terminalSessionId, onClose }: File
               <button type="button" onClick={() => navigate(crumb.path)} className="text-text-secondary hover:text-accent-primary truncate max-w-[120px]">
                 {crumb.name}
               </button>
-              {i < arr.length - 1 && <span className="text-text-muted">/</span>}
+              {/* Pas de séparateur après la racine « / » (sinon « / / home ») */}
+              {i > 0 && i < arr.length - 1 && <span className="text-text-muted">/</span>}
             </span>
           ))}
         </div>
@@ -399,7 +413,7 @@ export function FileExplorerPanel({ serverId, terminalSessionId, onClose }: File
       </div>
 
       {/* ── Liste ────────────────────────────────────────────────────────── */}
-      <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto">
+      <div ref={setListEl} className="flex-1 min-h-0 overflow-y-auto">
         {loading && <div className="flex items-center justify-center gap-2 py-6 text-text-muted text-xs"><Loader2 size={14} className="animate-spin" /> {t("console.files.loading")}</div>}
         {!loading && error && <p className="p-3 text-xs text-red-400 break-words">{t("console.files.errorPrefix", { message: error })}</p>}
         {!loading && !error && rendered.length === 0 && <p className="p-3 text-xs text-text-muted">{t("console.files.empty")}</p>}
@@ -414,10 +428,15 @@ export function FileExplorerPanel({ serverId, terminalSessionId, onClose }: File
             )}
           >
             {iconFor(entry)}
-            <span className="flex-1 min-w-0 truncate text-text-primary" title={entry.name}>{entry.name}</span>
+            <span
+              className="flex-1 min-w-[6rem] truncate text-text-primary"
+              title={`${entry.name}\n${formatModified(entry.modified)} · ${entry.permissions}`}
+            >
+              {entry.name}
+            </span>
             <span className="w-16 text-right text-text-muted font-mono shrink-0">{isDirLike(entry) ? "" : formatSize(entry.size)}</span>
-            <span className="w-32 text-text-muted shrink-0 hidden sm:block">{formatModified(entry.modified)}</span>
-            <span className="w-24 text-text-muted font-mono shrink-0 hidden md:block">{entry.permissions}</span>
+            {listWidth >= 480 && <span className="w-36 text-text-muted shrink-0 truncate">{formatModified(entry.modified)}</span>}
+            {listWidth >= 620 && <span className="w-24 text-text-muted font-mono shrink-0">{entry.permissions}</span>}
             <button
               ref={menuFor?.path === entry.path ? menuAnchorRef : undefined}
               onClick={(e) => {
