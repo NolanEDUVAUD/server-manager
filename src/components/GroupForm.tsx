@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Layers } from "lucide-react";
 import { Group, Server } from "../types";
-import { ServerIconDisplay } from "./IconPicker";
+import { ServerIconDisplay, IconPicker } from "./IconPicker";
 import { useT } from "../i18n";
 
 interface GroupFormProps {
@@ -77,12 +77,10 @@ export function GroupForm({ initial, servers, onSubmit, onCancel }: GroupFormPro
             </div>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">{t("groups.form.icon")}</label>
-              <input
-                className="w-16 bg-bg-secondary border border-border-primary rounded-win px-2 py-2 text-sm text-text-primary text-center text-lg focus:outline-none focus:border-accent-primary transition-colors"
-                value={icon}
-                onChange={(e) => setIcon(e.target.value)}
-                placeholder="🖥️"
-                maxLength={2}
+              <IconPicker
+                serverId={`group-${initial?.id || 'new'}`}
+                value={icon || null}
+                onChange={(newIcon) => setIcon(newIcon || "")}
               />
             </div>
           </div>

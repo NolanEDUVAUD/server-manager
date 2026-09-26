@@ -152,6 +152,7 @@ fn app_manifest() -> tauri_build::AppManifest {
         "proxmox_vm_snapshot_list",
         "proxmox_vm_snapshot_rollback",
         "prune_history",
+        "quit_app",
         "read_extension_file",
         "resize_dashboard_tab",
         "run_batch",

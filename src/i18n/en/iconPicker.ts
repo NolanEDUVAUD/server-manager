@@ -7,4 +7,8 @@ export const iconPicker: Dict["iconPicker"] = {
   uploading: "Uploading...",
   custom: "Custom image (PNG/SVG)",
   fileFilter: "Image",
+  search: "Search icons...",
+  color: "Color",
+  default: "Default",
+  noResults: "No icons found",
 };

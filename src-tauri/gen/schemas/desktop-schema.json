@@ -969,6 +969,12 @@
           "markdownDescription": "Enables the prune_history command without any pre-configured scope."
         },
         {
+          "description": "Enables the quit_app command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-quit-app",
+          "markdownDescription": "Enables the quit_app command without any pre-configured scope."
+        },
+        {
           "description": "Enables the read_extension_file command without any pre-configured scope.",
           "type": "string",
           "const": "allow-read-extension-file",
@@ -1867,6 +1873,12 @@
           "type": "string",
           "const": "deny-prune-history",
           "markdownDescription": "Denies the prune_history command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the quit_app command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-quit-app",
+          "markdownDescription": "Denies the quit_app command without any pre-configured scope."
         },
         {
           "description": "Denies the read_extension_file command without any pre-configured scope.",

@@ -42,6 +42,7 @@ import { shortcuts } from "./shortcuts";
 import { sshAuth } from "./sshAuth";
 import { sshKeys } from "./sshKeys";
 import { support } from "./support";
+import { supportBanner } from "./supportBanner";
 import { themes } from "./themes";
 import { updates } from "./updates";
 import { webTabs } from "./webTabs";
@@ -86,6 +87,7 @@ export const fr = {
   sshAuth,
   sshKeys,
   support,
+  supportBanner,
   themes,
   updates,
   webTabs,
