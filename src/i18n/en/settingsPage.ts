@@ -11,6 +11,7 @@ export const settingsPage: Dict["settingsPage"] = {
     sshkeys: "SSH keys",
     config: "Configuration",
     updates: "Updates",
+    report: "Report an issue",
     about: "About",
   },
   saved: "Saved",

@@ -10,6 +10,7 @@ export const settingsPage = {
     sshkeys: "Clés SSH",
     config: "Configuration",
     updates: "Mise à jour",
+    report: "Signaler un problème",
     about: "À propos",
   },
   saved: "Sauvegardé",

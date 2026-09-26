@@ -17,11 +17,12 @@ import { SecuritySettings } from '../components/SecuritySettings';
 import { SshKeysSettings } from '../components/SshKeysSettings';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
+import { BugReportForm } from '../components/BugReportForm';
 import { useAppUpdate } from '../stores/useAppUpdate';
 import { useT } from '../i18n';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
-type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'config' | 'updates' | 'about';
+type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'config' | 'updates' | 'report' | 'about';
 
 // Libellés traduits à l'affichage (settingsPage.sections.<id>)
 const SECTIONS: { id: Section }[] = [
@@ -34,6 +35,7 @@ const SECTIONS: { id: Section }[] = [
   { id: 'sshkeys' },
   { id: 'config' },
   { id: 'updates' },
+  { id: 'report' },
   { id: 'about' },
 ];
 
@@ -74,6 +76,7 @@ export function Settings() {
         {active === 'sshkeys'    && <SshKeysSettings />}
         {active === 'config'     && <SectionConfig />}
         {active === 'updates'    && <SectionUpdates />}
+        {active === 'report'     && <BugReportForm />}
         {active === 'about'      && <SectionAbout />}
       </div>
 

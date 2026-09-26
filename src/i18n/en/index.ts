@@ -5,6 +5,7 @@ import { appUpdate } from "./appUpdate";
 import { backup } from "./backup";
 import { backups } from "./backups";
 import { batch } from "./batch";
+import { bugReport } from "./bugReport";
 import { catalog } from "./catalog";
 import { common } from "./common";
 import { consolePage } from "./console";
@@ -49,6 +50,7 @@ export const en: Dict = {
   backup,
   backups,
   batch,
+  bugReport,
   catalog,
   common,
   console: consolePage,
