@@ -11,4 +11,23 @@ export const network = {
   macsFilled: { one: "{count} adresse MAC renseignée", other: "{count} adresses MAC renseignées" },
   serverAdded: "{name} ajouté",
   serverError: "{name} : {message}",
+  // ── Vue Graphe (façon Obsidian) ──────────────────────────────────────────
+  viewList: "Liste",
+  viewGraph: "Graphe",
+  gateway: "Passerelle",
+  graphHint: "Glisse le fond pour te déplacer, la molette pour zoomer, un nœud pour le déplacer ou cliquer dessus.",
+  statusOnline: "En ligne",
+  statusOffline: "Hors ligne",
+  statusUnknown: "Inconnu",
+  nodeServer: "Serveur",
+  nodeDevice: "Appareil détecté",
+  nodeGateway: "Passerelle",
+  nodeDetails: {
+    type: "Type",
+    status: "État",
+    ip: "Adresse IP",
+    mac: "Adresse MAC",
+    jumpVia: "Via l'hôte de rebond",
+  },
+  closeDetails: "Fermer",
 };

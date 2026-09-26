@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Network as NetworkIcon, Loader2, Plus, Wand2, Cpu } from "lucide-react";
+import { Network as NetworkIcon, Loader2, Plus, Wand2, Cpu, List, GitFork } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { NetworkDevice, ServerPayload } from "../types";
 import { ServerForm } from "../components/ServerForm";
@@ -8,14 +8,19 @@ import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { missingMacFixes } from "../utils/network";
 import { useT } from "../i18n";
+import { NetworkGraph } from "../components/NetworkGraph";
+import { cn } from "../utils";
+
+type NetworkView = "list" | "graph";
 
 export function Network() {
   const { t } = useT();
-  const { servers, addServer, updateServer } = useStore();
+  const { servers, statuses, addServer, updateServer } = useStore();
   const { toasts, removeToast, success, error } = useToast();
   const [devices, setDevices] = useState<NetworkDevice[] | null>(null);
   const [scanning, setScanning] = useState(false);
   const [adding, setAdding] = useState<NetworkDevice | null>(null);
+  const [view, setView] = useState<NetworkView>("list");
 
   async function scan() {
     setScanning(true);
@@ -56,9 +61,25 @@ export function Network() {
           <h1 className="text-text-primary font-semibold text-lg">{t("network.title")}</h1>
           <p className="text-text-secondary text-xs mt-0.5">{t("network.subtitle")}</p>
         </div>
-        <button onClick={scan} disabled={scanning} className="flex items-center gap-2 px-4 py-2 text-sm bg-accent-primary hover:bg-accent-secondary text-white rounded-win disabled:opacity-50">
-          {scanning ? <Loader2 size={15} className="animate-spin" /> : <NetworkIcon size={15} />} {scanning ? t("network.scanning") : t("network.scan")}
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-win border border-border-primary overflow-hidden text-xs">
+            <button
+              onClick={() => setView("list")}
+              className={cn("flex items-center gap-1.5 px-3 py-1.5", view === "list" ? "bg-accent-primary text-white" : "text-text-secondary hover:bg-bg-hover")}
+            >
+              <List size={13} /> {t("network.viewList")}
+            </button>
+            <button
+              onClick={() => setView("graph")}
+              className={cn("flex items-center gap-1.5 px-3 py-1.5", view === "graph" ? "bg-accent-primary text-white" : "text-text-secondary hover:bg-bg-hover")}
+            >
+              <GitFork size={13} /> {t("network.viewGraph")}
+            </button>
+          </div>
+          <button onClick={scan} disabled={scanning} className="flex items-center gap-2 px-4 py-2 text-sm bg-accent-primary hover:bg-accent-secondary text-white rounded-win disabled:opacity-50">
+            {scanning ? <Loader2 size={15} className="animate-spin" /> : <NetworkIcon size={15} />} {scanning ? t("network.scanning") : t("network.scan")}
+          </button>
+        </div>
       </div>
 
       {fixes.length > 0 && (
@@ -71,7 +92,9 @@ export function Network() {
         </div>
       )}
 
-      {!devices ? (
+      {view === "graph" ? (
+        <NetworkGraph servers={servers} statuses={statuses} devices={devices} />
+      ) : !devices ? (
         <div className="flex flex-col items-center gap-2 py-16 text-text-muted text-sm">
           <NetworkIcon size={28} className="opacity-50" />
           {t("network.empty")}
