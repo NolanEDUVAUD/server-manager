@@ -37,7 +37,7 @@ mod ssh_keys;
 #[cfg(test)]
 mod ssh_test_server;
 
-use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, extensions as extensions_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use commands::organisation as organisation_cmd;
 use commands::ssh_keys as ssh_keys_cmd;
 use storage::AppState;
@@ -299,6 +299,13 @@ pub fn run() {
             ssh_keys_cmd::ssh_key_deploy,
             ssh_keys_cmd::ssh_key_use_for_server,
             ssh_keys_cmd::ssh_agent_status,
+            // ── Extensions communautaires (F1) ──────────────────
+            extensions_cmd::get_extensions,
+            extensions_cmd::install_extension,
+            extensions_cmd::set_extension_enabled,
+            extensions_cmd::uninstall_extension,
+            extensions_cmd::read_extension_file,
+            extensions_cmd::fetch_extension_manifest,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du démarrage de l'application Tauri");

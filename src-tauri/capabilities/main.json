@@ -155,6 +155,12 @@
     "allow-backup-cancel",
     "allow-get-backup-settings",
     "allow-save-backup-settings",
-    "allow-backup-run-now"
+    "allow-backup-run-now",
+    "allow-get-extensions",
+    "allow-install-extension",
+    "allow-set-extension-enabled",
+    "allow-uninstall-extension",
+    "allow-read-extension-file",
+    "allow-fetch-extension-manifest"
   ]
 }
