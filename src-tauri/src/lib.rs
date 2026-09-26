@@ -236,6 +236,10 @@ pub fn run() {
             // ── Découverte réseau ───────────────────────────────
             discovery_cmd::detect_mac,
             discovery_cmd::network_scan,
+            discovery_cmd::get_routes,
+            discovery_cmd::get_extra_subnets,
+            discovery_cmd::get_wlan_info,
+            discovery_cmd::traceroute_lite,
             // ── Commandes mémorisées ────────────────────────────
             snippets_cmd::get_snippets,
             snippets_cmd::save_snippet,
