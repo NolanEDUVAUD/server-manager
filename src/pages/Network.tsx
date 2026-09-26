@@ -93,7 +93,7 @@ export function Network() {
       )}
 
       {view === "graph" ? (
-        <NetworkGraph servers={servers} statuses={statuses} devices={devices} />
+        <NetworkGraph servers={servers} statuses={statuses} devices={devices} onAddServer={setAdding} />
       ) : !devices ? (
         <div className="flex flex-col items-center gap-2 py-16 text-text-muted text-sm">
           <NetworkIcon size={28} className="opacity-50" />
