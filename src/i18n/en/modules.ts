@@ -8,6 +8,7 @@ export const modules: Dict["modules"] = {
   alerts: { label: "Alerts", description: "ntfy, Discord, Telegram… notifications" },
   network: { label: "Network", description: "Local network devices and MAC addresses" },
   docker: { label: "Docker", description: "Containers and images on Docker hosts" },
+  databases: { label: "Databases", description: "MySQL/MariaDB, PostgreSQL and Redis on your servers" },
   batch: { label: "Batch tasks", description: "One script on several servers, Ansible playbooks" },
   updates: { label: "Updates", description: "Pending apt packages and outdated containers" },
   logs: { label: "Logs", description: "Logs centralized in Grafana Loki" },

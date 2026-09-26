@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-db-drop-database"
+description = "Enables the db_drop_database command without any pre-configured scope."
+commands.allow = ["db_drop_database"]
+
+[[permission]]
+identifier = "deny-db-drop-database"
+description = "Denies the db_drop_database command without any pre-configured scope."
+commands.deny = ["db_drop_database"]

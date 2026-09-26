@@ -171,6 +171,19 @@
     "allow-set-extension-enabled",
     "allow-uninstall-extension",
     "allow-read-extension-file",
-    "allow-fetch-extension-manifest"
+    "allow-fetch-extension-manifest",
+    "allow-get-db-connections",
+    "allow-save-db-connection",
+    "allow-db-detect-engines",
+    "allow-db-list-databases",
+    "allow-db-list-tables",
+    "allow-db-list-users",
+    "allow-db-run-query",
+    "allow-db-create-database",
+    "allow-db-drop-database",
+    "allow-db-backup-database",
+    "allow-db-service-action",
+    "allow-db-redis-info",
+    "allow-db-redis-command"
   ]
 }

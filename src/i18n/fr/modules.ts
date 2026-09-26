@@ -7,6 +7,7 @@ export const modules = {
   alerts: { label: "Alertes", description: "Notifications ntfy, Discord, Telegram…" },
   network: { label: "Réseau", description: "Appareils du réseau local et adresses MAC" },
   docker: { label: "Docker", description: "Conteneurs et images des hôtes Docker" },
+  databases: { label: "Bases de données", description: "MySQL/MariaDB, PostgreSQL et Redis de tes serveurs" },
   batch: { label: "Tâches en lot", description: "Un script sur plusieurs serveurs, playbooks Ansible" },
   updates: { label: "Mises à jour", description: "Paquets apt en attente et conteneurs dépassés" },
   logs: { label: "Logs", description: "Journaux centralisés dans Grafana Loki" },

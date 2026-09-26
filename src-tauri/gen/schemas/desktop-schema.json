@@ -459,6 +459,72 @@
           "markdownDescription": "Enables the cron_remove_managed command without any pre-configured scope."
         },
         {
+          "description": "Enables the db_backup_database command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-backup-database",
+          "markdownDescription": "Enables the db_backup_database command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_create_database command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-create-database",
+          "markdownDescription": "Enables the db_create_database command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_detect_engines command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-detect-engines",
+          "markdownDescription": "Enables the db_detect_engines command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_drop_database command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-drop-database",
+          "markdownDescription": "Enables the db_drop_database command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_list_databases command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-list-databases",
+          "markdownDescription": "Enables the db_list_databases command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_list_tables command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-list-tables",
+          "markdownDescription": "Enables the db_list_tables command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_list_users command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-list-users",
+          "markdownDescription": "Enables the db_list_users command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_redis_command command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-redis-command",
+          "markdownDescription": "Enables the db_redis_command command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_redis_info command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-redis-info",
+          "markdownDescription": "Enables the db_redis_info command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_run_query command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-run-query",
+          "markdownDescription": "Enables the db_run_query command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the db_service_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-db-service-action",
+          "markdownDescription": "Enables the db_service_action command without any pre-configured scope."
+        },
+        {
           "description": "Enables the delete_alert_rule command without any pre-configured scope.",
           "type": "string",
           "const": "allow-delete-alert-rule",
@@ -601,6 +667,12 @@
           "type": "string",
           "const": "allow-get-data-path",
           "markdownDescription": "Enables the get_data_path command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_db_connections command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-db-connections",
+          "markdownDescription": "Enables the get_db_connections command without any pre-configured scope."
         },
         {
           "description": "Enables the get_event_stats command without any pre-configured scope.",
@@ -1023,6 +1095,12 @@
           "markdownDescription": "Enables the save_custom_theme command without any pre-configured scope."
         },
         {
+          "description": "Enables the save_db_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-save-db-connection",
+          "markdownDescription": "Enables the save_db_connection command without any pre-configured scope."
+        },
+        {
           "description": "Enables the save_folder command without any pre-configured scope.",
           "type": "string",
           "const": "allow-save-folder",
@@ -1419,6 +1497,72 @@
           "markdownDescription": "Denies the cron_remove_managed command without any pre-configured scope."
         },
         {
+          "description": "Denies the db_backup_database command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-backup-database",
+          "markdownDescription": "Denies the db_backup_database command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_create_database command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-create-database",
+          "markdownDescription": "Denies the db_create_database command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_detect_engines command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-detect-engines",
+          "markdownDescription": "Denies the db_detect_engines command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_drop_database command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-drop-database",
+          "markdownDescription": "Denies the db_drop_database command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_list_databases command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-list-databases",
+          "markdownDescription": "Denies the db_list_databases command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_list_tables command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-list-tables",
+          "markdownDescription": "Denies the db_list_tables command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_list_users command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-list-users",
+          "markdownDescription": "Denies the db_list_users command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_redis_command command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-redis-command",
+          "markdownDescription": "Denies the db_redis_command command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_redis_info command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-redis-info",
+          "markdownDescription": "Denies the db_redis_info command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_run_query command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-run-query",
+          "markdownDescription": "Denies the db_run_query command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the db_service_action command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-db-service-action",
+          "markdownDescription": "Denies the db_service_action command without any pre-configured scope."
+        },
+        {
           "description": "Denies the delete_alert_rule command without any pre-configured scope.",
           "type": "string",
           "const": "deny-delete-alert-rule",
@@ -1561,6 +1705,12 @@
           "type": "string",
           "const": "deny-get-data-path",
           "markdownDescription": "Denies the get_data_path command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_db_connections command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-db-connections",
+          "markdownDescription": "Denies the get_db_connections command without any pre-configured scope."
         },
         {
           "description": "Denies the get_event_stats command without any pre-configured scope.",
@@ -1981,6 +2131,12 @@
           "type": "string",
           "const": "deny-save-custom-theme",
           "markdownDescription": "Denies the save_custom_theme command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_db_connection command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-save-db-connection",
+          "markdownDescription": "Denies the save_db_connection command without any pre-configured scope."
         },
         {
           "description": "Denies the save_folder command without any pre-configured scope.",

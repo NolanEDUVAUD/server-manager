@@ -9,6 +9,7 @@ import { bugReport } from "./bugReport";
 import { common } from "./common";
 import { consolePage } from "./console";
 import { dashboard } from "./dashboard";
+import { databases } from "./databases";
 import { docker } from "./docker";
 import { events } from "./events";
 import { extensions } from "./extensions";
@@ -54,6 +55,7 @@ export const en: Dict = {
   common,
   console: consolePage,
   dashboard,
+  databases,
   docker,
   events,
   extensions,

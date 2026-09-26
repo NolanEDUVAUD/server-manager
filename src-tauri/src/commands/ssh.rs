@@ -271,10 +271,27 @@ pub(crate) async fn execute_ssh_stream(
     run_command(&session, command, on_chunk).await
 }
 
+/// Comme execute_ssh, en écrivant `stdin` sur l'entrée standard de la commande puis en la
+/// fermant. Sert à transmettre un secret sans l'écrire dans la commande elle-même (qui est
+/// visible dans la liste des processus du serveur).
+pub(crate) async fn execute_ssh_with_stdin(target: &SshTarget, command: &str, stdin: &[u8], timeout_secs: u64) -> Result<SshResult, String> {
+    let session = connect_ssh(target, timeout_secs).await?;
+    run_command_with_input(&session, command, Some(stdin), &|_| {}).await
+}
+
 /// Exécute une commande sur une session ouverte et attend la fin du canal
 pub(crate) async fn run_command(
     session: &SshSession,
     command: &str,
+    on_chunk: &(dyn Fn(&str) + Send + Sync),
+) -> Result<SshResult, String> {
+    run_command_with_input(session, command, None, on_chunk).await
+}
+
+async fn run_command_with_input(
+    session: &SshSession,
+    command: &str,
+    stdin: Option<&[u8]>,
     on_chunk: &(dyn Fn(&str) + Send + Sync),
 ) -> Result<SshResult, String> {
     let mut channel = session
@@ -286,6 +303,11 @@ pub(crate) async fn run_command(
         .exec(true, command)
         .await
         .map_err(|e| format!("Erreur d'exécution de la commande '{}': {}", command, e))?;
+
+    if let Some(input) = stdin {
+        channel.data(input).await.map_err(|e| format!("Envoi sur l'entrée standard impossible: {}", e))?;
+        channel.eof().await.map_err(|e| format!("Fermeture de l'entrée standard impossible: {}", e))?;
+    }
 
     let mut output = String::new();
     let mut exit_code: Option<u32> = None;

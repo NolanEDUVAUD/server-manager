@@ -3,6 +3,7 @@ pub mod backup;
 pub mod app_update;
 pub mod batch;
 pub mod dashboards;
+pub mod db_admin;
 pub mod discovery;
 pub mod docker;
 pub mod events;

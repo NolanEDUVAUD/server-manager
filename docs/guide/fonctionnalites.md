@@ -119,6 +119,48 @@ lignes de logs.
 > Si un hôte Docker n'apparaît pas, vérifie qu'il est bien ajouté comme
 > serveur dans **Serveurs**.
 
+## Bases de données
+
+**Bases de données** détecte, sur chaque serveur, les moteurs MySQL/MariaDB,
+PostgreSQL et Redis installés (ou tournant dans un conteneur Docker), et permet
+de les administrer sans jamais exposer leurs ports : tout passe par la même
+connexion SSH que le reste de l'application (y compris un éventuel hôte de
+rebond).
+
+- **Détection** : client et service (actif/arrêté via `systemctl`) sur l'hôte,
+  ou conteneur Docker dont l'image correspond à un moteur connu.
+- **Bases** : liste avec taille et nombre de tables ; clic pour voir les
+  tables d'une base (taille et estimation du nombre de lignes).
+- **Utilisateurs** : comptes/rôles du moteur.
+- **Requête SQL** : petit éditeur avec résultats en grille. Le mode
+  **lecture seule** (activé par défaut) enrobe la requête dans une transaction
+  qui refuse toute écriture ; le désactiver demande une confirmation. Les
+  résultats sont plafonnés à 1000 lignes et quelques Mo.
+- **Créer / supprimer une base** : le nom d'une nouvelle base est validé
+  (lettres, chiffres, underscore) ; la suppression demande de retaper le nom
+  de la base à supprimer.
+- **Sauvegardes** : lance `mysqldump`/`pg_dump` sur le serveur, vers un
+  dossier choisi (`~/backups` par défaut), avec un nom horodaté ; le chemin et
+  la taille du fichier obtenu sont affichés.
+- **Service** : démarrer, arrêter ou redémarrer le service du moteur (avec
+  confirmation).
+
+Par défaut, l'authentification utilise le compte système (`sudo -u postgres
+psql` pour PostgreSQL, `sudo mysql` pour MySQL/MariaDB — authentification par
+socket Unix, standard sur Debian/Ubuntu) : rien à saisir. Un utilisateur et un
+mot de passe applicatifs peuvent être enregistrés par serveur et par moteur
+depuis la **Connexion** de chaque moteur ; le mot de passe est chiffré comme
+les autres secrets de l'app et n'est jamais renvoyé au frontend (seul un
+indicateur « mot de passe enregistré » l'est). Il n'est jamais placé sur la
+texte de la commande envoyée au serveur (qui serait visible par tous ses
+utilisateurs dans `ps`) : il est transmis sur l'entrée standard de la session
+SSH, puis exporté pour le client (`MYSQL_PWD` / `PGPASSWORD`). Un mot de passe
+de base ne peut donc pas contenir de retour à la ligne.
+
+Redis n'a pas d'éditeur SQL : un résumé `INFO` (version, mémoire, clés par
+base) suffit, avec un jeu de commandes de lecture strictement limité
+(`INFO`, `DBSIZE`, `SCAN`, `TYPE`, `TTL`, `GET`).
+
 ## Console SSH
 
 Terminal SSH intégré, avec les identifiants déjà enregistrés pour chaque
