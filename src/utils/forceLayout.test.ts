@@ -175,3 +175,14 @@ describe("circularLayout", () => {
     expect(circularLayout([], 800, 600)).toEqual([]);
   });
 });
+
+describe("decayAlpha (stabilisation)", () => {
+  it("atteint ALPHA_MIN en un nombre raisonnable de frames", async () => {
+    const { decayAlpha, ALPHA_MIN, INITIAL_ALPHA } = await import("./forceLayout");
+    let a = INITIAL_ALPHA;
+    let frames = 0;
+    while (a > ALPHA_MIN && frames < 10_000) { a = decayAlpha(a); frames++; }
+    expect(a).toBe(ALPHA_MIN);
+    expect(frames).toBeLessThan(600); // ~10 s à 60 i/s
+  });
+});

@@ -12,6 +12,7 @@ export const appUpdate: Dict["appUpdate"] = {
   },
   available: "Version {version} available",
   install: "Install and restart",
+  openDownload: "Open the download page",
   confirmTitle: "Install version {version}?",
   confirmMessage:
     "Version {version} will be downloaded from GitHub, then its signature will be checked against the public key built into the application: an unsigned or modified package is rejected.\n\nIf the signature is valid, the installer will replace the application and restart it automatically. Your servers and configuration are kept.\n\nTasks running in the application (SSH consoles, batch tasks, lab shutdown or startup…) will be interrupted.",

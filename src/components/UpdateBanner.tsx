@@ -55,7 +55,7 @@ export function UpdateBanner() {
                 onClick={() => setConfirming(true)}
                 className="px-3 py-1.5 rounded-win text-xs font-medium bg-accent-primary hover:bg-accent-secondary text-white transition-colors"
               >
-                {error ? t("appUpdate.banner.retry") : t("appUpdate.install")}
+                {error ? t("appUpdate.banner.retry") : t(signed ? "appUpdate.install" : "appUpdate.openDownload")}
               </button>
               <button
                 onClick={dismiss}
@@ -96,7 +96,7 @@ export function UpdateBanner() {
         <ConfirmDialog
           title={t("appUpdate.confirmTitle", { version: github.latest_version })}
           message={installConfirmMessage(github.latest_version, signed)}
-          confirmLabel={t("appUpdate.install")}
+          confirmLabel={t(signed ? "appUpdate.install" : "appUpdate.openDownload")}
           onConfirm={() => {
             setConfirming(false);
             install();

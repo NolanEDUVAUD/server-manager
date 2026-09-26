@@ -63,10 +63,16 @@ export const INITIAL_ALPHA = 1;
 export const ALPHA_DECAY = 0.02;
 /** En dessous de ce seuil, la simulation est considérée comme stabilisée (on arrête la boucle). */
 export const ALPHA_MIN = 0.01;
+/** Écart à ALPHA_MIN sous lequel on considère la simulation stabilisée */
+export const ALPHA_SNAP = 0.002;
 
 /** Fait décroître `alpha` d'un cran vers `ALPHA_MIN` (à appeler une fois par frame). */
 export function decayAlpha(alpha: number, decay = ALPHA_DECAY): number {
-  return Math.max(ALPHA_MIN, alpha + (ALPHA_MIN - alpha) * decay);
+  const next = alpha + (ALPHA_MIN - alpha) * decay;
+  // Décroissance asymptotique : sans ce « cran », alpha n'atteindrait ALPHA_MIN qu'après
+  // des milliers de frames (égalité en virgule flottante) et le graphe ne serait jamais
+  // considéré comme stabilisé (pas de recadrage automatique, boucle rAF sans fin).
+  return next - ALPHA_MIN < ALPHA_SNAP ? ALPHA_MIN : next;
 }
 
 /**

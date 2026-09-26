@@ -27,7 +27,7 @@ const available: GithubUpdateCheck = {
 };
 
 /** Le bouton de la bannière, puis celui du ConfirmDialog (rendu après), portent le même libellé */
-const installButtons = () => screen.getAllByRole("button", { name: "Installer et redémarrer" });
+const installButtons = () => screen.getAllByRole("button", { name: /Installer et redémarrer|Ouvrir la page de téléchargement/ });
 
 describe("UpdateBanner", () => {
   beforeEach(() => {

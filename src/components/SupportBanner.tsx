@@ -4,6 +4,7 @@ import { useT } from "../i18n";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../stores/useStore";
 import { useDraftStore } from "../stores/useDraftStore";
+import { useAppUpdate } from "../stores/useAppUpdate";
 
 /**
  * Bannière d'invitation à soutenir le projet, affichée au maximum une fois par session.
@@ -60,7 +61,10 @@ export function SupportBanner() {
   // - L'utilisateur a cliqué "Ne plus afficher"
   // - L'utilisateur a cliqué "Plus tard" cette session
   // - La bannière n'a pas encore été montrée
-  if (dismissed || hiddenThisSession || !showedOnce) {
+  // Une seule bannière à la fois : la mise à jour disponible passe en priorité
+  const updateBannerShown = useAppUpdate((s) => !!s.github?.available && (s.status === "installing" || (s.status === "available" && !s.dismissed)));
+
+  if (dismissed || hiddenThisSession || !showedOnce || updateBannerShown) {
     return null;
   }
 

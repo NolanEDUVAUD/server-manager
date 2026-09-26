@@ -10,6 +10,7 @@ import {
   computeFitTransform,
   decayAlpha,
   INITIAL_ALPHA,
+  simulate,
   LayoutEdge,
   LayoutNode,
   stepForceLayout,
@@ -141,7 +142,11 @@ export function NetworkGraph({ servers, statuses, devices, onAddServer }: Networ
     const ids = [...nodesData.keys()];
     const existing = new Map(nodesRef.current.map((n) => [n.id, n]));
     const isNewSet = ids.some((id) => !existing.has(id)) || ids.length !== nodesRef.current.length;
-    nodesRef.current = ids.map((id) => existing.get(id) ?? circularLayout([id], size.width, size.height, 60)[0]);
+    // Les nouveaux nœuds sont répartis ENSEMBLE sur un cercle : placés un par un, ils
+    // démarreraient tous au même point et la répulsion les projetterait au hasard.
+    const newIds = ids.filter((id) => !existing.has(id));
+    const placed = new Map(circularLayout(newIds, size.width, size.height, 140).map((n) => [n.id, n]));
+    nodesRef.current = ids.map((id) => existing.get(id) ?? placed.get(id)!);
     const gateway = nodesRef.current.find((n) => n.id === GATEWAY_ID);
     if (gateway && !existing.has(GATEWAY_ID)) {
       gateway.x = size.width / 2;
@@ -150,6 +155,12 @@ export function NetworkGraph({ servers, statuses, devices, onAddServer }: Networ
     if (isNewSet) {
       alphaRef.current = INITIAL_ALPHA;
       shouldFitRef.current = true;
+      // Premier affichage : on pré-calcule la mise en place hors écran pour que le graphe
+      // apparaisse déjà presque stable (l'animation ne fait plus que l'affiner)
+      if (existing.size === 0) {
+        simulate(nodesRef.current, edgesRef.current, { width: size.width, height: size.height, collisionRadius: COLLISION_RADIUS, alpha: 1 }, 300);
+        alphaRef.current = 0.3;
+      }
     }
     if (selected && !nodesData.has(selected)) setSelected(null);
     startLoop();

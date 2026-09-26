@@ -11,6 +11,7 @@ export const appUpdate = {
   },
   available: "Version {version} disponible",
   install: "Installer et redémarrer",
+  openDownload: "Ouvrir la page de téléchargement",
   confirmTitle: "Installer la version {version} ?",
   confirmMessage:
     "La version {version} va être téléchargée depuis GitHub, puis sa signature sera vérifiée avec la clé publique intégrée à l'application : un paquet non signé ou modifié est refusé.\n\nSi la signature est valide, l'installateur remplacera l'application puis la redémarrera automatiquement. Tes serveurs et ta configuration sont conservés.\n\nLes tâches en cours dans l'application (consoles SSH, tâches en lot, arrêt ou démarrage du lab…) seront interrompues.",

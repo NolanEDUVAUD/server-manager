@@ -103,7 +103,7 @@ export function AppUpdateSettings() {
               onClick={() => setConfirming(true)}
               className="px-3 py-1.5 rounded-win bg-accent-primary text-white hover:opacity-90 transition-opacity text-sm font-medium"
             >
-              {t("appUpdate.install")}
+              {t(signed ? "appUpdate.install" : "appUpdate.openDownload")}
             </button>
           </div>
         )}
@@ -123,7 +123,7 @@ export function AppUpdateSettings() {
         <ConfirmDialog
           title={t("appUpdate.confirmTitle", { version: github.latest_version })}
           message={installConfirmMessage(github.latest_version, signed)}
-          confirmLabel={t("appUpdate.install")}
+          confirmLabel={t(signed ? "appUpdate.install" : "appUpdate.openDownload")}
           onConfirm={() => {
             setConfirming(false);
             install();

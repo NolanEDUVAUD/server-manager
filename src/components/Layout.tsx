@@ -184,10 +184,21 @@ export function Layout({ children }: LayoutProps) {
     setTabOrder(to ? moveItem(order, route, to) : [...order.filter((r) => r !== route), route]);
   }
 
+  // Les écouteurs posés sur window doivent garder la même référence pour pouvoir être
+  // retirés, tout en appelant les gestionnaires du dernier rendu (état à jour).
+  const latestHandlers = useRef({ move: (_e: PointerEvent) => {}, up: () => {}, key: (_e: KeyboardEvent) => {}, cancel: () => {} });
+  const windowListeners = useRef({
+    move: (e: PointerEvent) => latestHandlers.current.move(e),
+    up: () => latestHandlers.current.up(),
+    key: (e: KeyboardEvent) => latestHandlers.current.key(e),
+    cancel: () => latestHandlers.current.cancel(),
+  }).current;
+
   function endDrag() {
-    window.removeEventListener("pointermove", onPointerMove);
-    window.removeEventListener("pointerup", onPointerUp);
-    window.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("pointermove", windowListeners.move);
+    window.removeEventListener("pointerup", windowListeners.up);
+    window.removeEventListener("pointercancel", windowListeners.cancel);
+    window.removeEventListener("keydown", windowListeners.key);
   }
 
   function onPointerMove(e: PointerEvent) {
@@ -218,13 +229,19 @@ export function Layout({ children }: LayoutProps) {
     setDropTarget(null);
   }
 
-  function onKeyDown(e: KeyboardEvent) {
-    if (e.key !== "Escape" || !dragCandidate.current) return;
+  function cancelDrag() {
+    if (!dragCandidate.current) return;
     dragCandidate.current = null;
     endDrag();
     setDragRoute(null);
     setDropTarget(null);
+    requestAnimationFrame(() => { suppressClick.current = false; });
   }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (e.key === "Escape") cancelDrag();
+  }
+  latestHandlers.current = { move: onPointerMove, up: onPointerUp, key: onKeyDown, cancel: cancelDrag };
 
   function onItemPointerDown(route: string) {
     return (e: React.PointerEvent) => {
@@ -233,9 +250,11 @@ export function Layout({ children }: LayoutProps) {
       // pas la propriété : on ne bloque alors pas le geste.
       if (e.button !== undefined && e.button !== 0) return;
       dragCandidate.current = { route, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, dragging: false };
-      window.addEventListener("pointermove", onPointerMove);
-      window.addEventListener("pointerup", onPointerUp);
-      window.addEventListener("keydown", onKeyDown);
+      endDrag();
+      window.addEventListener("pointermove", windowListeners.move);
+      window.addEventListener("pointerup", windowListeners.up);
+      window.addEventListener("pointercancel", windowListeners.cancel);
+      window.addEventListener("keydown", windowListeners.key);
     };
   }
 
@@ -265,6 +284,10 @@ export function Layout({ children }: LayoutProps) {
           to={to}
           end={to === "/"}
           title={t(labelKey)}
+          // Un lien est glissable nativement : le navigateur lancerait son propre glisser
+          // (et annulerait les événements pointeur, pointerup compris). On le désactive.
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
           className={({ isActive }) =>
             cn(
               "flex items-center gap-3 px-3 py-2 rounded-win text-sm transition-all duration-150",
