@@ -1,4 +1,5 @@
 import { currentLocale, t } from "../i18n";
+import { open } from "@tauri-apps/plugin-shell";
 // ── Validation ─────────────────────────────────────────────────────────────
 
 export function isValidIP(ip: string): boolean {
@@ -109,6 +110,23 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── Ouverture d'une adresse dans le navigateur par défaut ───────────────────
+
+/**
+ * Ouvre une adresse `https://` dans le navigateur par défaut (releases GitHub, rapport
+ * de bug, soutien du projet…) via le plugin shell de Tauri. L'adresse autorisée est
+ * restreinte côté configuration (`plugins.shell.open` dans tauri.conf.json, limité à
+ * github.com) : un appel avec une autre adresse est refusé par le backend.
+ */
+export async function openExternal(url: string): Promise<boolean> {
+  try {
+    await open(url);
     return true;
   } catch {
     return false;

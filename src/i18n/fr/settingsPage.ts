@@ -9,6 +9,7 @@ export const settingsPage = {
     integrations: "Intégrations",
     sshkeys: "Clés SSH",
     config: "Configuration",
+    updates: "Mise à jour",
     about: "À propos",
   },
   saved: "Sauvegardé",

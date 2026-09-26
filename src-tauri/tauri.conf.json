@@ -39,6 +39,9 @@
   "plugins": {
     "dialog": null,
     "notification": null,
+    "shell": {
+      "open": "^https://github\\.com/"
+    },
     "updater": {
       "pubkey": "",
       "windows": {

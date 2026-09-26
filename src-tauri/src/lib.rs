@@ -119,6 +119,9 @@ pub fn run() {
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        // Ouverture du navigateur par défaut (releases, rapport de bug, soutien du projet) ;
+        // adresse autorisée restreinte dans tauri.conf.json (plugins.shell.open)
+        .plugin(tauri_plugin_shell::init())
         // ── Mise à jour automatique de l'application (1.5) ──
         .plugin(commands::app_update::plugin())
         .manage(commands::app_update::AppUpdateState::default())

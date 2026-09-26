@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw, ArrowUpCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Info, Loader2, RefreshCw, ArrowUpCircle } from "lucide-react";
 import { useStore } from "../stores/useStore";
 import { NOT_CONFIGURED_KEY, useAppUpdate } from "../stores/useAppUpdate";
 import { useT } from "../i18n";
+import { openExternal } from "../utils";
+import { formatReleaseDate } from "../utils/appUpdate";
+import { REPO_URL } from "../utils/support";
 
 /** Paramètres → Général : mises à jour de l'application */
 export function AppUpdateSettings() {
@@ -70,6 +73,28 @@ export function AppUpdateSettings() {
             error={error}
             dismissed={dismissed}
           />
+        </div>
+
+        {status === "available" && update?.notes && (
+          <div className="pt-2 border-t border-border-secondary space-y-1.5">
+            <p className="text-text-primary text-xs font-medium">
+              {t("appUpdate.settings.releaseNotes")}
+              {update.date ? ` · ${formatReleaseDate(update.date)}` : ""}
+            </p>
+            <pre className="whitespace-pre-wrap break-words text-text-secondary text-xs font-sans bg-bg-secondary rounded-win p-2 max-h-40 overflow-y-auto">
+              {update.notes}
+            </pre>
+          </div>
+        )}
+
+        <div className="pt-1">
+          <button
+            onClick={() => openExternal(`${REPO_URL}/releases`)}
+            className="flex items-center gap-1.5 text-xs text-accent-primary hover:underline"
+          >
+            <ExternalLink size={12} />
+            {t("appUpdate.settings.viewReleases")}
+          </button>
         </div>
       </div>
     </>
