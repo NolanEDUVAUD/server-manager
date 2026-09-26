@@ -209,6 +209,13 @@ impl russh::keys::agent::server::Agent for TestAgent {}
 /// Agent SSH sur une socket Unix temporaire, chargé avec `key` ; renvoie le chemin de la socket
 #[cfg(unix)]
 pub async fn start_agent(key: &PrivateKey) -> std::path::PathBuf {
+    start_agent_with(std::slice::from_ref(key)).await
+}
+
+/// Agent SSH sur une socket Unix temporaire, chargé avec `keys` (dans cet ordre, éventuellement
+/// aucune : agent joignable mais sans identité) ; renvoie le chemin de la socket
+#[cfg(unix)]
+pub async fn start_agent_with(keys: &[PrivateKey]) -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!("spm-agent-{}.sock", uuid::Uuid::new_v4()));
     let listener = tokio::net::UnixListener::bind(&path).expect("socket de l'agent");
     let connections = Box::pin(futures::stream::unfold(listener, |l| async move {
@@ -216,7 +223,11 @@ pub async fn start_agent(key: &PrivateKey) -> std::path::PathBuf {
         Some((next, l))
     }));
     tokio::spawn(russh::keys::agent::server::serve(connections, TestAgent));
-    let mut client = russh::keys::agent::client::AgentClient::connect_uds(&path).await.expect("connexion à l'agent");
-    client.add_identity(key, &[]).await.expect("clé ajoutée à l'agent");
+    if !keys.is_empty() {
+        let mut client = russh::keys::agent::client::AgentClient::connect_uds(&path).await.expect("connexion à l'agent");
+        for key in keys {
+            client.add_identity(key, &[]).await.expect("clé ajoutée à l'agent");
+        }
+    }
     path
 }
