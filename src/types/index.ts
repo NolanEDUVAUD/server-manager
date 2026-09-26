@@ -542,12 +542,42 @@ export interface LabProgress { step: number; status: "running" | "done" | "error
 
 // ─── Découverte réseau ──────────────────────────────────────────────────────
 
+/** Type d'appareil deviné (fabricant OUI + nom) — voir `discovery::guess_device_kind` côté Rust */
+export type DeviceKind = "router" | "switch" | "access_point" | "server" | "nas" | "phone" | "tv" | "printer" | "iot" | "unknown";
+
 export interface NetworkDevice {
   ip: string;
   mac: string | null;
   /** Carte réseau virtuelle (VM, conteneur) : WoL inutile */
   virtual_nic: string | null;
   known_server: string | null;
+  /** Fabricant deviné à partir de l'OUI de la MAC (absent d'un ancien scan mis en cache) */
+  vendor?: string | null;
+  device_kind?: DeviceKind | null;
+}
+
+// ─── Routage, Wi-Fi, traceroute (topologie du graphe réseau) ────────────────
+
+export interface RouteEntry {
+  destination: string;
+  mask: string | null;
+  gateway: string | null;
+  interface: string | null;
+  metric: number | null;
+}
+
+export interface WlanInfo {
+  ssid: string | null;
+  bssid: string | null;
+  signal_percent: number | null;
+  channel: number | null;
+  band: string | null;
+}
+
+export interface TracerouteHop {
+  hop: number;
+  ip: string | null;
+  rtt_ms: number | null;
 }
 
 // ─── Commandes mémorisées ───────────────────────────────────────────────────

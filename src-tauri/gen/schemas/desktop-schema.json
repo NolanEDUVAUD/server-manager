@@ -621,6 +621,12 @@
           "markdownDescription": "Enables the get_extensions command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_extra_subnets command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-extra-subnets",
+          "markdownDescription": "Enables the get_extra_subnets command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_groups command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-groups",
@@ -663,6 +669,12 @@
           "markdownDescription": "Enables the get_recent_metrics command without any pre-configured scope."
         },
         {
+          "description": "Enables the get_routes command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-routes",
+          "markdownDescription": "Enables the get_routes command without any pre-configured scope."
+        },
+        {
           "description": "Enables the get_schedules command without any pre-configured scope.",
           "type": "string",
           "const": "allow-get-schedules",
@@ -697,6 +709,12 @@
           "type": "string",
           "const": "allow-get-snippets",
           "markdownDescription": "Enables the get_snippets command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_wlan_info command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-wlan-info",
+          "markdownDescription": "Enables the get_wlan_info command without any pre-configured scope."
         },
         {
           "description": "Enables the import_config command without any pre-configured scope.",
@@ -1191,6 +1209,12 @@
           "markdownDescription": "Enables the toggle_server_in_group command without any pre-configured scope."
         },
         {
+          "description": "Enables the traceroute_lite command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-traceroute-lite",
+          "markdownDescription": "Enables the traceroute_lite command without any pre-configured scope."
+        },
+        {
           "description": "Enables the uninstall_extension command without any pre-configured scope.",
           "type": "string",
           "const": "allow-uninstall-extension",
@@ -1539,6 +1563,12 @@
           "markdownDescription": "Denies the get_extensions command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_extra_subnets command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-extra-subnets",
+          "markdownDescription": "Denies the get_extra_subnets command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_groups command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-groups",
@@ -1581,6 +1611,12 @@
           "markdownDescription": "Denies the get_recent_metrics command without any pre-configured scope."
         },
         {
+          "description": "Denies the get_routes command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-routes",
+          "markdownDescription": "Denies the get_routes command without any pre-configured scope."
+        },
+        {
           "description": "Denies the get_schedules command without any pre-configured scope.",
           "type": "string",
           "const": "deny-get-schedules",
@@ -1615,6 +1651,12 @@
           "type": "string",
           "const": "deny-get-snippets",
           "markdownDescription": "Denies the get_snippets command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_wlan_info command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-wlan-info",
+          "markdownDescription": "Denies the get_wlan_info command without any pre-configured scope."
         },
         {
           "description": "Denies the import_config command without any pre-configured scope.",
@@ -2107,6 +2149,12 @@
           "type": "string",
           "const": "deny-toggle-server-in-group",
           "markdownDescription": "Denies the toggle_server_in_group command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the traceroute_lite command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-traceroute-lite",
+          "markdownDescription": "Denies the traceroute_lite command without any pre-configured scope."
         },
         {
           "description": "Denies the uninstall_extension command without any pre-configured scope.",
