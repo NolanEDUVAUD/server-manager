@@ -11,6 +11,8 @@ use crate::{commands::wol::wake_group_inner, events::EventLog, storage::AppState
 pub const TRAY_ID: &str = "main";
 const WOL_PREFIX: &str = "wol:";
 const LOCK_ID: &str = "lock";
+const OPEN_ID: &str = "tray_open";
+const QUIT_ID: &str = "tray_quit";
 
 /// Textes du menu et de l'infobulle dans la langue de l'interface
 pub struct TrayTexts {
@@ -72,7 +74,7 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         .unwrap_or((false, false));
 
     let tx = texts(&language(app));
-    let open = MenuItem::with_id(app, "open", tx.open, true, None::<&str>)?;
+    let open = MenuItem::with_id(app, OPEN_ID, tx.open, true, None::<&str>)?;
     let sep1 = PredefinedMenuItem::separator(app)?;
     let wol_items: Vec<MenuItem<Wry>> = groups
         .iter()
@@ -82,7 +84,7 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     let wake = Submenu::with_items(app, tx.wake, !groups.is_empty() && !locked, &wol_refs)?;
     let lock = MenuItem::with_id(app, LOCK_ID, tx.lock, !locked, None::<&str>)?;
     let sep2 = PredefinedMenuItem::separator(app)?;
-    let quit = MenuItem::with_id(app, "quit", tx.quit, true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, QUIT_ID, tx.quit, true, None::<&str>)?;
     if lock_enabled {
         Menu::with_items(app, &[&open, &sep1, &wake, &lock, &sep2, &quit])
     } else {
@@ -108,8 +110,8 @@ pub fn show_main_window(app: &AppHandle) {
 fn on_menu(app: &AppHandle, event: MenuEvent) {
     let id = event.id().as_ref();
     match id {
-        "open" => show_main_window(app),
-        "quit" => app.exit(0),
+        OPEN_ID | "open" => show_main_window(app),
+        QUIT_ID | "quit" => app.exit(0),
         LOCK_ID => {
             if let Err(e) = crate::lock::lock_app(app, "zone de notification") {
                 log::warn!("Verrouillage impossible : {}", e);
