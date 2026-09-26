@@ -1077,6 +1077,24 @@
           "markdownDescription": "Enables the set_extension_enabled command without any pre-configured scope."
         },
         {
+          "description": "Enables the smart_batch_detect_os command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-smart-batch-detect-os",
+          "markdownDescription": "Enables the smart_batch_detect_os command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the smart_batch_preview command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-smart-batch-preview",
+          "markdownDescription": "Enables the smart_batch_preview command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the smart_batch_run command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-smart-batch-run",
+          "markdownDescription": "Enables the smart_batch_run command without any pre-configured scope."
+        },
+        {
           "description": "Enables the ssh_agent_status command without any pre-configured scope.",
           "type": "string",
           "const": "allow-ssh-agent-status",
@@ -2017,6 +2035,24 @@
           "type": "string",
           "const": "deny-set-extension-enabled",
           "markdownDescription": "Denies the set_extension_enabled command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the smart_batch_detect_os command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-smart-batch-detect-os",
+          "markdownDescription": "Denies the smart_batch_detect_os command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the smart_batch_preview command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-smart-batch-preview",
+          "markdownDescription": "Denies the smart_batch_preview command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the smart_batch_run command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-smart-batch-run",
+          "markdownDescription": "Denies the smart_batch_run command without any pre-configured scope."
         },
         {
           "description": "Denies the ssh_agent_status command without any pre-configured scope.",

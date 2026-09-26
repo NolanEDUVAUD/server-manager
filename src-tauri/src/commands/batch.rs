@@ -1,13 +1,15 @@
 /// Commandes Tauri — Tâches en lot et Ansible
+use serde::Serialize;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
 use crate::{
-    batch::{self, list_playbooks_command, playbook_command, wrap_script, AnsibleConfig, BatchInputs, BatchMode, BatchTask, BatchTarget},
+    batch::{self, list_playbooks_command, playbook_command, wrap_script, AnsibleConfig, BatchInputs, BatchMode, BatchTask, BatchTarget, SmartTarget},
     commands::ssh::execute_ssh,
     events::{EventKind, EventLog},
-    models::AppData,
+    models::{AppData, OsType},
+    smart_batch::{self, expand_template, posix_probe_command, resolve_action, windows_probe_command, DetectedOs, OsCache, PkgFamily, SmartAction},
     ssh_auth::resolve_ssh,
     storage::AppState,
 };
@@ -29,6 +31,194 @@ fn spawn_run(app: &AppHandle, inputs: &BatchInputs, targets: Vec<BatchTarget>, c
     });
     tauri::async_runtime::spawn(batch::run(run_id.clone(), targets, command, mode, stop_on_error, emit, inputs.clone()));
     run_id
+}
+
+// ── Lot intelligent (F2) : détection de l'OS et résolution des actions ────
+
+/// Détecte l'OS d'une cible par SSH (avec cache), à partir de la commande adaptée à son
+/// `os_type` enregistré (Windows : PowerShell/`cmd /c ver` ; sinon : `/etc/os-release`/`uname`).
+async fn detect_os(target: &BatchTarget, os_type: OsType, cache: &OsCache, force: bool) -> Result<DetectedOs, String> {
+    if !force {
+        if let Some(os) = cache.get(&target.server_id) {
+            return Ok(os);
+        }
+    }
+    let (probe, parse): (&str, fn(&str) -> Option<DetectedOs>) = if os_type == OsType::Windows {
+        (windows_probe_command(), smart_batch::parse_windows_probe)
+    } else {
+        (posix_probe_command(), smart_batch::parse_posix_probe)
+    };
+    let result = execute_ssh(&target.ssh, probe, 15).await?;
+    let os = parse(&result.output)
+        .ok_or_else(|| format!("Détection de l'OS impossible pour {} : réponse inattendue à « {} »", target.name, probe))?;
+    cache.set(&target.server_id, os.clone());
+    Ok(os)
+}
+
+/// `os_type` de chaque serveur d'une liste, dans l'ordre (celui par défaut si le serveur a disparu
+/// entre-temps : `targets()` aurait de toute façon déjà signalé l'absence)
+fn os_types_of(data: &AppData, ids: &[String]) -> Vec<OsType> {
+    ids.iter().map(|id| data.servers.iter().find(|s| &s.id == id).map(|s| s.os_type.clone()).unwrap_or_default()).collect()
+}
+
+/// OS détecté d'une cible, pour l'affichage dans l'interface (ex. « Debian 12 »)
+#[derive(Debug, Clone, Serialize)]
+pub struct TargetOsView {
+    pub server_id: String,
+    pub name: String,
+    pub label: Option<String>,
+    pub error: Option<String>,
+}
+
+/// Détecte l'OS de chaque serveur donné (en parallèle), avec mise en cache (10 min)
+#[tauri::command]
+pub async fn smart_batch_detect_os(
+    state: State<'_, AppState>,
+    cache: State<'_, OsCache>,
+    server_ids: Vec<String>,
+    force: bool,
+) -> Result<Vec<TargetOsView>, String> {
+    crate::crypto::ensure_unlocked()?;
+    let (t, os_types) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (targets(&data, &server_ids)?, os_types_of(&data, &server_ids))
+    };
+    let futures = t.iter().zip(os_types).map(|(target, os_type)| {
+        let cache = cache.inner().clone();
+        async move {
+            match detect_os(target, os_type, &cache, force).await {
+                Ok(os) => TargetOsView { server_id: target.server_id.clone(), name: target.name.clone(), label: Some(os.pretty_name), error: None },
+                Err(e) => TargetOsView { server_id: target.server_id.clone(), name: target.name.clone(), label: None, error: Some(e) },
+            }
+        }
+    });
+    Ok(futures::future::join_all(futures).await)
+}
+
+/// Ce qui doit être exécuté : une action portable (résolue par OS) ou un script avec variables
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(tag = "type", content = "value")]
+pub enum SmartSource {
+    Action(SmartAction),
+    Script(String),
+}
+
+/// Commande résolue pour une cible, prête à être montrée avant confirmation (ou l'erreur qui
+/// fait ignorer la cible : OS inconnu, variable de gabarit invalide…)
+#[derive(Debug, Clone, Serialize)]
+pub struct SmartPreview {
+    pub server_id: String,
+    pub name: String,
+    pub os_label: Option<String>,
+    pub command: Option<String>,
+    pub skip_reason: Option<String>,
+}
+
+fn resolve_source(source: &SmartSource, os: &DetectedOs) -> Result<String, String> {
+    match source {
+        SmartSource::Action(action) => resolve_action(action, os),
+        SmartSource::Script(script) => expand_template(script, os),
+    }
+}
+
+/// Bash sous Unix (et macOS), mais pas sous Windows (pas de `bash` par défaut : la commande
+/// résolue est déjà du PowerShell/`cmd`, à exécuter telle quelle)
+fn finalize_command(resolved: &str, os: &DetectedOs) -> String {
+    match os.family {
+        PkgFamily::Winget | PkgFamily::Choco => resolved.to_string(),
+        _ => wrap_script(resolved),
+    }
+}
+
+/// Résout la commande de chaque cible pour l'aperçu affiché avant confirmation
+#[tauri::command]
+pub async fn smart_batch_preview(
+    state: State<'_, AppState>,
+    cache: State<'_, OsCache>,
+    server_ids: Vec<String>,
+    source: SmartSource,
+) -> Result<Vec<SmartPreview>, String> {
+    crate::crypto::ensure_unlocked()?;
+    let (t, os_types) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (targets(&data, &server_ids)?, os_types_of(&data, &server_ids))
+    };
+    let futures = t.into_iter().zip(os_types).map(|(target, os_type)| {
+        let source = source.clone();
+        let cache = cache.inner().clone();
+        async move {
+            match detect_os(&target, os_type, &cache, false).await {
+                Ok(os) => match resolve_source(&source, &os) {
+                    Ok(command) => SmartPreview {
+                        server_id: target.server_id,
+                        name: target.name,
+                        command: Some(finalize_command(&command, &os)),
+                        os_label: Some(os.pretty_name),
+                        skip_reason: None,
+                    },
+                    Err(e) => SmartPreview { server_id: target.server_id, name: target.name, os_label: Some(os.pretty_name), command: None, skip_reason: Some(e) },
+                },
+                Err(e) => SmartPreview { server_id: target.server_id, name: target.name, os_label: None, command: None, skip_reason: Some(e) },
+            }
+        }
+    });
+    Ok(futures::future::join_all(futures).await)
+}
+
+/// Lance une action intelligente ou un script à variables : détecte (ou relit du cache) l'OS de
+/// chaque cible, résout sa commande, ignore celles dont l'OS n'a pas pu être déterminé ou
+/// reconnu, puis exécute le reste via le moteur de lot habituel (réponses interactives comprises).
+#[tauri::command]
+pub fn smart_batch_run(
+    app: AppHandle,
+    state: State<AppState>,
+    cache: State<OsCache>,
+    events: State<EventLog>,
+    inputs: State<BatchInputs>,
+    server_ids: Vec<String>,
+    source: SmartSource,
+    mode: BatchMode,
+    stop_on_error: bool,
+) -> Result<String, String> {
+    crate::crypto::ensure_unlocked()?;
+    if server_ids.is_empty() {
+        return Err("Serveurs requis".into());
+    }
+    let (t, os_types) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (targets(&data, &server_ids)?, os_types_of(&data, &server_ids))
+    };
+
+    let run_id = Uuid::new_v4().to_string();
+    let emitter = app.clone();
+    let emit: batch::Emit = Arc::new(move |u| {
+        let _ = emitter.emit("batch-update", &u);
+    });
+    let cache = cache.inner().clone();
+    let names: Vec<String> = t.iter().map(|x| x.name.clone()).collect();
+    let label = match &source {
+        SmartSource::Action(a) => format!("action intelligente {:?}", a),
+        SmartSource::Script(s) => format!("script « {} »", s.lines().next().unwrap_or("").chars().take(80).collect::<String>()),
+    };
+    events.record(EventKind::VmAction, None, "Tâche en lot intelligente", format!("{} sur {}", label, names.join(", ")));
+    let inputs = inputs.inner().clone();
+    let task_run_id = run_id.clone();
+
+    tauri::async_runtime::spawn(async move {
+        let run_id = task_run_id;
+        let mut smart_targets = Vec::new();
+        for (target, os_type) in t.into_iter().zip(os_types) {
+            match detect_os(&target, os_type, &cache, false).await {
+                Ok(os) => match resolve_source(&source, &os) {
+                    Ok(command) => smart_targets.push(SmartTarget { command: finalize_command(&command, &os), target }),
+                    Err(e) => emit(batch::Update::Skipped { run_id: run_id.clone(), server_id: target.server_id, reason: e }),
+                },
+                Err(e) => emit(batch::Update::Skipped { run_id: run_id.clone(), server_id: target.server_id, reason: e }),
+            }
+        }
+        batch::run_smart(run_id, smart_targets, mode, stop_on_error, emit, inputs).await;
+    });
+    Ok(run_id)
 }
 
 #[tauri::command]

@@ -140,19 +140,35 @@ async fn run_one(run_id: &str, t: &BatchTarget, command: &str, emit: &Emit, inpu
 /// Exécute `command` sur les cibles. En séquentiel avec `stop_on_error`, les serveurs
 /// restants après un échec sont marqués « non exécutés ».
 pub async fn run(run_id: String, targets: Vec<BatchTarget>, command: String, mode: BatchMode, stop_on_error: bool, emit: Emit, inputs: BatchInputs) {
+    let smart = targets.into_iter().map(|target| SmartTarget { target, command: command.clone() }).collect();
+    run_smart(run_id, smart, mode, stop_on_error, emit, inputs).await
+}
+
+/// Cible d'un lot « intelligent » (F2) : sa propre commande, déjà résolue pour son OS détecté
+/// (action portable ou script avec variables développées). Les cibles ignorées faute d'OS reconnu
+/// ne sont pas incluses ici : elles sont signalées séparément par l'appelant (`Update::Skipped`).
+#[derive(Clone)]
+pub struct SmartTarget {
+    pub target: BatchTarget,
+    pub command: String,
+}
+
+/// Comme `run`, mais chaque cible a sa propre commande déjà résolue (action intelligente ou
+/// script avec variables développées pour l'OS détecté de chacune).
+pub async fn run_smart(run_id: String, targets: Vec<SmartTarget>, mode: BatchMode, stop_on_error: bool, emit: Emit, inputs: BatchInputs) {
     let mut results = Vec::new();
     match mode {
         BatchMode::Parallel => {
-            results = futures::future::join_all(targets.iter().map(|t| run_one(&run_id, t, &command, &emit, &inputs))).await;
+            results = futures::future::join_all(targets.iter().map(|t| run_one(&run_id, &t.target, &t.command, &emit, &inputs))).await;
         }
         BatchMode::Sequential => {
             let mut stopped = false;
             for t in &targets {
                 if stopped {
-                    emit(Update::Skipped { run_id: run_id.clone(), server_id: t.server_id.clone(), reason: "arrêt après une erreur".into() });
+                    emit(Update::Skipped { run_id: run_id.clone(), server_id: t.target.server_id.clone(), reason: "arrêt après une erreur".into() });
                     continue;
                 }
-                let ok = run_one(&run_id, t, &command, &emit, &inputs).await;
+                let ok = run_one(&run_id, &t.target, &t.command, &emit, &inputs).await;
                 results.push(ok);
                 stopped = stop_on_error && !ok;
             }

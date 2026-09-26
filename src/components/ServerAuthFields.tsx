@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { KeyRound, Loader2, AlertTriangle } from "lucide-react";
+import { KeyRound, Loader2, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { AgentStatus, AuthMethod, Server, SshKeyView } from "../types";
 import { AUTH_METHODS, authWarning, jumpCandidates, jumpDependents } from "../utils/sshAuth";
 import { cn } from "../utils";
 import { useT } from "../i18n";
+import { InfoPopover } from "./InfoPopover";
 
 export interface AuthFieldsValue {
   auth_method: AuthMethod;
@@ -40,7 +41,10 @@ export function ServerAuthFields({ serverId, servers, keys, keysError, value, on
   return (
     <div className="space-y-3 rounded-win border border-border-primary p-3">
       <div>
-        <span className={labelClass}>{t("sshAuth.title")}</span>
+        <span className={cn(labelClass, "flex items-center gap-1.5")}>
+          {t("sshAuth.title")}
+          <InfoPopover label={t("sshAuth.agentInfoLabel")}>{t("sshAuth.agentInfo")}</InfoPopover>
+        </span>
         <div role="radiogroup" aria-label={t("sshAuth.methodAria")} className="flex gap-2 flex-wrap">
           {AUTH_METHODS.map((m) => (
             <button
@@ -48,6 +52,7 @@ export function ServerAuthFields({ serverId, servers, keys, keysError, value, on
               type="button"
               role="radio"
               aria-checked={method === m.value}
+              title={t(m.hintKey)}
               onClick={() => onChange({ auth_method: m.value, ...(m.value === "Password" ? { clear_password: false } : {}) })}
               className={cn(
                 "px-3 py-1.5 rounded-win text-sm border transition-all duration-150",
@@ -138,7 +143,7 @@ export function ServerAuthFields({ serverId, servers, keys, keysError, value, on
   );
 }
 
-/** Vérifie à la demande qu'un agent SSH est joignable et contient des clés */
+/** Teste à la demande qu'un agent SSH est joignable, quel type et combien de clés il propose */
 function AgentCheck() {
   const { t } = useT();
   const [status, setStatus] = useState<AgentStatus | null>(null);
@@ -158,23 +163,53 @@ function AgentCheck() {
   }
 
   return (
-    <div className="text-xs space-y-1">
+    <div className="text-xs space-y-1.5">
       <button
         type="button"
         onClick={check}
         disabled={loading}
+        title={t("sshAuth.checkAgent")}
         className="flex items-center gap-1.5 text-accent-primary hover:underline disabled:opacity-50"
       >
-        {loading ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />} {t("sshAuth.checkAgent")}
+        {loading ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />}
+        {loading ? t("sshAuth.agentTesting") : t("sshAuth.checkAgent")}
       </button>
-      {error && <p className="text-red-400">{error}</p>}
-      {status && status.available && (
-        <p className="text-text-secondary">
-          {t("sshAuth.agentKeys", { count: status.keys.length, sources: status.sources.join(", ") })}
-        </p>
+      {error && (
+        <p className="flex items-center gap-1.5 text-red-400"><XCircle size={13} className="shrink-0" /> {error}</p>
       )}
-      {status && !status.available && (
-        <p className="text-yellow-400">{t("sshAuth.agentUnreachable")} {status.hint}</p>
+      {status && (
+        <div className="space-y-1">
+          {status.sources.map((source) => {
+            const keys = status.keys.filter((k) => k.source === source);
+            return (
+              <div key={source} className="flex items-start gap-1.5">
+                {keys.length > 0 ? (
+                  <CheckCircle2 size={13} className="shrink-0 mt-px text-accent-success" />
+                ) : (
+                  <AlertTriangle size={13} className="shrink-0 mt-px text-yellow-400" />
+                )}
+                <div>
+                  <p className="text-text-secondary">
+                    {keys.length > 0
+                      ? t(keys.length === 1 ? "sshAuth.agentSource" : "sshAuth.agentSourcePlural", { source, count: keys.length })
+                      : t("sshAuth.agentNoKeysInSource", { source })}
+                  </p>
+                  {keys.map((k) => (
+                    <p key={k.fingerprint} className="font-mono text-[11px] text-text-muted break-all" title={`${k.algorithm} ${k.fingerprint}`}>
+                      {k.algorithm} · {k.fingerprint}
+                      {k.comment && ` · ${k.comment}`}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {!status.available && (
+            <p className="flex items-start gap-1.5 text-yellow-400">
+              <XCircle size={13} className="shrink-0 mt-px" /> {t("sshAuth.agentUnreachable")} {status.hint}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

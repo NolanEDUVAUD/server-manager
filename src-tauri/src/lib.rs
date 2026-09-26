@@ -26,6 +26,7 @@ mod organisation;
 mod probes;
 mod proxmox;
 mod scheduler;
+mod smart_batch;
 mod storage;
 mod terminal;
 mod tray;
@@ -68,6 +69,7 @@ pub fn run() {
             app.manage(dashboard_state::DashboardState::default());
             app.manage(terminal::TerminalState::default());
             app.manage(batch::BatchInputs::default());
+            app.manage(smart_batch::OsCache::default());
             app.manage(events::EventLog::load(app.handle()));
             app.manage(alerts::AlertEngine::new(app.handle()));
             let probe_state = probes::ProbeState::default();
@@ -257,6 +259,9 @@ pub fn run() {
             batch_cmd::save_ansible_config,
             batch_cmd::ansible_list_playbooks,
             batch_cmd::ansible_run,
+            batch_cmd::smart_batch_detect_os,
+            batch_cmd::smart_batch_preview,
+            batch_cmd::smart_batch_run,
             // ── Mises à jour ────────────────────────────────────
             updates_cmd::updates_scan,
             // ── Logs Loki ───────────────────────────────────────

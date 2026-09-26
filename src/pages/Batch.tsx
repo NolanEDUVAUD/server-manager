@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { AlertTriangle, CheckCircle2, Loader2, MinusCircle, Play, Save, Trash2, XCircle, ListChecks, BookOpen, RefreshCw, MessageSquareWarning, CornerDownLeft } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, MinusCircle, Play, Save, Trash2, XCircle, ListChecks, BookOpen, RefreshCw, MessageSquareWarning, CornerDownLeft, Sparkles, Search } from "lucide-react";
 import { useStore } from "../stores/useStore";
-import { AnsibleConfig, BatchMode, BatchTask, BatchUpdate } from "../types";
+import { AnsibleConfig, BatchMode, BatchTask, BatchUpdate, SmartAction, SmartPreview, SmartSource, TargetOsView } from "../types";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
@@ -114,6 +114,18 @@ export function Batch() {
   const [runs, setRuns] = useState<Record<string, ServerRun>>({});
   const runId = useRef<string | null>(null);
 
+  // Lot intelligent (F2) : action portable ou script à variables, adaptés à l'OS de chaque cible
+  const [sourceMode, setSourceMode] = useState<"script" | "smart">("script");
+  const [useTemplates, setUseTemplates] = useState(false);
+  const [smartActionType, setSmartActionType] = useState<SmartAction["type"]>("UpdatePackages");
+  const [smartName, setSmartName] = useState("");
+  const [osByServer, setOsByServer] = useState<Record<string, TargetOsView>>({});
+  const [osLoading, setOsLoading] = useState(false);
+  const [preview, setPreview] = useState<SmartPreview[] | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [confirmingSmart, setConfirmingSmart] = useState(false);
+  const isSmart = sourceMode === "smart" || useTemplates;
+
   // Ansible
   const [ansible, setAnsible] = useState<AnsibleConfig>({ server_id: "", dir: "/etc/ansible" });
   const [playbooks, setPlaybooks] = useState<string[] | null>(null);
@@ -152,6 +164,56 @@ export function Batch() {
     setRuns(Object.fromEntries(ids.map((id) => [id, { status: "pending", output: "" } as ServerRun])));
     try {
       runId.current = await invoke<string>("run_batch", { script, serverIds: ids, mode, stopOnError });
+    } catch (e) {
+      error(String(e));
+    }
+  }
+
+  function currentSource(): SmartSource {
+    if (sourceMode === "smart") {
+      const action: SmartAction =
+        smartActionType === "InstallPackage" || smartActionType === "RestartService"
+          ? ({ type: smartActionType, name: smartName.trim() } as SmartAction)
+          : ({ type: smartActionType } as SmartAction);
+      return { type: "Action", value: action };
+    }
+    return { type: "Script", value: script };
+  }
+
+  async function detectOs() {
+    if (selected.size === 0) return;
+    setOsLoading(true);
+    try {
+      const views = await invoke<TargetOsView[]>("smart_batch_detect_os", { serverIds: [...selected], force: false });
+      setOsByServer((prev) => ({ ...prev, ...Object.fromEntries(views.map((v) => [v.server_id, v])) }));
+    } catch (e) {
+      error(String(e));
+    } finally {
+      setOsLoading(false);
+    }
+  }
+
+  async function openSmartPreview() {
+    if (selected.size === 0) return;
+    setPreviewLoading(true);
+    setPreview(null);
+    try {
+      const items = await invoke<SmartPreview[]>("smart_batch_preview", { serverIds: [...selected], source: currentSource() });
+      setPreview(items);
+      setConfirmingSmart(true);
+    } catch (e) {
+      error(String(e));
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  async function runSmart() {
+    setConfirmingSmart(false);
+    const ids = [...selected];
+    setRuns(Object.fromEntries(ids.map((id) => [id, { status: "pending", output: "" } as ServerRun])));
+    try {
+      runId.current = await invoke<string>("smart_batch_run", { serverIds: ids, source: currentSource(), mode, stopOnError });
     } catch (e) {
       error(String(e));
     }
@@ -216,23 +278,64 @@ export function Batch() {
       {tab === "script" ? (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_16rem] gap-4">
           <div className="space-y-3">
-            <div className="flex gap-2 flex-wrap">
-              {TEMPLATES.map((tpl) => (
-                <button key={tpl.nameKey} onClick={() => setScript(tpl.script)} className={cn("px-2.5 py-1 text-xs rounded-win border", looksModifying(tpl.script) ? "border-red-500/30 text-red-400" : "border-border-primary text-text-secondary hover:text-text-primary")}>
-                  {t(tpl.nameKey)}
+            <div className="flex gap-2">
+              {(["script", "smart"] as const).map((m) => (
+                <button key={m} onClick={() => setSourceMode(m)} className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-win border", sourceMode === m ? "border-accent-primary bg-accent-primary/10 text-text-primary" : "border-border-primary text-text-secondary hover:bg-bg-hover")}>
+                  {m === "smart" && <Sparkles size={12} />} {m === "smart" ? t("batch.smart.actionMode") : t("batch.smart.scriptMode")}
                 </button>
               ))}
-              {tasks.map((task) => (
-                <span key={task.id} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-win border border-accent-primary/40 text-accent-primary">
-                  <button onClick={() => { setScript(task.script); setSelected(new Set(task.server_ids)); setMode(task.mode); setStopOnError(task.stop_on_error); }}>{task.name}</button>
-                  <button onClick={() => invoke("delete_batch_task", { id: task.id }).then(() => setTasks((p) => p.filter((x) => x.id !== task.id)))} title={t("common.delete")}><Trash2 size={11} /></button>
-                </span>
-              ))}
             </div>
-            <textarea value={script} onChange={(e) => setScript(e.target.value)} rows={8} placeholder={"df -h\nuptime"} aria-label={t("batch.scriptLabel")} className={cn(inputClass, "font-mono text-xs")} />
-            {modifying && (
-              <p className="flex items-center gap-2 text-xs text-red-400"><AlertTriangle size={13} /> {t("batch.modifyingWarning")}</p>
+
+            {sourceMode === "script" ? (
+              <>
+                <div className="flex gap-2 flex-wrap">
+                  {TEMPLATES.map((tpl) => (
+                    <button key={tpl.nameKey} onClick={() => setScript(tpl.script)} className={cn("px-2.5 py-1 text-xs rounded-win border", looksModifying(tpl.script) ? "border-red-500/30 text-red-400" : "border-border-primary text-text-secondary hover:text-text-primary")}>
+                      {t(tpl.nameKey)}
+                    </button>
+                  ))}
+                  {tasks.map((task) => (
+                    <span key={task.id} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-win border border-accent-primary/40 text-accent-primary">
+                      <button onClick={() => { setScript(task.script); setSelected(new Set(task.server_ids)); setMode(task.mode); setStopOnError(task.stop_on_error); }}>{task.name}</button>
+                      <button onClick={() => invoke("delete_batch_task", { id: task.id }).then(() => setTasks((p) => p.filter((x) => x.id !== task.id)))} title={t("common.delete")}><Trash2 size={11} /></button>
+                    </span>
+                  ))}
+                </div>
+                <textarea value={script} onChange={(e) => setScript(e.target.value)} rows={8} placeholder={"df -h\nuptime"} aria-label={t("batch.scriptLabel")} className={cn(inputClass, "font-mono text-xs")} />
+                {modifying && (
+                  <p className="flex items-center gap-2 text-xs text-red-400"><AlertTriangle size={13} /> {t("batch.modifyingWarning")}</p>
+                )}
+                <label className="flex items-start gap-2 text-xs text-text-secondary cursor-pointer">
+                  <input type="checkbox" checked={useTemplates} onChange={(e) => setUseTemplates(e.target.checked)} className="accent-accent-primary mt-0.5" />
+                  <span>{t("batch.smart.useTemplates")}</span>
+                </label>
+                {useTemplates && <p className="text-[11px] text-text-muted font-mono">{t("batch.smart.templatesHelp")}</p>}
+              </>
+            ) : (
+              <div className="space-y-2 border border-border-primary rounded-win p-3">
+                <p className="text-xs text-text-muted">{t("batch.smart.intro")}</p>
+                <label className="block">
+                  <span className={"block text-xs text-text-secondary mb-1"}>{t("batch.smart.actionLabel")}</span>
+                  <select value={smartActionType} onChange={(e) => setSmartActionType(e.target.value as SmartAction["type"])} className={inputClass} aria-label={t("batch.smart.actionLabel")}>
+                    {(["UpdatePackages", "UpgradeSystem", "InstallPackage", "RestartService", "CleanPackageCache", "RebootIfRequired"] as const).map((a) => (
+                      <option key={a} value={a}>{t(`batch.smart.actions.${a}`)}</option>
+                    ))}
+                  </select>
+                </label>
+                {(smartActionType === "InstallPackage" || smartActionType === "RestartService") && (
+                  <label className="block">
+                    <span className="block text-xs text-text-secondary mb-1">{smartActionType === "InstallPackage" ? t("batch.smart.packageNameLabel") : t("batch.smart.serviceNameLabel")}</span>
+                    <input
+                      value={smartName}
+                      onChange={(e) => setSmartName(e.target.value)}
+                      placeholder={smartActionType === "InstallPackage" ? t("batch.smart.packageNamePlaceholder") : t("batch.smart.serviceNamePlaceholder")}
+                      className={inputClass}
+                    />
+                  </label>
+                )}
+              </div>
             )}
+
             <div className="flex items-center gap-4 text-sm text-text-secondary flex-wrap">
               <label className="flex items-center gap-2"><input type="radio" checked={mode === "Parallel"} onChange={() => setMode("Parallel")} className="accent-accent-primary" /> {t("batch.parallel")}</label>
               <label className="flex items-center gap-2"><input type="radio" checked={mode === "Sequential"} onChange={() => setMode("Sequential")} className="accent-accent-primary" /> {t("batch.sequential")}</label>
@@ -240,23 +343,57 @@ export function Batch() {
                 <input type="checkbox" disabled={mode !== "Sequential"} checked={stopOnError} onChange={(e) => setStopOnError(e.target.checked)} className="accent-accent-primary" /> {t("batch.stopOnError")}
               </label>
               <div className="ml-auto flex gap-2">
-                <button onClick={saveTask} disabled={!script.trim()} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-win border border-border-primary hover:bg-bg-hover disabled:opacity-40"><Save size={13} /> {t("batch.saveTask")}</button>
-                <button onClick={() => setConfirming(true)} disabled={!script.trim() || selected.size === 0} className={cn("flex items-center gap-1.5 px-4 py-2 text-sm rounded-win text-white disabled:opacity-40", modifying ? "bg-red-600 hover:bg-red-500" : "bg-accent-primary hover:bg-accent-secondary")}>
-                  <Play size={13} /> {t("batch.runOn", { count: selected.size })}
-                </button>
+                {sourceMode === "script" && (
+                  <button onClick={saveTask} disabled={!script.trim()} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-win border border-border-primary hover:bg-bg-hover disabled:opacity-40"><Save size={13} /> {t("batch.saveTask")}</button>
+                )}
+                {isSmart ? (
+                  <button
+                    onClick={openSmartPreview}
+                    disabled={
+                      selected.size === 0 ||
+                      previewLoading ||
+                      (sourceMode === "smart" && (smartActionType === "InstallPackage" || smartActionType === "RestartService") && !smartName.trim()) ||
+                      (sourceMode === "script" && !script.trim())
+                    }
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-win text-white bg-accent-primary hover:bg-accent-secondary disabled:opacity-40"
+                  >
+                    {previewLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} {t("batch.smart.preview")}
+                  </button>
+                ) : (
+                  <button onClick={() => setConfirming(true)} disabled={!script.trim() || selected.size === 0} className={cn("flex items-center gap-1.5 px-4 py-2 text-sm rounded-win text-white disabled:opacity-40", modifying ? "bg-red-600 hover:bg-red-500" : "bg-accent-primary hover:bg-accent-secondary")}>
+                    <Play size={13} /> {t("batch.runOn", { count: selected.size })}
+                  </button>
+                )}
               </div>
             </div>
           </div>
           <div className="bg-bg-tertiary border border-border-primary rounded-win p-3 space-y-2 h-fit">
-            <p className="text-xs font-medium text-text-secondary">{t("batch.targets")}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium text-text-secondary">{t("batch.targets")}</p>
+              {isSmart && (
+                <button onClick={detectOs} disabled={osLoading || selected.size === 0} title={t("batch.smart.detect")} className="flex items-center gap-1 text-[11px] text-accent-primary hover:underline disabled:opacity-40">
+                  {osLoading ? <Loader2 size={11} className="animate-spin" /> : <Search size={11} />} {t("batch.smart.detect")}
+                </button>
+              )}
+            </div>
             {groups.map((g) => (
               <button key={g.id} onClick={() => setSelected(new Set(g.server_ids))} className="block text-xs text-accent-primary hover:underline">{t("batch.group", { name: g.name })}</button>
             ))}
-            {servers.map((s) => (
-              <label key={s.id} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} className="accent-accent-primary" /> {s.name}
-              </label>
-            ))}
+            {servers.map((s) => {
+              const os = osByServer[s.id];
+              return (
+                <div key={s.id}>
+                  <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                    <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} className="accent-accent-primary" /> {s.name}
+                  </label>
+                  {isSmart && selected.has(s.id) && os && (
+                    <p className={cn("text-[11px] ml-6", os.label ? "text-text-muted" : "text-yellow-400")}>
+                      {os.label ? t("batch.smart.osOf", { name: s.name, os: os.label }) : t("batch.smart.osUnknownOf", { name: s.name, error: os.error ?? "" })}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (
@@ -317,6 +454,33 @@ export function Batch() {
           onCancel={() => setConfirmAnsible(false)}
           onConfirm={runPlaybook}
         />
+      )}
+      {confirmingSmart && preview && (
+        <ConfirmDialog
+          title={t("batch.smart.confirmTitle")}
+          message={t("batch.smart.confirmMessage")}
+          confirmLabel={t("batch.smart.launch")}
+          confirmDisabled={!preview.some((p) => p.command)}
+          onCancel={() => setConfirmingSmart(false)}
+          onConfirm={runSmart}
+        >
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {preview.length === 0 && <p className="text-xs text-text-muted">{t("batch.smart.previewEmpty")}</p>}
+            {!preview.some((p) => p.command) && preview.length > 0 && (
+              <p className="flex items-center gap-1.5 text-xs text-yellow-400"><AlertTriangle size={12} /> {t("batch.smart.noneResolved")}</p>
+            )}
+            {preview.map((p) => (
+              <div key={p.server_id} className="text-xs border border-border-primary rounded-win p-2">
+                <p className="text-text-primary font-medium">{p.name}{p.os_label && <span className="text-text-muted font-normal"> — {p.os_label}</span>}</p>
+                {p.command ? (
+                  <pre className="mt-1 font-mono text-[11px] text-text-secondary whitespace-pre-wrap break-all">{p.command}</pre>
+                ) : (
+                  <p className="mt-1 text-yellow-400">{t("batch.smart.skipped", { reason: p.skip_reason ?? "" })}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </ConfirmDialog>
       )}
     </div>
   );
