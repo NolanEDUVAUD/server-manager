@@ -475,6 +475,11 @@ pub struct AppData {
     /// Clés SSH de l'app ; la clé privée est chiffrée par la clé maître
     #[serde(default)]
     pub ssh_keys: Vec<crate::ssh_keys::SshKey>,
+    // ── Extensions communautaires (F1) ────────────────────────────────────
+    /// Manifestes déclaratifs installés (jamais de code exécuté) ; absentes
+    /// d'un ancien fichier = aucune extension installée
+    #[serde(default)]
+    pub extensions: Vec<crate::commands::extensions::InstalledExtension>,
 }
 
 fn legacy_key_version() -> u8 {
@@ -504,6 +509,7 @@ impl Default for AppData {
             lock: crate::lock::LockConfig::default(),
             backup: crate::backup::BackupConfig::default(),
             ssh_keys: Vec::new(),
+            extensions: Vec::new(),
         }
     }
 }

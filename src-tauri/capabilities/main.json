@@ -156,6 +156,12 @@
     "allow-get-backup-settings",
     "allow-save-backup-settings",
     "allow-backup-run-now",
-    "shell:allow-open"
+    "shell:allow-open",
+    "allow-get-extensions",
+    "allow-install-extension",
+    "allow-set-extension-enabled",
+    "allow-uninstall-extension",
+    "allow-read-extension-file",
+    "allow-fetch-extension-manifest"
   ]
 }

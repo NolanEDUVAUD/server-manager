@@ -63,8 +63,10 @@ tauri-plugin-shell = "2"
 tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 chrono = { version = "0.4", features = ["serde"] }
 
-# Client HTTP pour l'intégration Proxmox VE
-reqwest = { version = "0.12", features = ["json"] }
+# Client HTTP pour l'intégration Proxmox VE. « stream » : lecture par morceaux du
+# manifeste d'une extension (fetch_extension_manifest), pour borner sa taille même si
+# le serveur ment sur Content-Length.
+reqwest = { version = "0.12", features = ["json", "stream"] }
 keyring = { version = "3", features = ["windows-native"] }
 tokio-native-tls = "0.3"
 x509-parser = "0.16"

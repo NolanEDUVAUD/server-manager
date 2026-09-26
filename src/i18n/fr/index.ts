@@ -14,6 +14,7 @@ import { consolePage } from "./console";
 import { dashboard } from "./dashboard";
 import { docker } from "./docker";
 import { events } from "./events";
+import { extensions } from "./extensions";
 import { filters } from "./filters";
 import { format } from "./format";
 import { groups } from "./groups";
@@ -57,6 +58,7 @@ export const fr = {
   dashboard,
   docker,
   events,
+  extensions,
   filters,
   format,
   groups,

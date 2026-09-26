@@ -4,6 +4,8 @@ import { ScrollText, Plus, Trash2 } from "lucide-react";
 import { Snippet } from "../types";
 import { useT } from "../i18n";
 import { Dropdown } from "./Dropdown";
+import { isExtensionId, mergeSnippets } from "../utils/extensions";
+import { useInstalledExtensions } from "../hooks/useInstalledExtensions";
 
 /**
  * Commandes mémorisées : insère la commande dans le terminal actif SANS l'exécuter
@@ -17,11 +19,12 @@ export function SnippetMenu({ sessionId }: { sessionId: string | undefined }) {
   const [command, setCommand] = useState("");
   const [error, setError] = useState("");
   const ref = useRef<HTMLButtonElement>(null);
+  const extensions = useInstalledExtensions();
 
   useEffect(() => {
     if (!open) return;
-    invoke<Snippet[]>("get_snippets").then(setSnippets).catch((e) => setError(String(e)));
-  }, [open]);
+    invoke<Snippet[]>("get_snippets").then((native) => setSnippets(mergeSnippets(native, extensions))).catch((e) => setError(String(e)));
+  }, [open, extensions]);
 
   function insert(s: Snippet) {
     if (!sessionId) return;
@@ -60,16 +63,18 @@ export function SnippetMenu({ sessionId }: { sessionId: string | undefined }) {
                 <p className="text-sm text-text-primary truncate">{s.name}</p>
                 <p className="text-[11px] text-text-muted font-mono truncate">{s.command}</p>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  invoke("delete_snippet", { id: s.id }).then(() => setSnippets((p) => p.filter((x) => x.id !== s.id)));
-                }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-text-muted hover:text-red-400"
-                title={t("common.delete")}
-              >
-                <Trash2 size={12} />
-              </button>
+              {!isExtensionId(s.id) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    invoke("delete_snippet", { id: s.id }).then(() => setSnippets((p) => p.filter((x) => x.id !== s.id)));
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-text-muted hover:text-red-400"
+                  title={t("common.delete")}
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
             </li>
           ))}
         </ul>

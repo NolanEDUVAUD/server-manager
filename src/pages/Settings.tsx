@@ -22,9 +22,12 @@ import { SupportSettings } from '../components/SupportSettings';
 import { useAppUpdate } from '../stores/useAppUpdate';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useT } from '../i18n';
+import { ExtensionsSettings } from '../components/ExtensionsSettings';
+import { isExtensionId, mergeThemes } from '../utils/extensions';
+import { useInstalledExtensions } from '../hooks/useInstalledExtensions';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
-type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'config' | 'updates' | 'report' | 'coffee' | 'about';
+type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'extensions' | 'config' | 'updates' | 'report' | 'coffee' | 'about';
 
 // Libellés traduits à l'affichage (settingsPage.sections.<id>)
 const SECTIONS: { id: Section }[] = [
@@ -35,6 +38,7 @@ const SECTIONS: { id: Section }[] = [
   { id: 'security' },
   { id: 'integrations' },
   { id: 'sshkeys' },
+  { id: 'extensions' },
   { id: 'config' },
   { id: 'updates' },
   { id: 'report' },
@@ -77,6 +81,7 @@ export function Settings() {
         {active === 'security'   && <SecuritySettings />}
         {active === 'integrations' && <IntegrationsSettings />}
         {active === 'sshkeys'    && <SshKeysSettings />}
+        {active === 'extensions' && <ExtensionsSettings />}
         {active === 'config'     && <SectionConfig />}
         {active === 'updates'    && <SectionUpdates />}
         {active === 'report'     && <BugReportForm />}
@@ -273,6 +278,9 @@ function SectionAppearance() {
   const { success, error } = useToast();
   // État de l'éditeur de thème (null = fermé)
   const [editingTheme, setEditingTheme] = useState<Theme | null>(null);
+  // Thèmes contribués par les extensions activées, en plus des builtins/customs
+  const extensions = useInstalledExtensions();
+  const displayedThemes = mergeThemes(extensions, allThemes);
 
   const handleChange = async (partial: Partial<AppearanceSettings>) => {
     try {
@@ -333,7 +341,7 @@ function SectionAppearance() {
       <div className="space-y-3">
         <p className="text-text-primary text-sm">{t("settingsPage.appearance.theme")}</p>
         <div className="grid grid-cols-3 gap-2">
-          {allThemes.map(theme => (
+          {displayedThemes.map(theme => (
             <ThemeCard
               key={theme.id}
               theme={theme}
@@ -345,7 +353,8 @@ function SectionAppearance() {
                 name: t("settingsPage.appearance.themeCopy", { name: theme.name }),
                 builtin: false,
               })}
-              onDelete={theme.builtin ? undefined : () => deleteCustomTheme(theme.id)}
+              // Un thème d'extension se retire en désinstallant l'extension (Paramètres → Extensions)
+              onDelete={theme.builtin || isExtensionId(theme.id) ? undefined : () => deleteCustomTheme(theme.id)}
             />
           ))}
         </div>

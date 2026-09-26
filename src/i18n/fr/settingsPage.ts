@@ -8,6 +8,7 @@ export const settingsPage = {
     security: "Sécurité",
     integrations: "Intégrations",
     sshkeys: "Clés SSH",
+    extensions: "Extensions",
     config: "Configuration",
     updates: "Mise à jour",
     report: "Signaler un problème",

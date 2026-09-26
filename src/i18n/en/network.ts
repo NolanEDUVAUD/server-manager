@@ -12,4 +12,23 @@ export const network: Dict["network"] = {
   macsFilled: { one: "{count} MAC address filled in", other: "{count} MAC addresses filled in" },
   serverAdded: "{name} added",
   serverError: "{name}: {message}",
+  // ── Graph view (Obsidian-like) ────────────────────────────────────────────
+  viewList: "List",
+  viewGraph: "Graph",
+  gateway: "Gateway",
+  graphHint: "Drag the background to pan, scroll to zoom, drag a node to move it or click it.",
+  statusOnline: "Online",
+  statusOffline: "Offline",
+  statusUnknown: "Unknown",
+  nodeServer: "Server",
+  nodeDevice: "Detected device",
+  nodeGateway: "Gateway",
+  nodeDetails: {
+    type: "Type",
+    status: "Status",
+    ip: "IP address",
+    mac: "MAC address",
+    jumpVia: "Via jump host",
+  },
+  closeDetails: "Close",
 };
