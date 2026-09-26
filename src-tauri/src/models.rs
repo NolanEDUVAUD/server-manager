@@ -487,6 +487,11 @@ pub struct AppData {
     /// d'un ancien fichier = aucune extension installée
     #[serde(default)]
     pub extensions: Vec<crate::commands::extensions::InstalledExtension>,
+    // ── Bases de données (F1) ─────────────────────────────────────────────
+    /// Connexions par serveur + moteur (MySQL/MariaDB, PostgreSQL, Redis) ; le mot de
+    /// passe applicatif éventuel est chiffré comme les autres secrets de l'app
+    #[serde(default)]
+    pub db_connections: Vec<crate::db_admin::DbConnection>,
 }
 
 fn legacy_key_version() -> u8 {
@@ -517,6 +522,7 @@ impl Default for AppData {
             backup: crate::backup::BackupConfig::default(),
             ssh_keys: Vec::new(),
             extensions: Vec::new(),
+            db_connections: Vec::new(),
         }
     }
 }
