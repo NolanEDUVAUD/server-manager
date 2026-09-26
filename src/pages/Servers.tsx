@@ -108,13 +108,13 @@ export function Servers() {
     } finally {
       setDeletingServer(null);
     }
+  }
 
-    async function handleCopySshCommand(server: ServerType) {
-      const command = `ssh ${server.ssh_user}@${server.ip} -p ${server.ssh_port}`;
-      const ok = await copyToClipboard(command);
-      if (ok) toast.success(t("servers.sshCommandCopied", { name: server.name }));
-      else toast.error(t("servers.sshCommandCopyFailed"));
-    }
+  async function handleCopySshCommand(server: ServerType) {
+    const command = `ssh ${server.ssh_user}@${server.ip} -p ${server.ssh_port}`;
+    const ok = await copyToClipboard(command);
+    if (ok) toast.success(t("servers.sshCommandCopied", { name: server.name }));
+    else toast.error(t("servers.sshCommandCopyFailed"));
   }
 
   function renderRow(server: ServerType) {
