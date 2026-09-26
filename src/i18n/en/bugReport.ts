@@ -22,5 +22,8 @@ export const bugReport: Dict["bugReport"] = {
   copy: "Copy report",
   copied: "Report copied to clipboard",
   openFailed: "Could not open the browser",
+  openFailedFallback: "Copy the address below and open it yourself in your browser:",
+  copyUrl: "Copy address",
+  urlCopied: "Address copied",
   titleRequired: "The title is required",
 };

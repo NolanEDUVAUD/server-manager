@@ -131,6 +131,7 @@ fn app_manifest() -> tauri_build::AppManifest {
         "master_password_remove",
         "network_scan",
         "open_dashboard_tab",
+        "open_external_url",
         "ping_all",
         "ping_group",
         "ping_server",

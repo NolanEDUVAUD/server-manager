@@ -2,7 +2,7 @@
  * Rapport de bug (Paramètres → Signaler un problème) : construction pure de l'URL
  * « new issue » GitHub et du texte du rapport, sans aucun appel réseau ni accès au
  * DOM — testable directement. Le formulaire n'envoie jamais rien lui-même : il ouvre
- * une issue pré-remplie dans le navigateur (`shell:allow-open`, restreint à github.com)
+ * une issue pré-remplie dans le navigateur (`open_external_url`, restreint à github.com)
  * ou copie le texte dans le presse-papier.
  *
  * Volontairement absent des informations système : IP, identifiants, clés, noms d'hôte.
@@ -82,15 +82,39 @@ export function buildBugReportText(input: BugReportInput): string {
 }
 
 /**
- * Adresse « nouvelle issue » GitHub, pré-remplie et encodée. `repoUrl` n'est paramétrable
- * que pour les tests : en production c'est toujours `REPO_URL` (github.com/…, seule
- * adresse autorisée par `shell.open`).
+ * Longueur maximale de l'adresse « new issue » elle-même : au-delà, certains navigateurs
+ * (et GitHub) refusent ou tronquent silencieusement la requête. Choisie avec une marge
+ * sous la limite pratique généralement citée (~8000 caractères).
+ */
+export const MAX_ISSUE_URL_CHARS = 7500;
+
+function issueUrl(repoUrl: string, title: string, body: string): string {
+  const params = new URLSearchParams({ title, body, labels: "bug" });
+  return `${repoUrl}/issues/new?${params.toString()}`;
+}
+
+/**
+ * Adresse « nouvelle issue » GitHub, pré-remplie et encodée, dont la longueur totale ne
+ * dépasse jamais `MAX_ISSUE_URL_CHARS`. `buildBugReportBody` borne déjà le corps à
+ * `MAX_BODY_CHARS`, mais l'encodage (accents, retours à la ligne en `%0A`…) peut à lui
+ * seul dépasser ce budget ; le corps est alors encore réduit, par recherche dichotomique
+ * sur le nombre de caractères conservés, jusqu'à ce que l'adresse encodée tienne dans la
+ * limite. `repoUrl` n'est paramétrable que pour les tests : en production c'est toujours
+ * `REPO_URL` (github.com/…, seule adresse autorisée par `open_external_url`).
  */
 export function buildBugReportIssueUrl(input: BugReportInput, repoUrl: string = REPO_URL): string {
-  const params = new URLSearchParams({
-    title: input.title.trim() || "(sans titre)",
-    body: buildBugReportBody(input),
-    labels: "bug",
-  });
-  return `${repoUrl}/issues/new?${params.toString()}`;
+  const title = input.title.trim() || "(sans titre)";
+  const body = buildBugReportBody(input);
+  const url = issueUrl(repoUrl, title, body);
+  if (url.length <= MAX_ISSUE_URL_CHARS) return url;
+
+  let lo = 0;
+  let hi = [...body].length;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    const candidate = issueUrl(repoUrl, title, truncateReportBody(body, mid));
+    if (candidate.length <= MAX_ISSUE_URL_CHARS) lo = mid;
+    else hi = mid - 1;
+  }
+  return issueUrl(repoUrl, title, truncateReportBody(body, lo));
 }

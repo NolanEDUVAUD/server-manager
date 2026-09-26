@@ -27,6 +27,8 @@ export function BugReportForm() {
   const [titleError, setTitleError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [openError, setOpenError] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [urlCopied, setUrlCopied] = useState(false);
 
   const buildInput = (): BugReportInput => ({
     title,
@@ -51,8 +53,23 @@ export function BugReportForm() {
     }
     setTitleError(false);
     setOpenError(false);
-    const ok = await openExternal(buildBugReportIssueUrl(buildInput()));
-    if (!ok) setOpenError(true);
+    setFailedUrl(null);
+    const url = buildBugReportIssueUrl(buildInput());
+    const ok = await openExternal(url);
+    if (!ok) {
+      setOpenError(true);
+      // Repli : l'adresse reste copiable même si le navigateur n'a pas pu être ouvert
+      setFailedUrl(url);
+    }
+  };
+
+  const handleCopyUrl = async () => {
+    if (!failedUrl) return;
+    const ok = await copyToClipboard(failedUrl);
+    if (ok) {
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
+    }
   };
 
   const handleCopy = async () => {
@@ -122,8 +139,34 @@ export function BugReportForm() {
             {t("bugReport.copy")}
           </button>
           {copied && <span className="text-xs text-green-400">{t("bugReport.copied")}</span>}
-          {openError && <span className="text-xs text-red-400">{t("bugReport.openFailed")}</span>}
         </div>
+        {openError && (
+          <div className="pt-1 space-y-1.5">
+            <p className="text-xs text-red-400">{t("bugReport.openFailed")}</p>
+            {failedUrl && (
+              <div className="space-y-1">
+                <p className="text-text-muted text-xs">{t("bugReport.openFailedFallback")}</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={failedUrl}
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="w-full bg-bg-input border border-border-primary rounded-win px-3 py-2 text-text-primary text-xs font-mono truncate"
+                  />
+                  <button
+                    onClick={handleCopyUrl}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-win border border-border-primary text-text-primary hover:bg-bg-hover transition-colors text-xs shrink-0"
+                  >
+                    {urlCopied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+                    {t("bugReport.copyUrl")}
+                  </button>
+                </div>
+                {urlCopied && <span className="text-xs text-green-400">{t("bugReport.urlCopied")}</span>}
+              </div>
+            )}
+          </div>
+        )}
         <p className="text-text-muted text-xs flex items-start gap-1.5">
           <ExternalLink size={12} className="shrink-0 mt-0.5" />
           {t("bugReport.sendHelp")}

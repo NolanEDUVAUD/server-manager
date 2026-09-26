@@ -39,9 +39,6 @@
   "plugins": {
     "dialog": null,
     "notification": null,
-    "shell": {
-      "open": "^https://(github\\.com|ko-fi\\.com|www\\.buymeacoffee\\.com)/"
-    },
     "updater": {
       "pubkey": "",
       "windows": {

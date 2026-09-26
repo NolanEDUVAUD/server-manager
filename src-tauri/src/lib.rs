@@ -10,6 +10,7 @@ mod db;
 mod discovery;
 mod docker;
 mod events;
+mod external;
 mod integration_checks;
 mod integrations;
 mod keystore;
@@ -37,7 +38,7 @@ mod ssh_keys;
 #[cfg(test)]
 mod ssh_test_server;
 
-use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, extensions as extensions_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
+use commands::{backup as backup_cmd, lock as lock_cmd, loki as loki_cmd, updates as updates_cmd, batch as batch_cmd, snippets as snippets_cmd, discovery as discovery_cmd, lab_power as lab_power_cmd, probes as probes_cmd, alerts as alerts_cmd, tray as tray_cmd, dashboards, integrations as integrations_cmd, docker as docker_cmd, events as events_cmd, external as external_cmd, extensions as extensions_cmd, groups, history as history_cmd, schedules, metrics as metrics_cmd, ping, terminal as terminal_cmd, proxmox as proxmox_cmd, servers, settings, ssh, wol};
 use commands::organisation as organisation_cmd;
 use commands::ssh_keys as ssh_keys_cmd;
 use storage::AppState;
@@ -119,9 +120,10 @@ pub fn run() {
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
-        // Ouverture du navigateur par défaut (releases, rapport de bug, soutien du projet) ;
-        // adresse autorisée restreinte dans tauri.conf.json (plugins.shell.open)
-        .plugin(tauri_plugin_shell::init())
+        // Ouverture du navigateur par défaut (releases, rapport de bug, soutien du projet) :
+        // la webview n'a aucune permission de ce plugin, seule la commande
+        // `open_external_url` (qui valide l'adresse, voir `external.rs`) peut l'appeler.
+        .plugin(tauri_plugin_opener::init())
         // ── Mise à jour automatique de l'application (1.5) ──
         .plugin(commands::app_update::plugin())
         .manage(commands::app_update::AppUpdateState::default())
@@ -272,6 +274,8 @@ pub fn run() {
             commands::app_update::app_update_info,
             commands::app_update::app_update_check,
             commands::app_update::app_update_install,
+            // ── Ouverture d'adresses externes (B4) ──────────────
+            external_cmd::open_external_url,
             // ── Verrouillage de l'application (1.3) ───────────
             lock_cmd::lock_status,
             lock_cmd::lock_now,
