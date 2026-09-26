@@ -147,6 +147,18 @@ jamais accès à l'IPC de commandes).
 > `windows`/`webviews` au-delà de `"main"`, et ne jamais ajouter de clé
 > `remote` à ce fichier.
 
+## Icône de l'application
+
+L'image source est `src-tauri/app-icon.png` (carrée, 1024 × 1024, fond transparent).
+Après l'avoir modifiée, régénère les icônes utilisées par l'installateur, la fenêtre et
+la zone de notification :
+
+```bash
+npx tauri icon src-tauri/app-icon.png -o /tmp/icons
+cp /tmp/icons/{32x32.png,128x128.png,128x128@2x.png,icon.icns,icon.ico} src-tauri/icons/
+cp /tmp/icons/128x128@2x.png public/app-icon.png
+```
+
 ## Signaler un problème ou proposer un changement
 
 Voir [guide/signaler-un-probleme.md](guide/signaler-un-probleme.md) pour
