@@ -15,11 +15,14 @@ pub enum BatchMode {
     Sequential,
 }
 
-/// Tâche enregistrée (bibliothèque de l'utilisateur)
+/// Tâche enregistrée (bibliothèque de l'utilisateur) : un script à variables, ou une action
+/// intelligente portable (`smart_action`). Les tâches créées avant l'ajout de `smart_action`
+/// restent chargeables telles quelles (valeur par défaut `None`, donc script).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct BatchTask {
     pub id: String,
     pub name: String,
+    /// Script à variables ; ignoré si `smart_action` est renseigné
     pub script: String,
     /// Serveurs visés par défaut (modifiables au lancement)
     #[serde(default)]
@@ -28,6 +31,9 @@ pub struct BatchTask {
     pub mode: BatchMode,
     #[serde(default)]
     pub stop_on_error: bool,
+    /// Action portable enregistrée à la place d'un script (tâches en lot simplifiées)
+    #[serde(default)]
+    pub smart_action: Option<crate::smart_batch::SmartAction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
@@ -228,6 +234,33 @@ mod tests {
         let skipped: Vec<&str> = log.iter().filter_map(|u| match u { Update::Skipped { server_id, .. } => Some(server_id.as_str()), _ => None }).collect();
         assert_eq!(skipped, vec!["b", "c"]);
         assert!(matches!(log.last(), Some(Update::Done { ok_count: 0, failed_count: 1, .. })));
+    }
+
+    #[test]
+    fn old_saved_tasks_without_smart_action_still_deserialize() {
+        // Tâche enregistrée avant l'ajout du champ `smart_action` : doit rester chargeable,
+        // avec `smart_action: None` (donc traitée comme un script).
+        let json = r#"{"id":"t1","name":"Espace disque","script":"df -h","server_ids":["a"],"mode":"Parallel","stop_on_error":false}"#;
+        let task: BatchTask = serde_json::from_str(json).unwrap();
+        assert_eq!(task.smart_action, None);
+        assert_eq!(task.script, "df -h");
+    }
+
+    #[test]
+    fn saved_task_can_carry_a_smart_action_instead_of_a_script() {
+        use crate::smart_batch::SmartAction;
+        let task = BatchTask {
+            id: "t2".into(),
+            name: "Mettre à jour".into(),
+            script: String::new(),
+            server_ids: vec!["a".into()],
+            mode: BatchMode::Parallel,
+            stop_on_error: false,
+            smart_action: Some(SmartAction::UpdatePackages),
+        };
+        let json = serde_json::to_string(&task).unwrap();
+        let back: BatchTask = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, task);
     }
 
     #[test]
