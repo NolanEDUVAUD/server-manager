@@ -26,7 +26,7 @@ import { lock } from "./lock";
 import { logs } from "./logs";
 import { modules } from "./modules";
 import { network } from "./network";
-import { onboarding } from "./onboarding";
+import { onboarding, tour, whatsNew } from "./onboarding";
 import { orgFields } from "./orgFields";
 import { organisation } from "./organisation";
 import { palette } from "./palette";
@@ -87,6 +87,8 @@ export const fr = {
   sshKeys,
   support,
   themes,
+  tour,
   updates,
   webTabs,
+  whatsNew,
 };

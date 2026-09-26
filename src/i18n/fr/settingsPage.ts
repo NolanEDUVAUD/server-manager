@@ -83,5 +83,6 @@ export const settingsPage = {
     encryption: "Chiffrement",
     storage: "Stockage",
     storageValue: "JSON chiffré + SQLite local (AppData)",
+    reviewTour: "Revoir le tutoriel",
   },
 };
