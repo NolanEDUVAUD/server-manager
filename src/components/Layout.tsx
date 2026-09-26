@@ -18,6 +18,8 @@ import { Onboarding } from "./Onboarding";
 import { Console } from "../pages/Console";
 import { CommandPalette } from "./CommandPalette";
 import { ShortcutsHelp } from "./ShortcutsHelp";
+import { TourModal } from "./TourModal";
+import { WhatsNewModal } from "./WhatsNewModal";
 import { useShortcuts, ShortcutHandlers } from "../hooks/useShortcuts";
 import { NAV_SHORTCUTS } from "../utils/shortcuts";
 import { UpdateBanner } from "./UpdateBanner";
@@ -371,6 +373,8 @@ export function Layout({ children }: LayoutProps) {
       <CommandPalette pages={nav.map((n) => ({ to: n.to, label: t(n.labelKey) }))} />
       <ShortcutsHelp />
       <Onboarding />
+      <TourModal />
+      <WhatsNewModal />
       <main className="flex-1 min-w-0 relative overflow-hidden flex flex-col">
         {/* Nouvelle version signée disponible (au-dessus du contenu, qu'elle pousse vers le bas) */}
         <UpdateBanner />

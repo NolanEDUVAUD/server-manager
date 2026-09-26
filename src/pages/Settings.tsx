@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Download, Upload, Copy } from 'lucide-react';
 import { useStore } from '../stores/useStore';
+import { useTourStore } from '../stores/useTourStore';
 import { useToast } from '../hooks/useToast';
 import { AppearanceSettings, GeneralSettings, NetworkSettings, Theme } from '../types';
 import { applyTheme, findTheme, slugify } from '../utils/theme';
@@ -644,6 +645,7 @@ function SectionUpdates() {
 function SectionAbout() {
   const { t } = useT();
   const { info, loadInfo } = useAppUpdate();
+  const openTour = useTourStore((s) => s.open);
   useEffect(() => {
     if (!info) loadInfo();
   }, [info, loadInfo]);
@@ -669,6 +671,12 @@ function SectionAbout() {
           <span className="text-text-primary">{t("settingsPage.about.storageValue")}</span>
         </div>
       </div>
+      <button
+        onClick={openTour}
+        className="px-4 py-2 text-sm bg-bg-active text-text-primary rounded-win hover:bg-bg-hover transition-colors duration-150"
+      >
+        {t("settingsPage.about.reviewTour")}
+      </button>
     </div>
   );
 }
