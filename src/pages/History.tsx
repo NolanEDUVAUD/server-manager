@@ -7,6 +7,7 @@ import { useStore } from "../stores/useStore";
 import { AppEvent, EventKind, ServerEventStats, ServerUptime, OS_ICONS } from "../types";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { cn, formatUptime } from "../utils";
+import { usePersistentState } from "../hooks/usePersistentState";
 import { currentLocale, TKey, useT } from "../i18n";
 
 const KIND_META: Record<EventKind, { label: TKey; icon: typeof Wifi; color: string }> = {
@@ -74,8 +75,8 @@ export function History() {
   const { events, servers, clearEvents } = useStore();
   const [stats, setStats] = useState<ServerEventStats[]>([]);
   const [uptime, setUptime] = useState<ServerUptime[]>([]);
-  const [serverFilter, setServerFilter] = useState<string>("all");
-  const [kindFilter, setKindFilter] = useState<EventKind | "all">("all");
+  const [serverFilter, setServerFilter] = usePersistentState<string>("history.serverFilter", "all");
+  const [kindFilter, setKindFilter] = usePersistentState<EventKind | "all">("history.kindFilter", "all");
   const [confirmClear, setConfirmClear] = useState(false);
 
   // Recalcul des statistiques à chaque nouvel événement

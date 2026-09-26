@@ -18,6 +18,7 @@ import { SshKeysSettings } from '../components/SshKeysSettings';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
 import { useAppUpdate } from '../stores/useAppUpdate';
+import { usePersistentState } from '../hooks/usePersistentState';
 import { useT } from '../i18n';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ const SECTIONS: { id: Section }[] = [
 // ── Composant principal ────────────────────────────────────────────────────────
 export function Settings() {
   const { t } = useT();
-  const [active, setActive] = useState<Section>('general');
+  const [active, setActive] = usePersistentState<Section>('settings.active', 'general');
   const { toasts, removeToast } = useToast();
 
   return (

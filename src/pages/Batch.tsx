@@ -9,6 +9,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { detectPrompt, looksModifying, TEMPLATES } from "../utils/batch";
+import { usePersistentState } from "../hooks/usePersistentState";
 import { cn } from "../utils";
 import { useT } from "../i18n";
 
@@ -95,8 +96,17 @@ export function Batch() {
   const { toasts, removeToast, success, error } = useToast();
   const prefill = useLocation().state as BatchPrefill | null;
   const [tab, setTab] = useState<"script" | "ansible">("script");
-  const [script, setScript] = useState(prefill?.script ?? "");
-  const [selected, setSelected] = useState<Set<string>>(new Set(prefill?.serverIds ?? []));
+  // Texte de commande et sélection de cibles : conservés en quittant la page (ex.
+  // aller vérifier un serveur puis revenir) pour ne pas perdre ce qui a été saisi.
+  const [script, setScript] = usePersistentState("batch.script", prefill?.script ?? "");
+  const [selected, setSelected] = usePersistentState<Set<string>>("batch.selected", new Set(prefill?.serverIds ?? []));
+  // Un préremplissage explicite (venu d'une autre page via la navigation) prime
+  // toujours sur un brouillon précédent de cette même page.
+  useEffect(() => {
+    if (prefill?.script !== undefined) setScript(prefill.script);
+    if (prefill?.serverIds) setSelected(new Set(prefill.serverIds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [mode, setMode] = useState<BatchMode>("Parallel");
   const [stopOnError, setStopOnError] = useState(false);
   const [tasks, setTasks] = useState<BatchTask[]>([]);

@@ -37,7 +37,7 @@ function RuleForm({ initial, onSubmit, onCancel }: { initial: AlertRule; onSubmi
   const targetValue = rule.target.kind === "All" ? "All" : `${rule.target.kind}:${rule.target.id}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-md mx-4 animate-slide-in">
         <div className="flex items-center justify-between p-5 border-b border-border-primary">
