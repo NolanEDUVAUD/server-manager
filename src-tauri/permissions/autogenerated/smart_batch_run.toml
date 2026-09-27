@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-smart-batch-run"
+description = "Enables the smart_batch_run command without any pre-configured scope."
+commands.allow = ["smart_batch_run"]
+
+[[permission]]
+identifier = "deny-smart-batch-run"
+description = "Denies the smart_batch_run command without any pre-configured scope."
+commands.deny = ["smart_batch_run"]

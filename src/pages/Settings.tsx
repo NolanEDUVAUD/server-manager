@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Download, Upload, Copy } from 'lucide-react';
+import { Download, Upload, Copy, RotateCcw } from 'lucide-react';
 import { useStore } from '../stores/useStore';
+import { useTourStore } from '../stores/useTourStore';
 import { useToast } from '../hooks/useToast';
 import { AppearanceSettings, GeneralSettings, NetworkSettings, Theme } from '../types';
 import { applyTheme, findTheme, slugify } from '../utils/theme';
@@ -17,11 +18,20 @@ import { SecuritySettings } from '../components/SecuritySettings';
 import { SshKeysSettings } from '../components/SshKeysSettings';
 import { MODULES } from '../utils/modules';
 import { AppUpdateSettings } from '../components/AppUpdateSettings';
+import { BugReportForm } from '../components/BugReportForm';
+import { SupportSettings } from '../components/SupportSettings';
+import { EulaViewer } from '../components/EulaViewer';
 import { useAppUpdate } from '../stores/useAppUpdate';
+import { usePersistentState } from '../hooks/usePersistentState';
 import { useT } from '../i18n';
+import { ExtensionsSettings } from '../components/ExtensionsSettings';
+import { isExtensionId, mergeThemes } from '../utils/extensions';
+import { useInstalledExtensions } from '../hooks/useInstalledExtensions';
+import { useLayoutStore, PageGap, PAGE_GAP_PX } from '../stores/useLayoutStore';
+import { cn } from '../utils';
 
 // ── Types de sections ──────────────────────────────────────────────────────────
-type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'config' | 'about';
+type Section = 'general' | 'appearance' | 'network' | 'history' | 'security' | 'integrations' | 'sshkeys' | 'extensions' | 'config' | 'updates' | 'report' | 'coffee' | 'about';
 
 // Libellés traduits à l'affichage (settingsPage.sections.<id>)
 const SECTIONS: { id: Section }[] = [
@@ -32,14 +42,18 @@ const SECTIONS: { id: Section }[] = [
   { id: 'security' },
   { id: 'integrations' },
   { id: 'sshkeys' },
+  { id: 'extensions' },
   { id: 'config' },
+  { id: 'updates' },
+  { id: 'report' },
+  { id: 'coffee' },
   { id: 'about' },
 ];
 
 // ── Composant principal ────────────────────────────────────────────────────────
 export function Settings() {
   const { t } = useT();
-  const [active, setActive] = useState<Section>('general');
+  const [active, setActive] = usePersistentState<Section>('settings.active', 'general');
   const { toasts, removeToast } = useToast();
 
   return (
@@ -71,7 +85,11 @@ export function Settings() {
         {active === 'security'   && <SecuritySettings />}
         {active === 'integrations' && <IntegrationsSettings />}
         {active === 'sshkeys'    && <SshKeysSettings />}
+        {active === 'extensions' && <ExtensionsSettings />}
         {active === 'config'     && <SectionConfig />}
+        {active === 'updates'    && <SectionUpdates />}
+        {active === 'report'     && <BugReportForm />}
+        {active === 'coffee'     && <SupportSettings />}
         {active === 'about'      && <SectionAbout />}
       </div>
 
@@ -232,8 +250,6 @@ function SectionGeneral() {
         />
       </div>
 
-      <AppUpdateSettings />
-
       <h2 className="text-text-primary font-medium text-base">{t("settingsPage.general.modules")}</h2>
       <p className="text-xs text-text-secondary -mt-4">{t("settingsPage.general.modulesHelp")}</p>
       <div className="bg-bg-tertiary rounded-win p-4 card">
@@ -266,6 +282,16 @@ function SectionAppearance() {
   const { success, error } = useToast();
   // État de l'éditeur de thème (null = fermé)
   const [editingTheme, setEditingTheme] = useState<Theme | null>(null);
+  // Thèmes contribués par les extensions activées, en plus des builtins/customs
+  const extensions = useInstalledExtensions();
+  const displayedThemes = mergeThemes(extensions, allThemes);
+
+  // Layout store (densité des pages, réinitialisation)
+  const pageGap = useLayoutStore((s) => s.pageGap);
+  const setPageGap = useLayoutStore((s) => s.setPageGap);
+  const resetTabOrder = useLayoutStore((s) => s.resetTabOrder);
+  const resetFavorites = useLayoutStore((s) => s.resetFavorites);
+  const resetSidebarWidth = useLayoutStore((s) => s.resetSidebarWidth);
 
   const handleChange = async (partial: Partial<AppearanceSettings>) => {
     try {
@@ -274,6 +300,8 @@ function SectionAppearance() {
       error(String(e));
     }
   };
+
+  const PAGE_GAP_CHOICES: PageGap[] = ["compact", "normal", "spacious"];
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -326,7 +354,7 @@ function SectionAppearance() {
       <div className="space-y-3">
         <p className="text-text-primary text-sm">{t("settingsPage.appearance.theme")}</p>
         <div className="grid grid-cols-3 gap-2">
-          {allThemes.map(theme => (
+          {displayedThemes.map(theme => (
             <ThemeCard
               key={theme.id}
               theme={theme}
@@ -338,7 +366,8 @@ function SectionAppearance() {
                 name: t("settingsPage.appearance.themeCopy", { name: theme.name }),
                 builtin: false,
               })}
-              onDelete={theme.builtin ? undefined : () => deleteCustomTheme(theme.id)}
+              // Un thème d'extension se retire en désinstallant l'extension (Paramètres → Extensions)
+              onDelete={theme.builtin || isExtensionId(theme.id) ? undefined : () => deleteCustomTheme(theme.id)}
             />
           ))}
         </div>
@@ -361,6 +390,57 @@ function SectionAppearance() {
             }}
           />
         )}
+      </div>
+
+      {/* Barre latérale et mise en page */}
+      <div className="space-y-3 bg-bg-tertiary rounded-win p-4">
+        <h3 className="text-text-primary text-sm font-medium">{t("settingsPage.appearance.sidebarLayout")}</h3>
+
+        {/* Densité des pages */}
+        <div>
+          <p className="text-[11px] text-text-secondary mb-1.5">{t("layout.pageGapLabel")}</p>
+          <div className="flex gap-1">
+            {PAGE_GAP_CHOICES.map((choice) => (
+              <button
+                key={choice}
+                onClick={() => setPageGap(choice)}
+                className={cn(
+                  "flex-1 px-2 py-1 rounded-win text-xs transition-colors",
+                  pageGap === choice
+                    ? "bg-accent-primary text-white"
+                    : "bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-hover"
+                )}
+              >
+                {t(`layout.pageGap.${choice}` as const)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Boutons de réinitialisation */}
+        <div className="space-y-2 pt-2 border-t border-border-secondary">
+          <button
+            onClick={resetTabOrder}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-win text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+          >
+            <RotateCcw size={13} />
+            {t("layout.resetOrder")}
+          </button>
+          <button
+            onClick={resetFavorites}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-win text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+          >
+            <RotateCcw size={13} />
+            {t("settingsPage.appearance.resetFavorites")}
+          </button>
+          <button
+            onClick={resetSidebarWidth}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-win text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+          >
+            <RotateCcw size={13} />
+            {t("settingsPage.appearance.resetSidebarWidth")}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -615,10 +695,21 @@ function SectionConfig() {
   );
 }
 
+// ── Section : Mise à jour ───────────────────────────────────────────────────────
+function SectionUpdates() {
+  return (
+    <div className="space-y-6 max-w-lg">
+      <AppUpdateSettings />
+    </div>
+  );
+}
+
 // ── Section : À propos ─────────────────────────────────────────────────────────
 function SectionAbout() {
   const { t } = useT();
   const { info, loadInfo } = useAppUpdate();
+  const openTour = useTourStore((s) => s.open);
+  const [showEula, setShowEula] = useState(false);
   useEffect(() => {
     if (!info) loadInfo();
   }, [info, loadInfo]);
@@ -639,11 +730,24 @@ function SectionAbout() {
           <span className="text-text-secondary">{t("settingsPage.about.encryption")}</span>
           <span className="text-text-primary">AES-256-GCM</span>
         </div>
-        <div className="flex justify-between py-1">
+        <div className="flex justify-between py-1 border-b border-border-secondary">
           <span className="text-text-secondary">{t("settingsPage.about.storage")}</span>
           <span className="text-text-primary">{t("settingsPage.about.storageValue")}</span>
         </div>
+        <button
+          onClick={() => setShowEula(true)}
+          className="mt-2 px-3 py-1.5 text-xs rounded-win bg-bg-active text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+        >
+          {t("settingsPage.about.eula") || "License Agreement (EULA)"}
+        </button>
       </div>
+      <button
+        onClick={() => openTour()}
+        className="px-4 py-2 text-sm bg-bg-active text-text-primary rounded-win hover:bg-bg-hover transition-colors duration-150"
+      >
+        {t("settingsPage.about.reviewTour")}
+      </button>
+      {showEula && <EulaViewer onClose={() => setShowEula(false)} />}
     </div>
   );
 }

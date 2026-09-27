@@ -6,8 +6,6 @@ export const sshAuth: Dict["sshAuth"] = {
     passwordHint: "Saved password, encrypted with the master key.",
     key: "App key",
     keyHint: "SSH key managed in Settings → SSH keys (the private key stays encrypted in the app).",
-    agent: "SSH agent",
-    agentHint: "Keys loaded in the Windows OpenSSH agent (ssh-add) or in Pageant.",
   },
   warnNoKeys: "No SSH key saved: create or import one in Settings → SSH keys.",
   warnChooseKey: "Choose the key to use.",
@@ -33,14 +31,10 @@ export const sshAuth: Dict["sshAuth"] = {
   jumpMissing: "Jump host unavailable — change it",
   jumpDependents: "This server is the jump host of {servers}: it cannot use a jump host itself (one level only).",
   jumpHelp: "The connection goes through this server (SSH tunnel); the host key of every hop is checked.",
-  checkAgent: "Check the SSH agent",
-  agentKeys: { one: "{count} key available ({sources}).", other: "{count} keys available ({sources})." },
-  agentUnreachable: "No SSH agent reachable.",
   deploy: {
     via: {
       password: "the saved password",
       key: "the current app key",
-      agent: "the SSH agent",
     },
     title: "Deploy a key on {name}",
     close: "Close",

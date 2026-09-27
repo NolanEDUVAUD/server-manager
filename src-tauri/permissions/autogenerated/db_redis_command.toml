@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-db-redis-command"
+description = "Enables the db_redis_command command without any pre-configured scope."
+commands.allow = ["db_redis_command"]
+
+[[permission]]
+identifier = "deny-db-redis-command"
+description = "Denies the db_redis_command command without any pre-configured scope."
+commands.deny = ["db_redis_command"]

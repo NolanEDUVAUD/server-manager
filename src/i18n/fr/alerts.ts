@@ -4,6 +4,9 @@ export const alerts = {
   subtitle: "Être prévenu quand quelque chose ne va pas, même fenêtre fermée (zone de notification)",
   test: "Tester",
   newRule: "Nouvelle règle",
+  masterSwitch: "Alertes activées",
+  masterSwitchOn: "Toutes les règles actives peuvent se déclencher",
+  masterSwitchOff: "Aucune alerte ne sera envoyée, quel que soit l'état de chaque règle",
   conditions: {
     offline: "Serveur hors ligne",
     cpuAbove: "CPU élevé",

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-db-detect-engines"
+description = "Enables the db_detect_engines command without any pre-configured scope."
+commands.allow = ["db_detect_engines"]
+
+[[permission]]
+identifier = "deny-db-detect-engines"
+description = "Denies the db_detect_engines command without any pre-configured scope."
+commands.deny = ["db_detect_engines"]

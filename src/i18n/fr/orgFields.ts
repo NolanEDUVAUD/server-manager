@@ -2,7 +2,7 @@
 export const orgFields = {
   legend: "Organisation",
   tags: "Tags",
-  noTags: "Aucun tag : crée-les avec « Organiser » sur la page Serveurs ou Services.",
+  noTags: "Aucun tag : crée-les avec « Organiser » sur la page Serveurs.",
   folder: "Dossier",
   customFields: "Champs personnalisés",
   customFieldsInfo:

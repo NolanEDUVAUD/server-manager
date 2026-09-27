@@ -7,7 +7,9 @@ import { useStore } from "../stores/useStore";
 import { AppEvent, EventKind, ServerEventStats, ServerUptime, OS_ICONS } from "../types";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { cn, formatUptime } from "../utils";
+import { usePersistentState } from "../hooks/usePersistentState";
 import { currentLocale, TKey, useT } from "../i18n";
+import { ServerIconDisplay } from "../components/IconPicker";
 
 const KIND_META: Record<EventKind, { label: TKey; icon: typeof Wifi; color: string }> = {
   Offline: { label: "events.kinds.offline", icon: WifiOff, color: "text-accent-error" },
@@ -74,8 +76,8 @@ export function History() {
   const { events, servers, clearEvents } = useStore();
   const [stats, setStats] = useState<ServerEventStats[]>([]);
   const [uptime, setUptime] = useState<ServerUptime[]>([]);
-  const [serverFilter, setServerFilter] = useState<string>("all");
-  const [kindFilter, setKindFilter] = useState<EventKind | "all">("all");
+  const [serverFilter, setServerFilter] = usePersistentState<string>("history.serverFilter", "all");
+  const [kindFilter, setKindFilter] = usePersistentState<EventKind | "all">("history.kindFilter", "all");
   const [confirmClear, setConfirmClear] = useState(false);
 
   // Recalcul des statistiques à chaque nouvel événement
@@ -139,7 +141,7 @@ export function History() {
           const last = events.find((e) => e.server_id === s.id);
           return (
             <div key={s.id} className="bg-bg-tertiary border border-border-primary rounded-win p-3 flex items-center gap-3">
-              <span className="text-lg shrink-0">{OS_ICONS[s.os_type]}</span>
+              <span className="text-lg shrink-0">{s.icon ? <ServerIconDisplay icon={s.icon} size={18} /> : OS_ICONS[s.os_type]}</span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-text-primary truncate">{s.name}</p>
                 <p className="text-xs text-text-muted truncate">

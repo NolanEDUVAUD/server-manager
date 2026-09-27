@@ -5,7 +5,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { ToastContainer } from "./Toast";
 import { useToast } from "../hooks/useToast";
 import { useStore } from "../stores/useStore";
-import { AgentStatus, KeyFileInfo, SshKeyView } from "../types";
+import { KeyFileInfo, SshKeyView } from "../types";
 import { keyUsers, suggestedKeyName } from "../utils/sshAuth";
 import { currentLocale, useT } from "../i18n";
 
@@ -37,9 +37,6 @@ export function SshKeysSettings() {
   const [importName, setImportName] = useState("");
   const [passphrase, setPassphrase] = useState("");
   const [importError, setImportError] = useState("");
-
-  const [agent, setAgent] = useState<AgentStatus | null>(null);
-  const [agentLoading, setAgentLoading] = useState(false);
 
   useEffect(() => {
     invoke<SshKeyView[]>("ssh_keys_list").then(setKeys).catch((e) => setLoadError(String(e)));
@@ -129,17 +126,6 @@ export function SshKeysSettings() {
       toast.error(String(e));
     } finally {
       setDeleting(null);
-    }
-  }
-
-  async function checkAgent() {
-    setAgentLoading(true);
-    try {
-      setAgent(await invoke<AgentStatus>("ssh_agent_status"));
-    } catch (e) {
-      toast.error(String(e));
-    } finally {
-      setAgentLoading(false);
     }
   }
 
@@ -254,30 +240,6 @@ export function SshKeysSettings() {
             </div>
           );
         })}
-      </div>
-
-      {/* Agent SSH */}
-      <div className="bg-bg-tertiary rounded-win p-4 card space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-text-primary">{t("sshKeys.agentTitle")}</p>
-            <p className="text-xs text-text-muted">{t("sshKeys.agentHelp")}</p>
-          </div>
-          <button onClick={checkAgent} disabled={agentLoading} className={buttonClass}>
-            {agentLoading && <Loader2 size={12} className="animate-spin" />} {t("sshKeys.detect")}
-          </button>
-        </div>
-        {agent && agent.available && (
-          <ul className="text-xs text-text-secondary space-y-0.5">
-            {agent.keys.length === 0 && <li>{t("sshKeys.agentNoKeys", { sources: agent.sources.join(", ") })}</li>}
-            {agent.keys.map((k) => (
-              <li key={`${k.source}-${k.fingerprint}`} className="font-mono break-all">{k.source} · {k.algorithm} · {k.fingerprint}{k.comment && ` · ${k.comment}`}</li>
-            ))}
-          </ul>
-        )}
-        {agent && !agent.available && (
-          <p className="text-xs text-yellow-400">{t("sshKeys.agentUnreachable", { errors: agent.errors.join(" ; ") })} {agent.hint}</p>
-        )}
       </div>
 
       {deleting && (

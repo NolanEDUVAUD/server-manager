@@ -539,6 +539,8 @@ pub fn lock_app(app: &AppHandle, reason: &str) -> Result<(), String> {
     app.state::<LockManager>().lock(&cfg)?;
     // Consoles SSH : sessions déjà authentifiées, fermées
     app.state::<crate::terminal::TerminalState>().close_all();
+    // Explorateur de fichiers SFTP : sessions déjà authentifiées, fermées
+    app.state::<crate::commands::sftp::SftpPoolState>().close_all();
     // Onglets web : webviews natives, dessinées par-dessus l'écran de verrouillage
     if let Ok(webviews) = app.state::<crate::dashboard_state::DashboardState>().webviews.lock() {
         for webview in webviews.values() {
@@ -868,13 +870,10 @@ mod tests {
         crypto::set_master_key(generate_key());
         crypto::vault().lock();
         // Port 1 de la boucle locale : sans la garde, l'erreur serait « connexion refusée ».
-        // L'agent SSH ne déchiffre rien : il doit être refusé lui aussi.
         let target = |auth| crate::ssh_auth::SshTarget { host: "127.0.0.1".into(), port: 1, user: "root".into(), auth, jump: None };
         let password = crate::ssh_auth::SshAuth::Password(Zeroizing::new("x".into()));
-        for auth in [password.clone(), crate::ssh_auth::SshAuth::Agent] {
-            let err = crate::commands::ssh::connect_ssh(&target(auth), 2).await.err().unwrap();
-            assert_eq!(err, crypto::LOCKED_MESSAGE);
-        }
+        let err = crate::commands::ssh::connect_ssh(&target(password.clone()), 2).await.err().unwrap();
+        assert_eq!(err, crypto::LOCKED_MESSAGE);
         let err = crate::commands::ssh::execute_ssh(&target(password.clone()), "true", 2).await.unwrap_err();
         assert_eq!(err, crypto::LOCKED_MESSAGE);
         crypto::vault().unlock(None);

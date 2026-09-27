@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-db-run-query"
+description = "Enables the db_run_query command without any pre-configured scope."
+commands.allow = ["db_run_query"]
+
+[[permission]]
+identifier = "deny-db-run-query"
+description = "Denies the db_run_query command without any pre-configured scope."
+commands.deny = ["db_run_query"]

@@ -1,0 +1,89 @@
+===============================================================================
+END-USER LICENSE AGREEMENT (EULA)
+Server Power Manager
+===============================================================================
+
+PLEASE READ THIS AGREEMENT CAREFULLY BEFORE INSTALLING OR USING THE SOFTWARE.
+
+This End-User License Agreement (the "Agreement") is a legal agreement between
+you (the "User") and the author and copyright holder of Server Power Manager
+(the "Author") regarding the Server Power Manager software, including its
+installers, updates, documentation and any associated files (the "Software").
+
+By installing, copying or otherwise using the Software, you agree to be bound
+by the terms of this Agreement. If you do not agree, do not install or use the
+Software.
+
+1. LICENSE GRANT
+
+Subject to the terms of this Agreement, the Author grants you a free,
+non-exclusive, non-transferable and revocable license to install and use the
+Software for your own personal or internal, non-commercial purposes, and to
+modify it for those same purposes.
+
+2. MONETIZATION RESTRICTIONS
+
+Any form of monetization of the Software, in whole or in part, modified or
+unmodified, is strictly prohibited without the prior written agreement of the
+Author. This includes, without limitation:
+  a) selling, renting or licensing the Software or any derivative work;
+  b) distributing the Software or any derivative work for a fee;
+  c) offering the Software as a paid hosted service, SaaS or managed service;
+  d) bundling the Software into a paid product, service or subscription;
+  e) generating revenue from the Software through advertising, paid features,
+     donations collected in your own name or any other means.
+
+Anyone wishing to monetize the Software must contact the Author and obtain
+written permission BEFORE doing so. The Author can be contacted through the
+issue tracker of the Software's official source code repository.
+
+3. REDISTRIBUTION
+
+You may share unmodified copies of the Software free of charge, provided that
+this Agreement is included and that no fee of any kind is charged. You must not
+remove or alter any copyright, license or attribution notices.
+
+4. OWNERSHIP
+
+The Software is licensed, not sold. The Author retains all rights, title and
+interest in and to the Software, including all intellectual property rights.
+All rights not expressly granted in this Agreement are reserved.
+
+5. THIRD-PARTY COMPONENTS
+
+The Software includes open-source components that remain subject to their own
+licenses. Nothing in this Agreement limits your rights under those licenses.
+
+6. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. The Software can power
+off, restart or run commands on your machines: you are solely responsible for
+its configuration and for the actions performed with it.
+
+7. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY OR
+CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF DATA, SERVICE INTERRUPTION OR LOSS OF
+PROFITS) ARISING IN ANY WAY OUT OF THE USE OF, OR INABILITY TO USE, THE
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+8. TERMINATION
+
+This Agreement is effective until terminated. It terminates automatically if
+you fail to comply with any of its terms. Upon termination, you must stop
+using the Software and destroy all copies in your possession.
+
+9. CHANGES TO THIS AGREEMENT
+
+The Author may update this Agreement in future versions of the Software. The
+version of the Agreement accepted when installing or updating the Software
+applies to that version.
+
+10. ACCEPTANCE
+
+By clicking "I Agree" or by installing or using the Software, you acknowledge
+that you have read this Agreement, understand it and agree to be bound by its
+terms.

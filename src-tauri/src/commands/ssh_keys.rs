@@ -1,5 +1,5 @@
-/// Commandes Tauri — Clés SSH (1.2) : liste, génération, import, renommage, suppression,
-/// déploiement sur un serveur et état de l'agent SSH. La clé privée ne quitte jamais le backend.
+/// Commandes Tauri — Clés SSH (1.2) : liste, génération, import, renommage, suppression et
+/// déploiement sur un serveur. La clé privée ne quitte jamais le backend.
 use serde::Serialize;
 use std::io::Read;
 use std::sync::Mutex;
@@ -15,7 +15,6 @@ use crate::{
     },
     crypto,
     models::{AuthMethod, Server},
-    ssh_agent::{self, AgentStatus},
     ssh_auth::{resolve_ssh, SshAuth},
     ssh_keys::{self, KeyError, KeyFileInfo, SshKeyView, DEPLOY_ADDED, DEPLOY_PRESENT, MAX_KEYS, MAX_KEY_FILE_BYTES},
     storage::AppState,
@@ -251,12 +250,6 @@ pub fn ssh_key_use_for_server(
     state.save()?;
     log::info!("{} utilise désormais une clé SSH de l'app", view.name);
     Ok(view)
-}
-
-/// Agents SSH joignables et clés proposées (publiques uniquement)
-#[tauri::command]
-pub async fn ssh_agent_status() -> Result<AgentStatus, String> {
-    Ok(ssh_agent::status().await)
 }
 
 #[cfg(test)]

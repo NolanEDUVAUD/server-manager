@@ -61,7 +61,7 @@ export function LockScreen({ status }: { status: LockStatus }) {
       role="dialog"
       aria-modal="true"
       aria-label={t("lock.screen.label")}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-primary text-text-primary select-none"
+      className="fixed inset-0 z-lock flex items-center justify-center bg-bg-primary text-text-primary select-none"
     >
       <div className="w-full max-w-sm mx-4 bg-bg-secondary border border-border-primary rounded-win-lg shadow-win-hover p-6 space-y-5 animate-fade-in">
         <div className="flex flex-col items-center gap-2 text-center">

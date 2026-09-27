@@ -37,10 +37,21 @@ export default {
         win: "0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)",
         "win-hover": "0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08)",
       },
+      // Échelle unique de superposition : tout le monde s'y réfère (z-dropdown, z-modal…)
+      // pour éviter les z-index ad hoc qui finissent par se chevaucher au hasard.
+      zIndex: {
+        dropdown: "50",
+        modal: "60",
+        toast: "70",
+        palette: "80",
+        lock: "100",
+      },
       animation: {
         "fade-in": "fadeIn 150ms ease-out",
         "slide-in": "slideIn 200ms ease-out",
         "pulse-soft": "pulseSoft 2s ease-in-out infinite",
+        // Mini-exemple du tutoriel (Favoris & personnalisation) : glisser un onglet en boucle
+        "tour-drag": "tourDrag 2.4s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -54,6 +65,11 @@ export default {
         pulseSoft: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.6" },
+        },
+        tourDrag: {
+          "0%, 15%": { left: "132px", opacity: "1" },
+          "45%, 65%": { left: "12px", opacity: "1" },
+          "85%, 100%": { left: "132px", opacity: "0" },
         },
       },
     },

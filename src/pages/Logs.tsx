@@ -6,6 +6,7 @@ import { useStore } from "../stores/useStore";
 import { LogEntry } from "../types";
 import { cn } from "../utils";
 import { fold } from "../utils/fuzzy";
+import { usePersistentState } from "../hooks/usePersistentState";
 import { useT, TKey } from "../i18n";
 
 const LEVELS: { value: number; labelKey: TKey }[] = [
@@ -32,12 +33,14 @@ export function Logs() {
   const { t, locale } = useT();
   const { servers, events } = useStore();
   const [hosts, setHosts] = useState<string[] | null>(null);
-  const [host, setHost] = useState("");
+  // Requête tapée par l'utilisateur : conservée en quittant la page pour ne pas
+  // avoir à la retaper au retour (elle ne survit qu'à la session, pas au rechargement).
+  const [host, setHost] = usePersistentState("logs.host", "");
   const [units, setUnits] = useState<string[]>([]);
-  const [unit, setUnit] = useState("");
-  const [level, setLevel] = useState(4);
-  const [range, setRange] = useState(60);
-  const [text, setText] = useState("");
+  const [unit, setUnit] = usePersistentState("logs.unit", "");
+  const [level, setLevel] = usePersistentState("logs.level", 4);
+  const [range, setRange] = usePersistentState("logs.range", 60);
+  const [text, setText] = usePersistentState("logs.text", "");
   const [window_, setWindow] = useState<{ start: number; end: number } | null>(null);
   const [entries, setEntries] = useState<LogEntry[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,15 +50,24 @@ export function Logs() {
   liveRef.current = live;
 
   useEffect(() => {
+    // Ne choisit un hôte par défaut que si aucun n'est déjà sélectionné : au retour
+    // sur la page, l'hôte tapé/choisi précédemment (restauré par usePersistentState)
+    // ne doit pas être écrasé par le premier de la liste.
     invoke<string[]>("loki_hosts")
-      .then((h) => { setHosts(h); if (h[0]) setHost(h[0]); })
+      .then((h) => { setHosts(h); setHost((prev) => prev || h[0] || ""); })
       .catch((e) => setError(String(e)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const prevHostRef = useRef<string | null>(null);
   useEffect(() => {
     if (!host) return;
-    setUnit("");
+    // Ne vide la sélection d'unité que lors d'un vrai changement d'hôte (choisi par
+    // l'utilisateur), pas au premier rendu où `host` est restauré depuis la session.
+    if (prevHostRef.current !== null && prevHostRef.current !== host) setUnit("");
+    prevHostRef.current = host;
     invoke<string[]>("loki_units", { host }).then((u) => setUnits(u.filter((x) => x.endsWith(".service")).sort())).catch(() => setUnits([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [host]);
 
   async function search(win = window_) {

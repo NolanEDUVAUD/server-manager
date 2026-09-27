@@ -73,7 +73,7 @@ describe("table des raccourcis", () => {
   });
 
   it("navigation : chaque raccourci « g » mène à une page", () => {
-    expect(NAV_SHORTCUTS.map((s) => s.to)).toEqual(["/", "/servers", "/services", "/console", "/settings"]);
+    expect(NAV_SHORTCUTS.map((s) => s.to)).toEqual(["/", "/servers", "/console", "/settings"]);
     expect(NAV_SHORTCUTS.every((s) => s.keys[0] === "g")).toBe(true);
   });
 

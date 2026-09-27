@@ -47,7 +47,7 @@ export function ShortcutsHelp() {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center">
+    <div className="fixed inset-0 z-toast flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShortcutsHelpOpen(false)} />
       <div role="dialog" aria-label={t("shortcuts.title")} className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-xl mx-4 max-h-[85vh] flex flex-col animate-slide-in">
         <div className="flex items-center justify-between p-5 border-b border-border-primary">

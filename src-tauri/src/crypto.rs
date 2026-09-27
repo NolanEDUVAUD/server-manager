@@ -201,6 +201,7 @@ pub fn secret_fields_mut(data: &mut AppData) -> Vec<&mut String> {
     fields.extend(data.probes.iter_mut().map(|p| &mut p.secret));
     fields.extend(data.ssh_keys.iter_mut().map(|k| &mut k.private_key));
     fields.push(&mut data.backup.passphrase);
+    fields.extend(data.db_connections.iter_mut().map(|c| &mut c.password));
     fields
 }
 

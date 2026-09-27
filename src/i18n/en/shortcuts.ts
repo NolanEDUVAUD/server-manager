@@ -4,7 +4,7 @@ export const shortcuts: Dict["shortcuts"] = {
   groups: {
     general: "General",
     palette: "Command palette",
-    pages: "Servers and Services pages",
+    pages: "Servers page",
     navigation: "Navigation",
   },
   desc: {
@@ -15,10 +15,9 @@ export const shortcuts: Dict["shortcuts"] = {
     paletteRun: "Run the selected action (actions on a server ask for confirmation)",
     lock: "Lock the application (if a lock is configured)",
     help: "Show this help",
-    search: "Jump to search (Servers and Services pages)",
+    search: "Jump to search (Servers page)",
     goDashboard: "Go to the dashboard",
     goServers: "Go to servers",
-    goServices: "Go to services",
     goConsole: "Go to the SSH console",
     goSettings: "Go to settings",
   },

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-smart-batch-preview"
+description = "Enables the smart_batch_preview command without any pre-configured scope."
+commands.allow = ["smart_batch_preview"]
+
+[[permission]]
+identifier = "deny-smart-batch-preview"
+description = "Denies the smart_batch_preview command without any pre-configured scope."
+commands.deny = ["smart_batch_preview"]

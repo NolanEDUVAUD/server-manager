@@ -32,11 +32,6 @@ export const sshKeys: Dict["sshKeys"] = {
   copiedPublic: "Public key copied",
   copyFailed: "Copy failed: select the public key and copy it by hand",
   deleted: "Key “{name}” deleted",
-  agentTitle: "SSH agent",
-  agentHelp: "Windows OpenSSH agent (named pipe), then Pageant: the “SSH agent” method of a server.",
-  detect: "Detect",
-  agentNoKeys: "Agent reachable ({sources}) but no key loaded.",
-  agentUnreachable: "No SSH agent reachable ({errors}).",
   deleteTitle: "Delete the key “{name}”",
   deleteInUse: "This key is used by {servers}. First choose another authentication method for these servers.",
   deleteMessage:

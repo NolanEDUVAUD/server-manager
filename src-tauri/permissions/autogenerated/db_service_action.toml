@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-db-service-action"
+description = "Enables the db_service_action command without any pre-configured scope."
+commands.allow = ["db_service_action"]
+
+[[permission]]
+identifier = "deny-db-service-action"
+description = "Denies the db_service_action command without any pre-configured scope."
+commands.deny = ["db_service_action"]

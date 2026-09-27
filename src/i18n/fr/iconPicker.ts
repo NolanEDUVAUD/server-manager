@@ -6,4 +6,8 @@ export const iconPicker = {
   uploading: "Upload...",
   custom: "Image personnalisée (PNG/SVG)",
   fileFilter: "Image",
+  search: "Rechercher des icônes...",
+  color: "Couleur",
+  default: "Défaut",
+  noResults: "Aucune icône trouvée",
 };

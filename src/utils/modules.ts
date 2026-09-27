@@ -30,12 +30,12 @@ function defineModule(key: ModuleKey, essential: boolean): AppModule {
 export const MODULES: AppModule[] = [
   defineModule("power", true),
   defineModule("resources", true),
-  defineModule("services", true),
   defineModule("console", true),
   defineModule("history", true),
   defineModule("alerts", true),
   defineModule("network", false),
   defineModule("docker", false),
+  defineModule("databases", false),
   defineModule("batch", false),
   defineModule("updates", false),
   defineModule("logs", false),

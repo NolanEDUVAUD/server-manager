@@ -23,6 +23,8 @@ use crate::app_update::{
 const CHECK_TIMEOUT: Duration = Duration::from_secs(20);
 /// Délai maximal du téléchargement complet de l'installateur
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(600);
+/// Délai maximal de lecture de la dernière release GitHub (F1)
+const GITHUB_RELEASE_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Default)]
 pub struct AppUpdateState {
@@ -99,6 +101,23 @@ pub async fn app_update_check(
         log::warn!("{msg}");
         msg
     })
+}
+
+// ── Dernière release GitHub, sans passer par l'updater signé (F1) ──────────
+//
+// Fonctionne même quand aucune clé publique n'est embarquée (`app_update_check`
+// répond alors toujours « non configuré ») : la page Paramètres → Mise à jour peut
+// ainsi toujours dire si une version plus récente existe. L'utilisateur choisit
+// ensuite : si l'updater signé trouve la même version, elle est téléchargée et
+// vérifiée automatiquement ; sinon la release s'ouvre dans le navigateur
+// (`open_external_url`, restreint à github.com).
+#[tauri::command]
+pub async fn check_github_release(app: AppHandle) -> Result<app_update::GithubUpdateCheck, String> {
+    let current = app.package_info().version.to_string();
+    let release = app_update::fetch_github_release(&app_update::latest_release_repo_api_url(), GITHUB_RELEASE_TIMEOUT)
+        .await
+        .map_err(|e| app_update::error_message("Impossible de vérifier les mises à jour", e))?;
+    Ok(app_update::build_github_update_check(&current, release))
 }
 
 // ── Télécharger, vérifier, installer puis redémarrer ───────────────────────

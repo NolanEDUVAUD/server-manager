@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-traceroute-lite"
+description = "Enables the traceroute_lite command without any pre-configured scope."
+commands.allow = ["traceroute_lite"]
+
+[[permission]]
+identifier = "deny-traceroute-lite"
+description = "Denies the traceroute_lite command without any pre-configured scope."
+commands.deny = ["traceroute_lite"]

@@ -2,9 +2,19 @@ import { AppUpdateProgress } from "../types";
 import { formatBytes } from "./index";
 import { currentLocale, t } from "../i18n";
 
-/** Texte du ConfirmDialog : dit exactement ce qui va se passer */
-export function installConfirmMessage(version: string): string {
-  return t("appUpdate.confirmMessage", { version });
+/**
+ * Texte du ConfirmDialog : dit exactement ce qui va se passer. `signed` : l'updater
+ * signé est configuré (téléchargement + vérification + installation automatiques) ;
+ * sinon la page de la release s'ouvre simplement dans le navigateur.
+ */
+export function installConfirmMessage(version: string, signed = true): string {
+  return t(signed ? "appUpdate.confirmMessage" : "appUpdate.confirmMessageUnsigned", { version });
+}
+
+/** Horodatage de la dernière recherche (« 14:32:05 »), vide si jamais lancée */
+export function formatCheckedAt(ts: number | null): string {
+  if (!ts) return "";
+  return new Date(ts).toLocaleTimeString(currentLocale());
 }
 
 /** Pourcentage du téléchargement, null si la taille totale est inconnue */

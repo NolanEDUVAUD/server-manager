@@ -10,6 +10,7 @@ import { ToastContainer } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { cn } from "../utils";
 import { useT } from "../i18n";
+import { ServerIconDisplay } from "../components/IconPicker";
 
 type HostState = { loading: boolean; host?: DockerHost; error?: string };
 
@@ -36,7 +37,7 @@ function LogsModal({ serverId, container, onClose }: { serverId: string; contain
   useEffect(load, [load]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-modal flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-bg-tertiary border border-border-primary rounded-win-lg shadow-win-hover w-full max-w-4xl mx-4 h-[75vh] flex flex-col animate-slide-in">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border-primary shrink-0">
@@ -159,7 +160,7 @@ export function Docker() {
                   : "border-border-primary bg-bg-tertiary text-text-secondary hover:text-text-primary"
               )}
             >
-              <span>{OS_ICONS[s.os_type]}</span>
+              <span>{s.icon ? <ServerIconDisplay icon={s.icon} size={14} /> : OS_ICONS[s.os_type]}</span>
               {s.name}
               <span className={cn("text-[11px]", usable ? "text-accent-success" : "text-text-muted")}>{hostBadge(s.id)}</span>
             </button>

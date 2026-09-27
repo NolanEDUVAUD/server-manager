@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-db-create-database"
+description = "Enables the db_create_database command without any pre-configured scope."
+commands.allow = ["db_create_database"]
+
+[[permission]]
+identifier = "deny-db-create-database"
+description = "Denies the db_create_database command without any pre-configured scope."
+commands.deny = ["db_create_database"]

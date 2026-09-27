@@ -15,8 +15,6 @@ pub enum SshAuth {
     Password(Zeroizing<String>),
     /// Clé privée OpenSSH en clair (relue par russh au moment de l'authentification)
     Key(Zeroizing<String>),
-    /// Agent SSH de la machine : aucun secret côté app
-    Agent,
 }
 
 /// Cible d'une connexion SSH, avec son rebond éventuel (un seul niveau)
@@ -42,7 +40,6 @@ impl fmt::Debug for SshAuth {
         f.write_str(match self {
             SshAuth::Password(_) => "Password(***)",
             SshAuth::Key(_) => "Key(***)",
-            SshAuth::Agent => "Agent",
         })
     }
 }
@@ -98,7 +95,18 @@ fn direct_target(data: &AppData, server: &Server) -> Result<SshTarget, String> {
     let auth = match server.auth_method {
         AuthMethod::Password => {
             let key = crypto::data_key(data)?;
-            SshAuth::Password(Zeroizing::new(crypto::decrypt(&server.ssh_password, &key)?))
+            let password = crypto::decrypt(&server.ssh_password, &key)?;
+            // Un mot de passe vide n'a jamais de sens pour cette méthode : c'est le signe d'un
+            // serveur qui utilisait l'agent SSH (fonctionnalité retirée), ramené sur Password au
+            // chargement sans mot de passe à lui donner. Message explicite plutôt qu'un refus
+            // silencieux du serveur pour un mot de passe vide.
+            if password.is_empty() {
+                return Err(format!(
+                    "{} : cette machine utilisait l'agent SSH, qui n'est plus pris en charge : choisis un mot de passe ou une clé dans ses paramètres",
+                    server.name
+                ));
+            }
+            SshAuth::Password(Zeroizing::new(password))
         }
         AuthMethod::Key => {
             let key_id = server
@@ -115,7 +123,6 @@ fn direct_target(data: &AppData, server: &Server) -> Result<SshTarget, String> {
             let master = crypto::data_key(data)?;
             SshAuth::Key(ssh_keys::decrypt_private_key(ssh_key, &master)?)
         }
-        AuthMethod::Agent => SshAuth::Agent,
     };
     Ok(SshTarget { host: server.ip.clone(), port: server.ssh_port, user: server.ssh_user.clone(), auth, jump: None })
 }
@@ -162,14 +169,12 @@ pub(crate) mod tests {
         let mut b = server(&data, "b", "DockerHost", "192.168.1.20", "");
         b.auth_method = AuthMethod::Key;
         b.ssh_key_id = Some("id-minipc".into());
-        let mut c = server(&data, "c", "Workstation", "192.168.1.30", "");
-        c.auth_method = AuthMethod::Agent;
-        data.servers.extend([a, b, c]);
+        data.servers.extend([a, b]);
         data
     }
 
     #[test]
-    fn password_key_and_agent_resolve_to_the_right_auth() {
+    fn password_and_key_resolve_to_the_right_auth() {
         let data = fixture();
         let a = resolve_ssh(&data, "a").unwrap();
         assert_eq!((a.host.as_str(), a.port, a.user.as_str()), ("192.168.1.10", 22, "root"));
@@ -178,8 +183,25 @@ pub(crate) mod tests {
 
         let b = resolve_ssh(&data, "b").unwrap();
         assert!(matches!(&b.auth, SshAuth::Key(pem) if pem.starts_with("-----BEGIN OPENSSH PRIVATE KEY-----")));
-        assert!(matches!(resolve_ssh(&data, "c").unwrap().auth, SshAuth::Agent));
         assert!(resolve_ssh(&data, "absent").unwrap_err().contains("introuvable"));
+    }
+
+    /// Ancienne fonctionnalité « agent SSH » retirée : une donnée existante avec
+    /// `auth_method: "Agent"` se lit comme `Password` (jamais un échec de chargement), et une
+    /// connexion pour un tel serveur (mot de passe forcément vide, l'agent n'en stockait pas)
+    /// donne un message explicite plutôt qu'un simple refus de mot de passe.
+    #[test]
+    fn legacy_agent_auth_method_maps_to_password_with_an_explicit_connection_error() {
+        let method: AuthMethod = serde_json::from_str("\"Agent\"").unwrap();
+        assert_eq!(method, AuthMethod::Password);
+        assert_eq!(serde_json::to_string(&AuthMethod::Password).unwrap(), "\"Password\"");
+
+        let mut data = fixture();
+        let mut c = server(&data, "c", "Workstation", "192.168.1.30", "");
+        c.auth_method = method; // tel qu'obtenu après désérialisation d'une ancienne donnée
+        data.servers.push(c);
+        let err = resolve_ssh(&data, "c").unwrap_err();
+        assert!(err.contains("Workstation") && err.contains("agent SSH") && err.contains("n'est plus pris en charge"), "{}", err);
     }
 
     #[test]

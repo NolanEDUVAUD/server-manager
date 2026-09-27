@@ -3,7 +3,7 @@ import type { Dict } from "..";
 export const orgFields: Dict["orgFields"] = {
   legend: "Organisation",
   tags: "Tags",
-  noTags: "No tags: create them with “Organise” on the Servers or Services page.",
+  noTags: "No tags: create them with “Organise” on the Servers page.",
   folder: "Folder",
   customFields: "Custom fields",
   customFieldsInfo:

@@ -82,7 +82,12 @@ describe("interface en anglais", () => {
   it("bannière de mise à jour", () => {
     useAppUpdate.setState({
       status: "available", dismissed: false, error: null, progress: null,
-      update: { configured: true, available: true, version: "0.3.0", current_version: "0.2.0", date: "2026-09-21T14:13:20+00:00", notes: null },
+      info: { configured: true, current_version: "0.2.0" },
+      github: {
+        current_version: "0.2.0", available: true, latest_version: "0.3.0", name: "0.3.0",
+        notes: null, html_url: "https://github.com/NolanEDUVAUD/server-manager/releases/tag/v0.3.0",
+        published_at: "2026-09-21T14:13:20+00:00",
+      },
     });
     render(<UpdateBanner />);
     expect(screen.getByText("Version 0.3.0 available")).toBeInTheDocument();

@@ -19,7 +19,7 @@ type Step =
   | { kind: "switch"; report: DeployReport }
   | { kind: "failed"; report: DeployReport };
 
-const methodLabelKey = { Password: "sshAuth.deploy.via.password", Key: "sshAuth.deploy.via.key", Agent: "sshAuth.deploy.via.agent" } as const;
+const methodLabelKey = { Password: "sshAuth.deploy.via.password", Key: "sshAuth.deploy.via.key" } as const;
 
 /**
  * « Déployer la clé » : ajoute la clé publique choisie à ~/.ssh/authorized_keys du serveur (via sa
